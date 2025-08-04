@@ -1,9 +1,9 @@
 import psycopg2
-from typing import Tuple, Optional
-from event import Event
-from relay import Relay
-from relay_metadata import RelayMetadata
-from utils import sanitize
+from typing import Tuple, Optional, List
+from .event import Event
+from .relay import Relay
+from .relay_metadata import RelayMetadata
+from .utils import sanitize
 import json
 import time
 
@@ -99,7 +99,6 @@ class Bigbrotr:
         self.dbname = dbname
         self.conn = None
         self.cur = None
-        return
 
     def connect(self):
         """
@@ -112,17 +111,19 @@ class Bigbrotr:
         - None
 
         Raises:
-        - None
+        - psycopg2.Error: if connection fails
         """
-        self.conn = psycopg2.connect(
-            host=self.host,
-            port=self.port,
-            user=self.user,
-            password=self.password,
-            dbname=self.dbname
-        )
-        self.cur = self.conn.cursor()
-        return
+        try:
+            self.conn = psycopg2.connect(
+                host=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                dbname=self.dbname
+            )
+            self.cur = self.conn.cursor()
+        except psycopg2.Error as e:
+            raise RuntimeError(f"Failed to connect to database: {e}")
 
     def close(self):
         """
@@ -137,9 +138,10 @@ class Bigbrotr:
         Raises:
         - None
         """
-        self.cur.close()
-        self.conn.close()
-        return
+        if self.cur:
+            self.cur.close()
+        if self.conn:
+            self.conn.close()
 
     def commit(self):
         """
@@ -154,8 +156,8 @@ class Bigbrotr:
         Raises:
         - None
         """
-        self.conn.commit()
-        return
+        if self.conn:
+            self.conn.commit()
 
     def execute(self, query: str, args: Optional[Tuple] = ()):
         """
@@ -185,15 +187,14 @@ class Bigbrotr:
         except psycopg2.Error as e:
             self.conn.rollback()
             raise RuntimeError(f"Database error: {e}")
-        return
     
-    def executemany(self, query: str, args: list[Tuple]):
+    def executemany(self, query: str, args: List[Tuple]):
         """
         Execute a query with multiple sets of parameters.
 
         Parameters:
         - query: str, the query to execute
-        - args: list[Tuple], the list of tuples containing parameters for the query
+        - args: List[Tuple], the list of tuples containing parameters for the query
 
         Example:
         >>> query = "INSERT INTO events (id, pubkey) VALUES (%s, %s)"
@@ -216,7 +217,6 @@ class Bigbrotr:
         except psycopg2.Error as e:
             self.conn.rollback()
             raise RuntimeError(f"Database error: {e}")
-        return
 
     def fetchall(self):
         """
@@ -288,7 +288,6 @@ class Bigbrotr:
         query = "SELECT delete_orphan_events()"
         self.execute(query)
         self.commit()
-        return
 
     def insert_event(self, event: Event, relay: Relay, seen_at: Optional[int] = None) -> None:
         """
@@ -342,7 +341,6 @@ class Bigbrotr:
         )
         self.execute(query, args)
         self.commit()
-        return
 
     def insert_relay(self, relay: Relay, inserted_at: Optional[int] = None) -> None:
         """
@@ -380,7 +378,6 @@ class Bigbrotr:
         )
         self.execute(query, args)
         self.commit()
-        return
 
     def insert_relay_metadata(self, relay_metadata: RelayMetadata) -> None:
         """
@@ -435,14 +432,13 @@ class Bigbrotr:
         )
         self.execute(query, args)
         self.commit()
-        return
 
-    def insert_event_batch(self, events: list[Event], relay: Relay, seen_at: Optional[int] = None) -> None:
+    def insert_event_batch(self, events: List[Event], relay: Relay, seen_at: Optional[int] = None) -> None:
         """
         Insert a batch of events into the database.
 
         Parameters:
-        - events: list[Event], the events to insert
+        - events: List[Event], the events to insert
         - relay: Relay, the relay to insert
         - seen_at: int, the time the event was seen
 
@@ -496,14 +492,13 @@ class Bigbrotr:
         ]
         self.cur.executemany(query, args)
         self.commit()
-        return
 
-    def insert_relay_batch(self, relays: list[Relay], inserted_at: Optional[int] = None) -> None:
+    def insert_relay_batch(self, relays: List[Relay], inserted_at: Optional[int] = None) -> None:
         """
         Insert a batch of relays into the database.
 
         Parameters:
-        - relays: list[Relay], the relays to insert
+        - relays: List[Relay], the relays to insert
 
         Example:
         >>> relays = [Relay(url="wss://relay1.com"), Relay(url="wss://relay2.com")]
@@ -541,14 +536,13 @@ class Bigbrotr:
         ]
         self.cur.executemany(query, args)
         self.commit()
-        return
 
-    def insert_relay_metadata_batch(self, relay_metadata_list: list[RelayMetadata]) -> None:
+    def insert_relay_metadata_batch(self, relay_metadata_list: List[RelayMetadata]) -> None:
         """
         Insert a batch of relay metadata into the database.
 
         Parameters:
-        - relay_metadata_list: list[RelayMetadata], the relay metadata to insert
+        - relay_metadata_list: List[RelayMetadata], the relay metadata to insert
 
         Example:
         >>> relay_metadata_list = [RelayMetadata(...), RelayMetadata(...)]
@@ -602,4 +596,3 @@ class Bigbrotr:
         ]
         self.cur.executemany(query, args)
         self.commit()
-        return
