@@ -1,5 +1,5 @@
 from typing import List
-from utils import calc_event_id, verify_sig
+from .utils import calc_event_id, verify_sig
 import json
 
 
@@ -23,7 +23,7 @@ class Event:
     - to_dict() -> dict: return the Event object as a dictionary
     """
 
-    def __init__(self, id: str, pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str, sig: str) -> "Event":
+    def __init__(self, id: str, pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str, sig: str) -> None:
         """
         Initialize an Event object.
 
@@ -47,7 +47,7 @@ class Event:
         >>> event = Event(id, pubkey, created_at, kind, tags, content, sig)
 
         Returns:
-        - Event, Event object initialized with the provided parameters
+        - None
 
         Raises:
         - TypeError: if id is not a str
@@ -100,10 +100,28 @@ class Event:
             raise ValueError("tags cannot contain null characters")
         if "\\u0000" in json.dumps(content):
             raise ValueError("content cannot contain null characters")
+        
+        # Validate hex format
+        try:
+            int(id, 16)
+        except ValueError:
+            raise ValueError(f"id must be a valid hex string: {id}")
+        
+        try:
+            int(pubkey, 16)
+        except ValueError:
+            raise ValueError(f"pubkey must be a valid hex string: {pubkey}")
+            
+        try:
+            int(sig, 16)
+        except ValueError:
+            raise ValueError(f"sig must be a valid hex string: {sig}")
+        
         if calc_event_id(pubkey, created_at, kind, tags, content) != id:
             raise ValueError(f"Invalid event id: {id}")
         if verify_sig(id, pubkey, sig) != True:
             raise ValueError(f"Invalid event signature: {sig}")
+        
         self.id = id
         self.pubkey = pubkey
         self.created_at = created_at
@@ -111,7 +129,6 @@ class Event:
         self.tags = tags
         self.content = content
         self.sig = sig
-        return
 
     def __repr__(self) -> str:
         """
