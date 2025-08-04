@@ -1,5 +1,5 @@
-from typing import Optional, List, Dict, Any
-from relay import Relay
+from typing import Optional, List, Dict, Any, Union
+from .relay import Relay
 import json
 
 
@@ -24,7 +24,7 @@ class RelayMetadata:
     - icon: Optional[str], the URL of the icon image
     - pubkey: Optional[str], the public key of the relay
     - contact: Optional[str], the contact information for the relay
-    - supported_nips: Optional[List[int]], a list of supported NIPs (NOSTR Improvement Possibilities)
+    - supported_nips: Optional[List[Union[int, str]]], a list of supported NIPs (NOSTR Improvement Possibilities)
     - software: Optional[str], the software used by the relay
     - version: Optional[str], the version of the software
     - privacy_policy: Optional[str], the URL of the privacy policy
@@ -57,7 +57,7 @@ class RelayMetadata:
         icon: Optional[str] = None,
         pubkey: Optional[str] = None,
         contact: Optional[str] = None,
-        supported_nips: Optional[List[int]] = None,
+        supported_nips: Optional[List[Union[int, str]]] = None,
         software: Optional[str] = None,
         version: Optional[str] = None,
         privacy_policy: Optional[str] = None,
@@ -85,7 +85,7 @@ class RelayMetadata:
         - icon: Optional[str], the URL of the icon image
         - pubkey: Optional[str], the public key of the relay
         - contact: Optional[str], the contact information for the relay
-        - supported_nips: Optional[List[int|str]], a list of supported NIPs
+        - supported_nips: Optional[List[Union[int, str]]], a list of supported NIPs
         - software: Optional[str], the software used by the relay
         - version: Optional[str], the version of the software
         - privacy_policy: Optional[str], the URL of the privacy policy
@@ -110,7 +110,7 @@ class RelayMetadata:
         ...     banner="https://example.com/banner.png",
         ...     icon="https://example.com/icon.png",
         ...     pubkey="abcdef1234567890",
-        ...     contact=""
+        ...     contact="admin@example.com",
         ...     supported_nips=[1, 2, 3],
         ...     software="nostr-relay-software",
         ...     version="1.0.0",
@@ -124,31 +124,8 @@ class RelayMetadata:
         - None
 
         Raises:
-        - TypeError: if relay is not a Relay
-        - TypeError: if generated_at is not an int
-        - TypeError: if connection_success is not a bool
-        - TypeError: if nip11_success is not a bool
-        - TypeError: if openable is not a bool or None
-        - TypeError: if readable is not a bool or None
-        - TypeError: if writable is not a bool or None
-        - TypeError: if rtt_open is not an int or None
-        - TypeError: if rtt_read is not an int or None
-        - TypeError: if rtt_write is not an int or None
-        - TypeError: if name is not a str or None
-        - TypeError: if description is not a str or None
-        - TypeError: if banner is not a str or None
-        - TypeError: if icon is not a str or None
-        - TypeError: if pubkey is not a str or None
-        - TypeError: if contact is not a str or None
-        - TypeError: if supported_nips is not a list of int or None
-        - TypeError: if software is not a str or None
-        - TypeError: if version is not a str or None
-        - TypeError: if privacy_policy is not a str or None
-        - TypeError: if terms_of_service is not a str or None
-        - TypeError: if limitation is not a dict or None
-        - TypeError: if extra_fields is not a dict or None
-        - TypeError: if limitation keys are not strings
-        - TypeError: if extra_fields keys are not strings
+        - TypeError: if any parameter is not of the expected type
+        - ValueError: if any parameter has an invalid value
         """
         if not isinstance(relay, Relay):
             raise TypeError(f"relay must be a Relay, not {type(relay)}")
@@ -244,6 +221,7 @@ class RelayMetadata:
                 except (TypeError, ValueError):
                     raise TypeError(
                         f"extra_fields values must be JSON serializable.")
+        
         self.relay = relay
         self.generated_at = generated_at
         self.connection_success = connection_success
