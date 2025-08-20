@@ -1,0 +1,564 @@
+nostr-tools/
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       ├── publish.yml
+│       └── docs.yml
+├── LICENSE
+├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── MANIFEST.in
+├── setup.py
+├── setup.cfg
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── Makefile
+├── pytest.ini
+├── .flake8
+├── .pre-commit-config.yaml
+├── mypy.ini
+├── tox.ini
+├── docs/
+│   ├── conf.py
+│   ├── index.rst
+│   ├── installation.rst
+│   ├── quickstart.rst
+│   ├── api/
+│   │   ├── index.rst
+│   │   ├── core.rst
+│   │   ├── utils.rst
+│   │   ├── client.rst
+│   │   └── exceptions.rst
+│   ├── guides/
+│   │   ├── index.rst
+│   │   ├── basic-usage.rst
+│   │   ├── advanced-usage.rst
+│   │   ├── event-handling.rst
+│   │   ├── relay-management.rst
+│   │   ├── cryptography.rst
+│   │   └── tor-support.rst
+│   ├── examples/
+│   │   ├── index.rst
+│   │   ├── simple-client.rst
+│   │   ├── event-publisher.rst
+│   │   ├── relay-monitor.rst
+│   │   └── social-graph.rst
+│   ├── _static/
+│   │   ├── css/
+│   │   │   └── custom.css
+│   │   └── images/
+│   │       ├── logo.png
+│   │       └── architecture.png
+│   └── _templates/
+│       ├── layout.html
+│       └── page.html
+├── nostr_tools/
+│   ├── __init__.py
+│   ├── py.typed
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── event.py
+│   │   ├── relay.py
+│   │   └── relay_metadata.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── crypto.py
+│   │   ├── network.py
+│   │   └── validation.py
+│   ├── client/
+│   │   ├── __init__.py
+│   │   ├── websocket_client.py
+│   │   └── event_fetcher.py
+│   └── exceptions/
+│       ├── __init__.py
+│       └── errors.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_core/
+│   │   ├── __init__.py
+│   │   ├── test_event.py
+│   │   ├── test_relay.py
+│   │   └── test_relay_metadata.py
+│   ├── test_utils/
+│   │   ├── __init__.py
+│   │   ├── test_crypto.py
+│   │   ├── test_network.py
+│   │   └── test_validation.py
+│   ├── test_client/
+│   │   ├── __init__.py
+│   │   ├── test_websocket_client.py
+│   │   └── test_event_fetcher.py
+│   ├── test_exceptions/
+│   │   ├── __init__.py
+│   │   └── test_errors.py
+│   ├── fixtures/
+│   │   ├── __init__.py
+│   │   ├── events.json
+│   │   ├── relays.json
+│   │   └── test_data.py
+│   └── integration/
+│       ├── __init__.py
+│       ├── test_real_relays.py
+│       ├── test_end_to_end.py
+│       └── test_performance.py
+├── examples/
+│   ├── __init__.py
+│   ├── basic_usage.py
+│   ├── event_fetching.py
+│   ├── relay_discovery.py
+│   ├── advanced/
+│   │   ├── __init__.py
+│   │   ├── social_graph_analyzer.py
+│   │   ├── relay_health_monitor.py
+│   │   ├── event_publisher_bot.py
+│   │   ├── nostr_bridge.py
+│   │   └── custom_filters.py
+│   ├── notebooks/
+│   │   ├── getting_started.ipynb
+│   │   ├── cryptography_examples.ipynb
+│   │   ├── event_analysis.ipynb
+│   │   └── relay_statistics.ipynb
+│   └── data/
+│       ├── sample_events.json
+│       ├── relay_list.txt
+│       └── test_keypairs.json
+├── scripts/
+│   ├── __init__.py
+│   ├── generate_docs.py
+│   ├── run_benchmarks.py
+│   ├── validate_examples.py
+│   ├── update_dependencies.py
+│   └── release.py
+├── benchmarks/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── bench_crypto.py
+│   ├── bench_network.py
+│   ├── bench_event_processing.py
+│   └── results/
+│       ├── baseline.json
+│       └── reports/
+│           ├── crypto_performance.html
+│           └── network_performance.html
+├── tools/
+│   ├── __init__.py
+│   ├── key_generator.py
+│   ├── event_validator.py
+│   ├── relay_tester.py
+│   ├── bech32_converter.py
+│   └── network_scanner.py
+├── docker/
+│   ├── Dockerfile
+│   ├── Dockerfile.dev
+│   ├── docker-compose.yml
+│   ├── docker-compose.dev.yml
+│   └── entrypoint.sh
+├── .vscode/
+│   ├── settings.json
+│   ├── launch.json
+│   ├── tasks.json
+│   └── extensions.json
+├── .idea/
+│   ├── nostr-tools.iml
+│   ├── misc.xml
+│   ├── modules.xml
+│   └── workspace.xml
+├── assets/
+│   ├── logo/
+│   │   ├── logo.svg
+│   │   ├── logo.png
+│   │   ├── logo-dark.png
+│   │   └── favicon.ico
+│   ├── diagrams/
+│   │   ├── architecture.svg
+│   │   ├── event_flow.svg
+│   │   └── relay_network.svg
+│   └── screenshots/
+│       ├── example_output.png
+│       └── documentation.png
+├── coverage_reports/
+│   ├── htmlcov/
+│   │   ├── index.html
+│   │   ├── status.json
+│   │   └── [generated files]
+│   ├── coverage.xml
+│   └── .coverage
+├── build/
+│   ├── lib/
+│   │   └── nostr_tools/
+│   │       └── [built files]
+│   └── bdist.*/
+├── dist/
+│   ├── nostr_tools-0.1.0-py3-none-any.whl
+│   ├── nostr_tools-0.1.0.tar.gz
+│   └── [distribution files]
+├── .tox/
+│   ├── py38/
+│   ├── py39/
+│   ├── py310/
+│   ├── py311/
+│   └── [tox environments]
+└── nostr_tools.egg-info/
+    ├── PKG-INFO
+    ├── SOURCES.txt
+    ├── dependency_links.txt
+    ├── requires.txt
+    └── top_level.txt
+
+## Additional Configuration Files Detail:
+
+### .gitignore
+```
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+docs/_build/
+docs/build/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+*.log
+.mypy_cache/
+.dmypy.json
+dmypy.json
+```
+
+### .flake8
+```
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E501
+exclude = 
+    .git,
+    __pycache__,
+    .tox,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    .venv,
+    venv
+per-file-ignores =
+    __init__.py:F401
+    tests/*:S101
+```
+
+### mypy.ini
+```
+[mypy]
+python_version = 3.8
+warn_return_any = True
+warn_unused_configs = True
+disallow_untyped_defs = True
+disallow_incomplete_defs = True
+check_untyped_defs = True
+disallow_untyped_decorators = True
+no_implicit_optional = True
+warn_redundant_casts = True
+warn_unused_ignores = True
+warn_no_return = True
+warn_unreachable = True
+strict_equality = True
+
+[mypy-tests.*]
+disallow_untyped_defs = False
+
+[mypy-setup]
+ignore_errors = True
+```
+
+### setup.cfg
+```
+[metadata]
+name = nostr-tools
+description = A Python library for Nostr protocol interactions
+long_description = file: README.md
+long_description_content_type = text/markdown
+url = https://github.com/yourusername/nostr-tools
+project_urls =
+    Bug Reports = https://github.com/yourusername/nostr-tools/issues
+    Source = https://github.com/yourusername/nostr-tools
+    Documentation = https://nostr-tools.readthedocs.io
+classifiers =
+    Development Status :: 4 - Beta
+    Intended Audience :: Developers
+    License :: OSI Approved :: MIT License
+    Operating System :: OS Independent
+    Programming Language :: Python :: 3
+    Programming Language :: Python :: 3.8
+    Programming Language :: Python :: 3.9
+    Programming Language :: Python :: 3.10
+    Programming Language :: Python :: 3.11
+    Topic :: Software Development :: Libraries :: Python Modules
+    Topic :: Internet :: WWW/HTTP :: Dynamic Content
+    Topic :: Security :: Cryptography
+
+[options]
+packages = find:
+python_requires = >=3.8
+install_requires =
+    bech32==1.2.0
+    secp256k1==0.14.0
+    aiohttp==3.11.18
+    aiohttp_socks==0.10.1
+    typing-extensions>=4.0.0
+
+[options.extras_require]
+dev =
+    pytest>=6.0
+    pytest-asyncio>=0.21.0
+    pytest-cov>=4.0
+    pytest-watch>=4.2
+    black>=22.0
+    flake8>=5.0
+    mypy>=1.0
+    isort>=5.0
+    pre-commit>=2.20
+docs =
+    sphinx>=5.0
+    sphinx-rtd-theme>=1.0
+    sphinx-autodoc-typehints>=1.19
+    myst-parser>=0.18
+performance =
+    pytest-benchmark>=4.0
+    memory-profiler>=0.60
+
+[options.entry_points]
+console_scripts =
+    nostr-keygen = nostr_tools.tools.key_generator:main
+    nostr-validate = nostr_tools.tools.event_validator:main
+    nostr-relay-test = nostr_tools.tools.relay_tester:main
+
+[tool:pytest]
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+
+[coverage:run]
+source = nostr_tools
+omit = 
+    tests/*
+    setup.py
+    */site-packages/*
+
+[coverage:report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+```
+
+### pyproject.toml
+```
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["nostr_tools"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+```
+
+### MANIFEST.in
+```
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements*.txt
+include pytest.ini
+include mypy.ini
+include .flake8
+recursive-include nostr_tools *.py
+recursive-include tests *.py
+recursive-include examples *.py *.json *.ipynb
+recursive-include docs *.rst *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+```
+
+### requirements-dev.txt
+```
+# Testing
+pytest>=6.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0
+pytest-watch>=4.2
+pytest-benchmark>=4.0
+
+# Code Quality
+black>=22.0
+flake8>=5.0
+mypy>=1.0
+isort>=5.0
+pre-commit>=2.20
+
+# Documentation
+sphinx>=5.0
+sphinx-rtd-theme>=1.0
+sphinx-autodoc-typehints>=1.19
+myst-parser>=0.18
+
+# Development Tools
+ipython>=8.0
+jupyter>=1.0
+notebook>=6.4
+
+# Performance
+memory-profiler>=0.60
+line-profiler>=4.0
+
+# Build Tools
+build>=0.8
+twine>=4.0
+wheel>=0.37
+```
+
+### tox.ini
+```
+[tox]
+envlist = py38,py39,py310,py311,flake8,mypy,docs
+
+[testenv]
+deps = 
+    pytest
+    pytest-asyncio
+    pytest-cov
+commands = pytest tests/
+
+[testenv:flake8]
+deps = flake8
+commands = flake8 nostr_tools tests
+
+[testenv:mypy]
+deps = 
+    mypy
+    types-setuptools
+commands = mypy nostr_tools
+
+[testenv:docs]
+deps = 
+    sphinx
+    sphinx-rtd-theme
+commands = sphinx-build -W -b html docs docs/_build/html
+
+[testenv:coverage]
+deps = 
+    pytest
+    pytest-asyncio
+    pytest-cov
+commands = 
+    pytest --cov=nostr_tools --cov-report=html --cov-report=term
+```
+
+## File Count Summary:
+- **Core Library Files**: 12
+- **Test Files**: 15
+- **Example Files**: 15  
+- **Documentation Files**: 20
+- **Configuration Files**: 15
+- **Scripts & Tools**: 10
+- **Build & CI Files**: 8
+- **Asset Files**: 10
+
+**Total: ~105 files** (excluding generated/build artifacts)
+
+This represents a complete, production-ready Python library structure with:
+✅ Comprehensive source code organization
+✅ Full test coverage and quality assurance  
+✅ Professional documentation structure
+✅ CI/CD pipeline configuration
+✅ Development tooling and automation
+✅ Example usage and tutorials
+✅ Performance benchmarking
+✅ Docker containerization support
