@@ -17,6 +17,7 @@ from .utils.crypto import (
     test_keypair,
     to_bech32,
     to_hex,
+    generate_keypair,
 )
 from .utils.network import find_websocket_relay_urls, sanitize
 from .utils.validation import validate_event, validate_relay_url
@@ -28,8 +29,8 @@ from .exceptions.errors import (
 )
 
 __version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__author__ = "Bigbrotr"
+__email__ = "hello@bigbrotr.com"
 
 __all__ = [
     # Core classes
@@ -46,6 +47,7 @@ __all__ = [
     "test_keypair",
     "to_bech32",
     "to_hex",
+    "generate_keypair",
     # Network utilities
     "find_websocket_relay_urls",
     "sanitize",
