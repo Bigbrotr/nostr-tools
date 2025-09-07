@@ -1,18 +1,53 @@
 """Utility functions for Nostr protocol operations."""
 
-from .crypto import calc_event_id, verify_sig, generate_event, test_keypair, to_bech32, to_hex
-from .network import find_websocket_relay_urls, sanitize
-from .validation import validate_event, validate_relay_url
+from .utils import (
+    # WebSocket relay utilities
+    find_websocket_relay_urls,
+
+    # Data sanitization
+    sanitize,
+
+    # Event operations
+    calc_event_id,
+    verify_sig,
+    sig_event_id,
+    generate_event,
+
+    # Key operations
+    test_keypair,
+    generate_keypair,
+
+    # Encoding utilities
+    to_bech32,
+    to_hex,
+
+    # Constants
+    TLDS,
+    URI_GENERIC_REGEX,
+)
 
 __all__ = [
+    # WebSocket relay utilities
+    "find_websocket_relay_urls",
+
+    # Data sanitization
+    "sanitize",
+
+    # Event operations
     "calc_event_id",
     "verify_sig",
+    "sig_event_id",
     "generate_event",
+
+    # Key operations
     "test_keypair",
+    "generate_keypair",
+
+    # Encoding utilities
     "to_bech32",
     "to_hex",
-    "find_websocket_relay_urls",
-    "sanitize",
-    "validate_event",
-    "validate_relay_url",
+
+    # Constants
+    "TLDS",
+    "URI_GENERIC_REGEX",
 ]
