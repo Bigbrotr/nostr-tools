@@ -17,8 +17,8 @@ class RelayMetadata:
         self,
         relay: Relay,
         generated_at: int,
-        connection_success: bool = False,
-        nip11_success: bool = False,
+        connection_success: bool,
+        nip11_success: bool,
         openable: Optional[bool] = None,
         readable: Optional[bool] = None,
         writable: Optional[bool] = None,
@@ -66,107 +66,214 @@ class RelayMetadata:
             terms_of_service: Terms of service URL
             limitation: Relay limitations
             extra_fields: Additional custom fields
+
+        Raises:
+            TypeError: If any argument is of incorrect type
+            ValueError: If any argument has an invalid value
         """
-        # Validate types
-        if not isinstance(relay, Relay):
-            raise TypeError(f"relay must be a Relay object, not {type(relay)}")
-        if not isinstance(generated_at, int):
-            raise TypeError(
-                f"generated_at must be an int, not {type(generated_at)}")
-        if not isinstance(connection_success, bool):
-            raise TypeError(
-                f"connection_success must be a bool, not {type(connection_success)}")
-        if not isinstance(nip11_success, bool):
-            raise TypeError(
-                f"nip11_success must be a bool, not {type(nip11_success)}")
-
-        # Validate optional fields
-        self._validate_optional_field("openable", openable, bool)
-        self._validate_optional_field("readable", readable, bool)
-        self._validate_optional_field("writable", writable, bool)
-        self._validate_optional_field("rtt_open", rtt_open, int)
-        self._validate_optional_field("rtt_read", rtt_read, int)
-        self._validate_optional_field("rtt_write", rtt_write, int)
-        self._validate_optional_field("name", name, str)
-        self._validate_optional_field("description", description, str)
-        self._validate_optional_field("banner", banner, str)
-        self._validate_optional_field("icon", icon, str)
-        self._validate_optional_field("pubkey", pubkey, str)
-        self._validate_optional_field("contact", contact, str)
-        self._validate_optional_field("software", software, str)
-        self._validate_optional_field("version", version, str)
-        self._validate_optional_field("privacy_policy", privacy_policy, str)
-        self._validate_optional_field(
-            "terms_of_service", terms_of_service, str)
-
-        if supported_nips is not None:
-            if not isinstance(supported_nips, list):
+        # Validate inputs
+        to_validate = [
+            ("relay", relay, Relay, True),
+            ("generated_at", generated_at, int, True),
+            ("connection_success", connection_success, bool, True),
+            ("nip11_success", nip11_success, bool, True),
+            ("openable", openable, bool, False),
+            ("readable", readable, bool, False),
+            ("writable", writable, bool, False),
+            ("rtt_open", rtt_open, int, False),
+            ("rtt_read", rtt_read, int, False),
+            ("rtt_write", rtt_write, int, False),
+            ("name", name, str, False),
+            ("description", description, str, False),
+            ("banner", banner, str, False),
+            ("icon", icon, str, False),
+            ("pubkey", pubkey, str, False),
+            ("contact", contact, str, False),
+            ("supported_nips", supported_nips, list, False),
+            ("software", software, str, False),
+            ("version", version, str, False),
+            ("privacy_policy", privacy_policy, str, False),
+            ("terms_of_service", terms_of_service, str, False),
+            ("limitation", limitation, dict, False),
+            ("extra_fields", extra_fields, dict, False),
+        ]
+        for field_name, field_value, expected_type, is_required in to_validate:
+            if is_required and field_value is None:
+                raise ValueError(
+                    f"{field_name} is required and cannot be None")
+            if field_value is not None and not isinstance(field_value, expected_type):
                 raise TypeError(
-                    f"supported_nips must be a list or None, not {type(supported_nips)}")
+                    f"{field_name} must be of type {expected_type.__name__} or None, not {type(field_value)}"
+                )
+        if generated_at < 0:
+            raise ValueError("generated_at must be a non-negative integer")
+        if supported_nips is not None:
             for nip in supported_nips:
                 if not isinstance(nip, (int, str)):
                     raise TypeError(
-                        f"supported_nips items must be int or str, not {type(nip)}")
-
-        if limitation is not None:
-            if not isinstance(limitation, dict):
-                raise TypeError(
-                    f"limitation must be a dict or None, not {type(limitation)}")
-            self._validate_json_serializable("limitation", limitation)
-
-        if extra_fields is not None:
-            if not isinstance(extra_fields, dict):
-                raise TypeError(
-                    f"extra_fields must be a dict or None, not {type(extra_fields)}")
-            self._validate_json_serializable("extra_fields", extra_fields)
+                        f"supported_nips items must be int or str, not {type(nip)}"
+                    )
+        to_validate = [
+            ("limitation", limitation),
+            ("extra_fields", extra_fields),
+        ]
+        for field_name, field_value in to_validate:
+            for key, val in field_value.items():
+                if not isinstance(key, str):
+                    raise TypeError(
+                        f"{field_name} keys must be strings, not {type(key)}"
+                    )
+                try:
+                    json.dumps(val)
+                except (TypeError, ValueError):
+                    raise TypeError(
+                        f"{field_name} values must be JSON serializable")
 
         # Assign attributes
         self.relay = relay
         self.generated_at = generated_at
         self.connection_success = connection_success
         self.nip11_success = nip11_success
-        self.openable = openable
-        self.readable = readable
-        self.writable = writable
-        self.rtt_open = rtt_open
-        self.rtt_read = rtt_read
-        self.rtt_write = rtt_write
-        self.name = name
-        self.description = description
-        self.banner = banner
-        self.icon = icon
-        self.pubkey = pubkey
-        self.contact = contact
-        self.supported_nips = supported_nips
-        self.software = software
-        self.version = version
-        self.privacy_policy = privacy_policy
-        self.terms_of_service = terms_of_service
-        self.limitation = limitation
-        self.extra_fields = extra_fields
-
-    def _validate_optional_field(self, name: str, value: Any, expected_type: type) -> None:
-        """Validate an optional field."""
-        if value is not None and not isinstance(value, expected_type):
-            raise TypeError(
-                f"{name} must be {expected_type.__name__} or None, not {type(value)}")
-
-    def _validate_json_serializable(self, name: str, value: Dict[str, Any]) -> None:
-        """Validate that a dictionary is JSON serializable."""
-        for key, val in value.items():
-            if not isinstance(key, str):
-                raise TypeError(
-                    f"{name} keys must be strings, not {type(key)}")
-            try:
-                json.dumps(val)
-            except (TypeError, ValueError):
-                raise TypeError(f"{name} values must be JSON serializable")
+        self.openable = openable if connection_success else None
+        self.readable = readable if connection_success else None
+        self.writable = writable if connection_success else None
+        self.rtt_open = rtt_open if connection_success else None
+        self.rtt_read = rtt_read if connection_success else None
+        self.rtt_write = rtt_write if connection_success else None
+        self.name = name if nip11_success else None
+        self.description = description if nip11_success else None
+        self.banner = banner if nip11_success else None
+        self.icon = icon if nip11_success else None
+        self.pubkey = pubkey if nip11_success else None
+        self.contact = contact if nip11_success else None
+        self.supported_nips = supported_nips if nip11_success else None
+        self.software = software if nip11_success else None
+        self.version = version if nip11_success else None
+        self.privacy_policy = privacy_policy if nip11_success else None
+        self.terms_of_service = terms_of_service if nip11_success else None
+        self.limitation = limitation if connection_success else None
+        self.extra_fields = extra_fields if connection_success else None
 
     def __repr__(self) -> str:
         """Return string representation of RelayMetadata."""
-        return (f"RelayMetadata(relay={self.relay.url}, "
-                f"connection_success={self.connection_success}, "
-                f"readable={self.readable}, writable={self.writable})")
+        return (
+            f"RelayMetadata(relay={self.relay}, generated_at={self.generated_at}, "
+            f"connection_success={self.connection_success}, nip11_success={self.nip11_success}, "
+            f"openable={self.openable}, readable={self.readable}, writable={self.writable}, "
+            f"rtt_open={self.rtt_open}, rtt_read={self.rtt_read}, rtt_write={self.rtt_write}, "
+            f"name={self.name}, description={self.description}, banner={self.banner}, icon={self.icon}, "
+            f"pubkey={self.pubkey}, contact={self.contact}, supported_nips={self.supported_nips}, "
+            f"software={self.software}, version={self.version}, privacy_policy={self.privacy_policy}, "
+            f"terms_of_service={self.terms_of_service}, limitation={self.limitation}, "
+            f"extra_fields={self.extra_fields})"
+        )
+
+    def __eq__(self, other) -> bool:
+        """Check equality with another RelayMetadata."""
+        if not isinstance(other, RelayMetadata):
+            return False
+        return (
+            self.relay == other.relay and
+            self.generated_at == other.generated_at and
+            self.connection_success == other.connection_success and
+            self.nip11_success == other.nip11_success and
+            self.openable == other.openable and
+            self.readable == other.readable and
+            self.writable == other.writable and
+            self.rtt_open == other.rtt_open and
+            self.rtt_read == other.rtt_read and
+            self.rtt_write == other.rtt_write and
+            self.name == other.name and
+            self.description == other.description and
+            self.banner == other.banner and
+            self.icon == other.icon and
+            self.pubkey == other.pubkey and
+            self.contact == other.contact and
+            self.supported_nips == other.supported_nips and
+            self.software == other.software and
+            self.version == other.version and
+            self.privacy_policy == other.privacy_policy and
+            self.terms_of_service == other.terms_of_service and
+            self.limitation == other.limitation and
+            self.extra_fields == other.extra_fields
+        )
+
+    def __ne__(self, other) -> bool:
+        """Check inequality with another RelayMetadata."""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Return hash of the RelayMetadata."""
+        return hash((
+            self.relay,
+            self.generated_at,
+            self.connection_success,
+            self.nip11_success,
+            self.openable,
+            self.readable,
+            self.writable,
+            self.rtt_open,
+            self.rtt_read,
+            self.rtt_write,
+            self.name,
+            self.description,
+            self.banner,
+            self.icon,
+            self.pubkey,
+            self.contact,
+            tuple(self.supported_nips) if self.supported_nips else None,
+            self.software,
+            self.version,
+            self.privacy_policy,
+            self.terms_of_service,
+            frozenset(self.limitation.items()) if self.limitation else None,
+            frozenset(self.extra_fields.items()
+                      ) if self.extra_fields else None,
+        ))
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RelayMetadata":
+        """
+        Create RelayMetadata from dictionary.
+
+        Args:
+            data: Dictionary containing metadata
+
+        Returns:
+            RelayMetadata object
+        """
+        if not isinstance(data, dict):
+            raise TypeError(f"data must be a dict, not {type(data)}")
+        required_keys = ["relay", "generated_at",
+                         "connection_success", "nip11_success"]
+        for key in required_keys:
+            if key not in data:
+                raise KeyError(f"data must contain key {key}")
+        return cls(
+            relay=data["relay"],
+            generated_at=data["generated_at"],
+            connection_success=data["connection_success"],
+            nip11_success=data["nip11_success"],
+            openable=data.get("openable"),
+            readable=data.get("readable"),
+            writable=data.get("writable"),
+            rtt_open=data.get("rtt_open"),
+            rtt_read=data.get("rtt_read"),
+            rtt_write=data.get("rtt_write"),
+            name=data.get("name"),
+            description=data.get("description"),
+            banner=data.get("banner"),
+            icon=data.get("icon"),
+            pubkey=data.get("pubkey"),
+            contact=data.get("contact"),
+            supported_nips=data.get("supported_nips"),
+            software=data.get("software"),
+            version=data.get("version"),
+            privacy_policy=data.get("privacy_policy"),
+            terms_of_service=data.get("terms_of_service"),
+            limitation=data.get("limitation"),
+            extra_fields=data.get("extra_fields"),
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -176,7 +283,7 @@ class RelayMetadata:
             Dictionary representation of the metadata
         """
         return {
-            "relay": self.relay.to_dict(),
+            "relay": self.relay,
             "generated_at": self.generated_at,
             "connection_success": self.connection_success,
             "nip11_success": self.nip11_success,
@@ -199,66 +306,4 @@ class RelayMetadata:
             "terms_of_service": self.terms_of_service,
             "limitation": self.limitation,
             "extra_fields": self.extra_fields,
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "RelayMetadata":
-        """
-        Create RelayMetadata from dictionary.
-
-        Args:
-            data: Dictionary containing metadata
-
-        Returns:
-            RelayMetadata object
-        """
-        if not isinstance(data, dict):
-            raise TypeError(f"data must be a dict, not {type(data)}")
-
-        if "relay" not in data:
-            raise KeyError("data must contain 'relay' key")
-        if "generated_at" not in data:
-            raise KeyError("data must contain 'generated_at' key")
-
-        relay = Relay.from_dict(data["relay"])
-
-        return cls(
-            relay=relay,
-            generated_at=data["generated_at"],
-            connection_success=data.get("connection_success", False),
-            nip11_success=data.get("nip11_success", False),
-            openable=data.get("openable"),
-            readable=data.get("readable"),
-            writable=data.get("writable"),
-            rtt_open=data.get("rtt_open"),
-            rtt_read=data.get("rtt_read"),
-            rtt_write=data.get("rtt_write"),
-            name=data.get("name"),
-            description=data.get("description"),
-            banner=data.get("banner"),
-            icon=data.get("icon"),
-            pubkey=data.get("pubkey"),
-            contact=data.get("contact"),
-            supported_nips=data.get("supported_nips"),
-            software=data.get("software"),
-            version=data.get("version"),
-            privacy_policy=data.get("privacy_policy"),
-            terms_of_service=data.get("terms_of_service"),
-            limitation=data.get("limitation"),
-            extra_fields=data.get("extra_fields"),
-        )
-
-    @property
-    def is_healthy(self) -> bool:
-        """Check if relay appears to be healthy."""
-        return (self.connection_success and
-                (self.readable is True or self.writable is True))
-
-    @property
-    def capabilities(self) -> Dict[str, bool]:
-        """Get relay capabilities summary."""
-        return {
-            "readable": self.readable or False,
-            "writable": self.writable or False,
-            "openable": self.openable or False,
         }

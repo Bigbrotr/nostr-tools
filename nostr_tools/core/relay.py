@@ -1,8 +1,7 @@
 """Nostr relay representation and validation."""
 
 from typing import Dict, Any
-from ..utils.network import find_websocket_relay_urls
-from ..exceptions.errors import RelayConnectionError
+from ..utils import find_websocket_relay_urls
 
 
 class Relay:
@@ -22,14 +21,15 @@ class Relay:
             url: WebSocket URL of the relay
 
         Raises:
-            RelayConnectionError: If URL is invalid
+            TypeError: If url is not a string
+            ValueError: If url is not a valid clearnet or tor websocket URL
         """
         if not isinstance(url, str):
-            raise RelayConnectionError(f"url must be a str, not {type(url)}")
+            raise TypeError(f"url must be a str, not {type(url)}")
 
         urls = find_websocket_relay_urls(url)
         if not urls:
-            raise RelayConnectionError(
+            raise ValueError(
                 f"Invalid URL format: {url}. Must be a valid clearnet or tor websocket URL."
             )
 
@@ -51,11 +51,18 @@ class Relay:
         """Check equality with another Relay."""
         if not isinstance(other, Relay):
             return False
-        return self.url == other.url
+        return (
+            self.url == other.url and
+            self.network == other.network
+        )
+
+    def __ne__(self, other) -> bool:
+        """Check inequality with another Relay."""
+        return not self.__eq__(other)
 
     def __hash__(self) -> int:
         """Return hash of the relay."""
-        return hash(self.url)
+        return hash((self.url, self.network))
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Relay":
@@ -72,11 +79,10 @@ class Relay:
             RelayConnectionError: If data is invalid
         """
         if not isinstance(data, dict):
-            raise RelayConnectionError(
-                f"data must be a dict, not {type(data)}")
+            raise TypeError(f"data must be a dict, not {type(data)}")
 
         if "url" not in data:
-            raise RelayConnectionError("data must contain key 'url'")
+            raise ValueError("data must contain key 'url'")
 
         return cls(data["url"])
 
@@ -91,18 +97,3 @@ class Relay:
             "url": self.url,
             "network": self.network
         }
-
-    @property
-    def domain(self) -> str:
-        """Get the domain part of the relay URL."""
-        return self.url.removeprefix("wss://").removeprefix("ws://").split("/")[0]
-
-    @property
-    def is_tor(self) -> bool:
-        """Check if this is a Tor (.onion) relay."""
-        return self.network == "tor"
-
-    @property
-    def is_clearnet(self) -> bool:
-        """Check if this is a clearnet relay."""
-        return self.network == "clearnet"
