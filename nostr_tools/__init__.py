@@ -10,7 +10,7 @@ from .core.relay import Relay
 from .core.relay_metadata import RelayMetadata
 from .client.websocket_client import NostrWebSocketClient
 from .client.event_fetcher import fetch_events
-from .utils.crypto import (
+from .utils import (
     calc_event_id,
     verify_sig,
     generate_event,
@@ -19,14 +19,7 @@ from .utils.crypto import (
     to_hex,
     generate_keypair,
 )
-from .utils.network import find_websocket_relay_urls, sanitize
-from .utils.validation import validate_event, validate_relay_url
-from .exceptions.errors import (
-    NostrError,
-    EventValidationError,
-    RelayConnectionError,
-    CryptographicError,
-)
+from .utils import find_websocket_relay_urls, sanitize
 
 __version__ = "0.1.0"
 __author__ = "Bigbrotr"
@@ -54,9 +47,4 @@ __all__ = [
     # Validation utilities
     "validate_event",
     "validate_relay_url",
-    # Exceptions
-    "NostrError",
-    "EventValidationError",
-    "RelayConnectionError",
-    "CryptographicError",
 ]
