@@ -91,9 +91,9 @@ print(f"Is Tor: {tor_relay.is_tor}")  # True
 ### WebSocket Client
 
 ```python
-from nostr_tools import NostrWebSocketClient
+from nostr_tools import Client
 
-async with NostrWebSocketClient(relay) as client:
+async with Client(relay) as client:
     # Subscribe to events
     sub_id = await client.subscribe({"kinds": [1], "limit": 10})
     
