@@ -8,7 +8,7 @@ including events, relays, WebSocket clients, and cryptographic utilities.
 from .core.event import Event
 from .core.relay import Relay
 from .core.relay_metadata import RelayMetadata
-from .client.websocket_client import NostrWebSocketClient
+from .core.client import Client
 from .client.event_fetcher import fetch_events
 from .utils import (
     calc_event_id,
@@ -31,7 +31,7 @@ __all__ = [
     "Relay",
     "RelayMetadata",
     # Client classes
-    "NostrWebSocketClient",
+    "Client",
     "fetch_events",
     # Crypto utilities
     "calc_event_id",
