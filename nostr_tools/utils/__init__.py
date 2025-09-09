@@ -24,6 +24,9 @@ from .utils import (
     # Constants
     TLDS,
     URI_GENERIC_REGEX,
+
+    parse_nip11_response,
+    parse_connection_response,
 )
 
 __all__ = [
@@ -50,4 +53,7 @@ __all__ = [
     # Constants
     "TLDS",
     "URI_GENERIC_REGEX",
+
+    "parse_nip11_response",
+    "parse_connection_response",
 ]

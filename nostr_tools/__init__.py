@@ -9,17 +9,9 @@ from .core.event import Event
 from .core.relay import Relay
 from .core.relay_metadata import RelayMetadata
 from .core.client import Client
-from .client.event_fetcher import fetch_events
-from .utils import (
-    calc_event_id,
-    verify_sig,
-    generate_event,
-    test_keypair,
-    to_bech32,
-    to_hex,
-    generate_keypair,
-)
-from .utils import find_websocket_relay_urls, sanitize
+from .core.filter import Filter
+from .actions import *
+from .utils import *
 
 __version__ = "0.1.0"
 __author__ = "Bigbrotr"
@@ -30,21 +22,24 @@ __all__ = [
     "Event",
     "Relay",
     "RelayMetadata",
-    # Client classes
     "Client",
-    "fetch_events",
-    # Crypto utilities
-    "calc_event_id",
-    "verify_sig",
-    "generate_event",
-    "test_keypair",
-    "to_bech32",
-    "to_hex",
-    "generate_keypair",
-    # Network utilities
+    "Filter",
+    # Utilities
     "find_websocket_relay_urls",
     "sanitize",
-    # Validation utilities
-    "validate_event",
-    "validate_relay_url",
+    "calc_event_id",
+    "verify_sig",
+    "sig_event_id",
+    "generate_event",
+    "test_keypair",
+    "generate_keypair",
+    "to_bech32",
+    "to_hex",
+    "TLDS",
+    "URI_GENERIC_REGEX",
+    "parse_nip11_response",
+    # Actions
+    "fetch_events",
+    "stream_events",
+    "fetch_nip11",
 ]
