@@ -1,1 +1,1 @@
-discuss about endle auth during listen/listen_events
+fix parse_nip11_response
