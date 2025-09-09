@@ -9,6 +9,7 @@ from aiohttp_socks import ProxyConnector
 
 from .relay import Relay
 from .event import Event
+from .filter import Filter
 from ..exceptions import RelayConnectionError
 
 
@@ -50,11 +51,7 @@ class Client:
         """Async context manager exit."""
         await self.disconnect()
 
-    async def connect(self) -> None:
-        """Establish WebSocket connection to the relay."""
-        if self._session is not None:
-            return  # Already connected
-
+    def connector(self):
         # Choose connector based on network type
         if self.relay.network == 'tor':
             if not self.socks5_proxy_url:
@@ -64,10 +61,29 @@ class Client:
                 self.socks5_proxy_url, force_close=True)
         else:
             connector = TCPConnector(force_close=True)
+        return connector
 
+    def session(self, connector=None):
+        if connector is None:
+            connector = self.connector()
+        return ClientSession(connector=connector)
+
+    async def connect(self) -> None:
+        """Establish WebSocket connection to the relay."""
+        if self.is_connected:
+            return  # Already connected
         try:
-            self._session = ClientSession(connector=connector)
-            self._ws = await self._session.ws_connect(self.relay.url, timeout=self.timeout)
+            connector = self.connector()
+            self._session = self.session(connector=connector)
+            relay_id = self.relay.url.removeprefix('wss://')
+            for schema in ['wss://', 'ws://']:
+                try:
+                    self._ws = await self._session.ws_connect(schema + relay_id, timeout=self.timeout)
+                    break
+                except Exception:
+                    continue
+            if not self._ws or self._ws.closed:
+                raise Exception("Failed to establish WebSocket connection")
         except Exception as e:
             if self._session:
                 await self._session.close()
@@ -107,7 +123,7 @@ class Client:
 
     async def subscribe(
         self,
-        filters: Dict[str, Any],
+        filter: Filter,
         subscription_id: Optional[str] = None
     ) -> str:
         """
@@ -126,11 +142,11 @@ class Client:
         if subscription_id is None:
             subscription_id = str(uuid.uuid4())
 
-        request = ["REQ", subscription_id, filters]
+        request = ["REQ", subscription_id, filter.filter_dict]
         await self.send_message(request)
 
         self._subscriptions[subscription_id] = {
-            "filters": filters,
+            "filter": filter,
             "active": True
         }
 
@@ -237,7 +253,7 @@ class Client:
     async def listen_events(
         self,
         subscription_id: str,
-    ) -> AsyncGenerator[Event, None]:
+    ) -> AsyncGenerator[List[Any], None]:
         """
         Listen for events from a specific subscription.
 
@@ -250,11 +266,7 @@ class Client:
         """
         async for message in self.listen():
             if message[0] == "EVENT" and message[1] == subscription_id:
-                try:
-                    event = Event.from_dict(message[2])
-                    yield event
-                except Exception:
-                    continue  # Skip invalid events
+                yield message
             elif message[0] == "EOSE" and message[1] == subscription_id:
                 break  # End of stored events
             elif message[0] == "CLOSED" and message[1] == subscription_id:
