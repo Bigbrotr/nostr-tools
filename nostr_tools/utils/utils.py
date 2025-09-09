@@ -378,3 +378,69 @@ def generate_keypair() -> tuple[str, str]:
     private_key_hex = private_key.hex()
     public_key_hex = public_key.hex()
     return private_key_hex, public_key_hex
+
+
+def parse_nip11_response(nip11_response):
+    if not isinstance(nip11_response, dict):
+        return {'nip11_success': False}
+    nip11_response = {
+        'nip11_success': True,
+        'name': nip11_response.get('name'),
+        'description': nip11_response.get('description'),
+        'banner': nip11_response.get('banner'),
+        'icon': nip11_response.get('icon'),
+        'pubkey': nip11_response.get('pubkey'),
+        'contact': nip11_response.get('contact'),
+        'supported_nips': nip11_response.get('supported_nips'),
+        'software': nip11_response.get('software'),
+        'version': nip11_response.get('version'),
+        'privacy_policy': nip11_response.get('privacy_policy'),
+        'terms_of_service': nip11_response.get('terms_of_service'),
+        'limitation': nip11_response.get('limitation'),
+        'extra_fields': {
+            key: value for key, value in nip11_response.items() if key not in [
+                'name', 'description', 'banner', 'icon', 'pubkey', 'contact',
+                'supported_nips', 'software', 'version', 'privacy_policy',
+                'terms_of_service', 'limitation'
+            ]
+        }
+    }
+    for key in ['name', 'description', 'banner', 'icon', 'pubkey', 'contact', 'software', 'version', 'privacy_policy', 'terms_of_service']:
+        if not (isinstance(nip11_response[key], str) or nip11_response[key] is None):
+            nip11_response[key] = None
+    if not isinstance(nip11_response['supported_nips'], list):
+        nip11_response['supported_nips'] = None
+    else:
+        nip11_response['supported_nips'] = [
+            nip for nip in nip11_response['supported_nips'] if isinstance(nip, (int, str))]
+    for key in ['limitation', 'extra_fields']:
+        if not isinstance(nip11_response[key], dict):
+            nip11_response[key] = None
+        else:
+            data = {}
+            for key, value in nip11_response[key].items():
+                if isinstance(key, str):
+                    try:
+                        json.dumps(value)
+                        data[key] = value
+                    except (TypeError, ValueError):
+                        pass
+            nip11_response[key] = data
+    for value in nip11_response.values():
+        if value is not None:
+            return nip11_response
+    return {'nip11_success': False}
+
+
+def parse_connection_response(connection_response):
+    if not isinstance(connection_response, dict):
+        return {'connection_success': False}
+    return {
+        'connection_success': True,
+        'rtt_open': connection_response['rtt_open'],
+        'rtt_read': connection_response['rtt_read'],
+        'rtt_write': connection_response['rtt_write'],
+        'openable': connection_response['openable'],
+        'writable': connection_response['writable'],
+        'readable': connection_response['readable']
+    }
