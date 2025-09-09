@@ -115,6 +115,34 @@ class Event:
         return hash((self.id, self.pubkey, self.created_at, self.kind, tuple(tuple(tag) for tag in self.tags), self.content, self.sig))
 
     @classmethod
+    def event_handler(cls, data: Dict[str, Any]) -> "Event":
+        """
+        Handle event creation from a dictionary, with escape sequence handling.
+        Args:
+            data: Dictionary containing event data
+        Returns:
+            Event object
+        Raises:
+            ValueError: If data is invalid
+        """
+        try:
+            event = cls.from_dict(data)
+        except ValueError:
+            tags = []
+            for tag in data['tags']:
+                tag = [
+                    t.replace(r'\n', '\n').replace(r'\"', '\"').replace(r'\\', '\\').replace(
+                        r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
+                    for t in tag
+                ]
+                tags.append(tag)
+            data['tags'] = tags
+            data['content'] = data['content'].replace(r'\n', '\n').replace(r'\"', '\"').replace(
+                r'\\', '\\').replace(r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
+            event = cls.from_dict(data)
+        return event
+
+    @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Event":
         """
         Create an Event object from a dictionary.
