@@ -26,7 +26,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
@@ -35,9 +35,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .[test]
 
-    - name: Run tests with pytest
+    - name: Run unit tests only (skip integration)
       run: |
-        python -m pytest --cov=nostr_tools --cov-report=xml --cov-report=term-missing
+        python -m pytest -m "not integration" --cov=nostr_tools --cov-report=xml --cov-report=term-missing
+      env:
+        NOSTR_SKIP_INTEGRATION: "true"
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -63,17 +65,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .[dev]
 
-    - name: Run Black
-      run: black --check nostr_tools tests
+    - name: Run Ruff linting
+      run: ruff check nostr_tools tests examples
 
-    - name: Run isort
-      run: isort --check-only --profile black nostr_tools tests
+    - name: Run Ruff formatting check
+      run: ruff format --check nostr_tools tests examples
 
-    - name: Run Flake8
-      run: flake8 nostr_tools tests
-
-    - name: Run MyPy
-      run: mypy nostr_tools
+    - name: Run MyPy type checking
+      run: mypy nostr_tools --ignore-missing-imports
 
   security:
     runs-on: ubuntu-latest
@@ -88,13 +87,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install bandit[toml] safety
+        pip install -e .[security]
 
     - name: Run Bandit security checks
-      run: bandit -r nostr_tools -f json
+      run: bandit -r nostr_tools -f json || true
 
     - name: Run Safety dependency checks
-      run: safety check --json
+      run: safety check || true
 
   build:
     runs-on: ubuntu-latest

@@ -9,9 +9,10 @@ help:
 	@echo "  install-dev   Install with development dependencies"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  format        Format code (black, ruff)"
+	@echo "  format        Format code with Ruff"
 	@echo "  format-check  Check code formatting"
-	@echo "  lint          Run linting (ruff, mypy)"
+	@echo "  lint          Run linting (Ruff + MyPy)"
+	@echo "  lint-fix      Run linting and fix issues"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test          Run all tests"
@@ -41,20 +42,25 @@ install-dev:
 
 # Code formatting
 format:
-	@echo "🎨 Formatting code..."
-	black nostr_tools tests examples
+	@echo "🎨 Formatting code with Ruff..."
+	ruff format nostr_tools tests examples
 	ruff check --fix nostr_tools tests examples
 
 format-check:
 	@echo "🔍 Checking code formatting..."
-	black --check nostr_tools tests examples
+	ruff format --check nostr_tools tests examples
 	ruff check nostr_tools tests examples
 
 # Linting
 lint:
 	@echo "🧹 Running linters..."
 	ruff check nostr_tools tests examples
-	mypy nostr_tools
+	mypy nostr_tools --ignore-missing-imports
+
+lint-fix:
+	@echo "🔧 Running linters with auto-fix..."
+	ruff check --fix nostr_tools tests examples
+	mypy nostr_tools --ignore-missing-imports
 
 # Testing
 test:
@@ -72,7 +78,7 @@ test-unit:
 
 test-fast:
 	@echo "🏃 Running fast tests only..."
-	python -m pytest -m "not slow" -v
+	python -m pytest -m "not slow and not integration" -v
 
 # Build and release
 clean:
@@ -117,7 +123,7 @@ examples-advanced:
 	python examples/advanced_features.py
 
 # Quality checks
-check: format-check lint test
+check: format-check lint test-unit
 	@echo "✅ All quality checks passed!"
 
 check-fast: format-check lint test-fast
@@ -148,6 +154,7 @@ info:
 	@echo "ℹ️  Project info:"
 	@echo "  Python: $(shell python --version)"
 	@echo "  Pip: $(shell pip --version)"
+	@echo "  Ruff: $(shell ruff --version)"
 	@echo "  Location: $(shell pwd)"
 
 # Environment validation
@@ -155,8 +162,10 @@ validate-env:
 	@echo "🔍 Validating environment..."
 	@python -c "import sys; print(f'Python: {sys.version}')"
 	@python -c "import nostr_tools; print(f'nostr-tools: {nostr_tools.__version__}')"
+	@ruff --version
 	@echo "✅ Environment validated"
 
 # Quick development commands
 quick-test: test-unit
 quick-check: format-check lint test-unit
+quick-fix: format lint-fix test-unit

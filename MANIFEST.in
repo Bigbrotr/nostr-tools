@@ -2,17 +2,16 @@
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md
+include SECURITY.md
 include LICENSE
-include requirements.txt
 include pyproject.toml
-include setup.cfg
 
 # Include package data
 recursive-include nostr_tools *.py
-recursive-include nostr_tools py.typed
+include nostr_tools/py.typed
 
-# Include tests for development installations
-recursive-include tests *.py
+# Include examples for documentation
+recursive-include examples *.py
 
 # Exclude unnecessary files
 global-exclude *.pyc
@@ -24,6 +23,7 @@ global-exclude .mypy_cache
 global-exclude .coverage
 global-exclude .DS_Store
 global-exclude .vscode
+global-exclude .idea
 global-exclude *.egg-info
 global-exclude build
 global-exclude dist
@@ -33,5 +33,9 @@ global-exclude .git
 global-exclude .gitignore
 global-exclude *.log
 global-exclude .tox
-global-exclude note.txt
-global-exclude test.ipynb
+global-exclude htmlcov
+global-exclude .github
+
+# Exclude test files from distribution
+exclude tests
+recursive-exclude tests *
