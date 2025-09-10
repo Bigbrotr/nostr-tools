@@ -383,7 +383,7 @@ def generate_keypair() -> tuple[str, str]:
 def parse_nip11_response(nip11_response):
     if not isinstance(nip11_response, dict):
         return {'nip11_success': False}
-    nip11_response = {
+    result = {
         'nip11_success': True,
         'name': nip11_response.get('name'),
         'description': nip11_response.get('description'),
@@ -406,29 +406,30 @@ def parse_nip11_response(nip11_response):
         }
     }
     for key in ['name', 'description', 'banner', 'icon', 'pubkey', 'contact', 'software', 'version', 'privacy_policy', 'terms_of_service']:
-        if not (isinstance(nip11_response[key], str) or nip11_response[key] is None):
-            nip11_response[key] = None
-    if not isinstance(nip11_response['supported_nips'], list):
-        nip11_response['supported_nips'] = None
+        if not (isinstance(result[key], str) or result[key] is None):
+            result[key] = None
+    if not isinstance(result['supported_nips'], list):
+        result['supported_nips'] = None
     else:
-        nip11_response['supported_nips'] = [
-            nip for nip in nip11_response['supported_nips'] if isinstance(nip, (int, str))]
+        result['supported_nips'] = [
+            nip for nip in result['supported_nips'] if isinstance(nip, (int, str))]
     for key in ['limitation', 'extra_fields']:
-        if not isinstance(nip11_response[key], dict):
-            nip11_response[key] = None
+        if not isinstance(result[key], dict):
+            result[key] = None
         else:
             data = {}
-            for key, value in nip11_response[key].items():
-                if isinstance(key, str):
+            for dict_key, value in result[key].items():
+                if isinstance(dict_key, str):
                     try:
                         json.dumps(value)
-                        data[key] = value
+                        data[dict_key] = value
                     except (TypeError, ValueError):
                         pass
-            nip11_response[key] = data
-    for value in nip11_response.values():
+            result[key] = data
+    for value in result.values():
         if value is not None:
-            return nip11_response
+            return result
+
     return {'nip11_success': False}
 
 
