@@ -1,1 +1,0 @@
-fix parse_nip11_response
