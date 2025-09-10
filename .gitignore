@@ -1,1 +1,5 @@
 venv/
+note.txt
+test.ipynb
+.DS_Store
+.vscode/
