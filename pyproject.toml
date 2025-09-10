@@ -1,0 +1,178 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nostr-tools"
+version = "0.1.0"
+description = "A comprehensive Python library for Nostr protocol interactions"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Bigbrotr", email = "hello@bigbrotr.com"}
+]
+maintainers = [
+    {name = "Bigbrotr", email = "hello@bigbrotr.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Communications",
+    "Topic :: Security :: Cryptography",
+    "Framework :: AsyncIO",
+]
+keywords = [
+    "nostr",
+    "decentralized",
+    "social",
+    "protocol",
+    "websocket",
+    "cryptography",
+    "bitcoin",
+    "schnorr",
+    "secp256k1"
+]
+requires-python = ">=3.8"
+dependencies = [
+    "bech32==1.2.0",
+    "secp256k1==0.14.0",
+    "aiohttp>=3.11.18",
+    "aiohttp_socks>=0.10.1",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "sphinx-autodoc-typehints>=1.19.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/bigbrotr/nostr-tools"
+Documentation = "https://github.com/bigbrotr/nostr-tools#readme"
+Repository = "https://github.com/bigbrotr/nostr-tools.git"
+"Bug Reports" = "https://github.com/bigbrotr/nostr-tools/issues"
+"Source Code" = "https://github.com/bigbrotr/nostr-tools"
+Changelog = "https://github.com/bigbrotr/nostr-tools/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nostr_tools*"]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+nostr_tools = ["py.typed"]
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["nostr_tools"]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "secp256k1.*",
+    "bech32.*",
+]
+ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--disable-warnings",
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+asyncio_mode = "auto"
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["nostr_tools"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if typing.TYPE_CHECKING:",
+]
+show_missing = true
+precision = 2
+
+# Flake8 configuration (in setup.cfg since flake8 doesn't support pyproject.toml)
