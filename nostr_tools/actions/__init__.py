@@ -1,4 +1,10 @@
-"""Utility functions for Nostr protocol operations."""
+"""
+Actions module for Nostr protocol operations.
+
+This module provides high-level utility functions for interacting with 
+Nostr relays, including fetching events, streaming data, and testing 
+relay capabilities.
+"""
 
 from .actions import (
     fetch_events,

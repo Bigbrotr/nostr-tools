@@ -1,4 +1,10 @@
-"""Utility functions for Nostr protocol operations."""
+"""
+Utility functions for Nostr protocol operations.
+
+This module provides helper functions for various Nostr protocol operations
+including WebSocket relay discovery, data sanitization, cryptographic 
+operations, and encoding utilities.
+"""
 
 from .utils import (
     # WebSocket relay utilities
@@ -25,6 +31,7 @@ from .utils import (
     TLDS,
     URI_GENERIC_REGEX,
 
+    # Response parsing
     parse_nip11_response,
     parse_connection_response,
 )
@@ -54,6 +61,7 @@ __all__ = [
     "TLDS",
     "URI_GENERIC_REGEX",
 
+    # Response parsing
     "parse_nip11_response",
     "parse_connection_response",
 ]

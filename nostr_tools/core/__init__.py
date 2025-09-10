@@ -1,4 +1,9 @@
-"""Core Nostr protocol components."""
+"""
+Core Nostr protocol components.
+
+This module contains the fundamental classes and structures for working
+with the Nostr protocol, including events, relays, clients, and filters.
+"""
 
 from .event import Event
 from .relay import Relay

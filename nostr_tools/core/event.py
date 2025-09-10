@@ -1,4 +1,9 @@
-"""Nostr event representation and validation."""
+"""
+Nostr event representation and validation.
+
+This module provides the Event class for creating, validating, and 
+manipulating Nostr events according to the NIP-01 specification.
+"""
 
 from typing import List, Dict, Any, Optional
 from ..utils import calc_event_id, verify_sig
@@ -9,14 +14,18 @@ class Event:
     """
     Class to represent a NOSTR event.
 
+    This class handles validation, serialization, and manipulation of Nostr
+    events according to the protocol specification. All events are validated
+    for proper format, signature verification, and ID consistency.
+
     Attributes:
-        id: str, id of the event
-        pubkey: str, public key of the event
-        created_at: int, timestamp of the event
-        kind: int, kind of the event
-        tags: List[List[str]], tags of the event
-        content: str, content of the event
-        sig: str, signature of the event
+        id (str): Event ID (64-character hex string)
+        pubkey (str): Public key of the event author (64-character hex string)
+        created_at (int): Unix timestamp of event creation
+        kind (int): Event kind (0-65535)
+        tags (List[List[str]]): List of event tags
+        content (str): Event content
+        sig (str): Event signature (128-character hex string)
     """
 
     def __init__(
@@ -30,16 +39,16 @@ class Event:
         sig: str
     ) -> None:
         """
-        Initialize an Event object.
+        Initialize an Event object with validation.
 
         Args:
-            id: Event ID
-            pubkey: Public key of the event author
-            created_at: Unix timestamp
-            kind: Event kind (0-65535)
-            tags: List of tags (each tag is a list of strings)
-            content: Event content
-            sig: Event signature
+            id (str): Event ID (64-character hex string)
+            pubkey (str): Public key of the event author (64-character hex string)
+            created_at (int): Unix timestamp of event creation
+            kind (int): Event kind (0-65535)
+            tags (List[List[str]]): List of event tags
+            content (str): Event content
+            sig (str): Event signature (128-character hex string)
 
         Raises:
             TypeError: If any argument is of incorrect type
@@ -59,10 +68,13 @@ class Event:
             if not isinstance(value, expected_type):
                 raise TypeError(
                     f"{name} must be a {expected_type.__name__}, not {type(value).__name__}")
+
         if not all(isinstance(tag, list) for tag in tags):
             raise TypeError("tags must be a list of lists")
         if not all(isinstance(item, str) for tag in tags for item in tag):
             raise TypeError("tag items must be strings")
+
+        # Value validation
         if len(id) != 64 or not all(c in '0123456789abcdef' for c in id):
             raise ValueError("id must be a 64-character hex string")
         if len(pubkey) != 64 or not all(c in '0123456789abcdef' for c in pubkey):
@@ -77,10 +89,15 @@ class Event:
             raise ValueError("content cannot contain null characters")
         if len(sig) != 128 or not all(c in '0123456789abcdef' for c in sig):
             raise ValueError("sig must be a 128-character hex string")
+
+        # Verify event ID matches computed ID
         if calc_event_id(pubkey, created_at, kind, tags, content) != id:
             raise ValueError(f"id does not match the computed event id")
+
+        # Verify signature
         if not verify_sig(id, pubkey, sig):
             raise ValueError("sig is not a valid signature for the event")
+
         self.id = id
         self.pubkey = pubkey
         self.created_at = created_at
@@ -90,12 +107,25 @@ class Event:
         self.sig = sig
 
     def __repr__(self) -> str:
-        """Return string representation of the Event."""
+        """
+        Return string representation of the Event.
+
+        Returns:
+            str: String representation showing all event attributes
+        """
         return (f"Event(id={self.id}, pubkey={self.pubkey}, created_at={self.created_at}, "
                 f"kind={self.kind}, tags={self.tags}, content={self.content}, sig={self.sig})")
 
     def __eq__(self, other):
-        """Check equality of two Event objects."""
+        """
+        Check equality of two Event objects.
+
+        Args:
+            other: Object to compare with
+
+        Returns:
+            bool: True if events are equal, False otherwise
+        """
         if not isinstance(other, Event):
             return NotImplemented
         return (self.id == other.id and
@@ -107,27 +137,49 @@ class Event:
                 self.sig == other.sig)
 
     def __ne__(self, other):
-        """Check inequality of two Event objects."""
+        """
+        Check inequality of two Event objects.
+
+        Args:
+            other: Object to compare with
+
+        Returns:
+            bool: True if events are not equal, False otherwise
+        """
         return not self.__eq__(other)
 
     def __hash__(self):
-        """Return hash of the Event object."""
-        return hash((self.id, self.pubkey, self.created_at, self.kind, tuple(tuple(tag) for tag in self.tags), self.content, self.sig))
+        """
+        Return hash of the Event object.
+
+        Returns:
+            int: Hash value for the event
+        """
+        return hash((self.id, self.pubkey, self.created_at, self.kind,
+                    tuple(tuple(tag) for tag in self.tags), self.content, self.sig))
 
     @classmethod
     def event_handler(cls, data: Dict[str, Any]) -> "Event":
         """
-        Handle event creation from a dictionary, with escape sequence handling.
+        Handle event creation from a dictionary with escape sequence handling.
+
+        This method attempts to create an Event from dictionary data, and if
+        validation fails due to escape sequences, it will unescape them and
+        try again.
+
         Args:
-            data: Dictionary containing event data
+            data (Dict[str, Any]): Dictionary containing event data
+
         Returns:
-            Event object
+            Event: Validated Event object
+
         Raises:
-            ValueError: If data is invalid
+            ValueError: If data is invalid even after escape handling
         """
         try:
             event = cls.from_dict(data)
         except ValueError:
+            # Handle escape sequences in tags
             tags = []
             for tag in data['tags']:
                 tag = [
@@ -137,6 +189,8 @@ class Event:
                 ]
                 tags.append(tag)
             data['tags'] = tags
+
+            # Handle escape sequences in content
             data['content'] = data['content'].replace(r'\n', '\n').replace(r'\"', '\"').replace(
                 r'\\', '\\').replace(r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
             event = cls.from_dict(data)
@@ -148,27 +202,35 @@ class Event:
         Create an Event object from a dictionary.
 
         Args:
-            data: Dictionary containing event data
+            data (Dict[str, Any]): Dictionary containing event data with keys:
+                id, pubkey, created_at, kind, tags, content, sig
 
         Returns:
-            Event object
+            Event: Validated Event object
 
         Raises:
-            EventValidationError: If data is invalid
+            TypeError: If data is not a dictionary
+            KeyError: If required keys are missing
+            ValueError: If event data is invalid
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, not {type(data)}")
-        for key in ["id", "pubkey", "created_at", "kind", "tags", "content", "sig"]:
+
+        required_keys = ["id", "pubkey", "created_at",
+                         "kind", "tags", "content", "sig"]
+        for key in required_keys:
             if key not in data:
                 raise KeyError(f"data must contain key {key}")
-        return cls(data["id"], data["pubkey"], data["created_at"], data["kind"], data["tags"], data["content"], data["sig"])
+
+        return cls(data["id"], data["pubkey"], data["created_at"],
+                   data["kind"], data["tags"], data["content"], data["sig"])
 
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the Event object to a dictionary.
 
         Returns:
-            Dictionary representation of the event
+            Dict[str, Any]: Dictionary representation of the event
         """
         return {
             "id": self.id,
@@ -185,10 +247,10 @@ class Event:
         Get all values for a specific tag name.
 
         Args:
-            tag_name: The tag name to search for
+            tag_name (str): The tag name to search for
 
         Returns:
-            List of values for the specified tag
+            List[str]: List of values for the specified tag
         """
         values = []
         for tag in self.tags:
@@ -201,11 +263,11 @@ class Event:
         Check if the event has a specific tag.
 
         Args:
-            tag_name: The tag name to check for
-            value: Optional specific value to check for
+            tag_name (str): The tag name to check for
+            value (Optional[str]): Optional specific value to check for
 
         Returns:
-            True if the tag exists (and has the value if specified)
+            bool: True if the tag exists (and has the value if specified)
         """
         for tag in self.tags:
             if len(tag) > 0 and tag[0] == tag_name:

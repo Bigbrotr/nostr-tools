@@ -1,3 +1,10 @@
+"""
+Setup configuration for nostr-tools package.
+
+This module defines the package metadata and dependencies for the 
+nostr-tools Python library.
+"""
+
 from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -10,12 +17,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="nostr-tools",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Bigbrotr",
+    author_email="hello@bigbrotr.com",
     description="A Python library for Nostr protocol interactions",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/nostr-tools",
+    url="https://github.com/Bigbrotr/nostr-tools",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -3,6 +3,16 @@ nostr-tools: A Python library for Nostr protocol interactions.
 
 This library provides core components for working with the Nostr protocol,
 including events, relays, WebSocket clients, and cryptographic utilities.
+
+The main components include:
+- Event: Nostr event representation and validation
+- Relay: Nostr relay configuration
+- RelayMetadata: Relay information and capabilities
+- Client: WebSocket client for relay communication
+- Filter: Event filtering for subscriptions
+- Utility functions for key management, event signing, and more
+- Custom exceptions for error handling
+- High-level actions for common Nostr operations
 """
 
 from .core.event import Event
