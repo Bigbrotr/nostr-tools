@@ -1,4 +1,10 @@
-"""Nostr relay metadata representation."""
+"""
+Nostr relay metadata representation and validation.
+
+This module provides the RelayMetadata class for storing and managing
+comprehensive information about Nostr relays, including connection metrics,
+NIP-11 information document data, and operational capabilities.
+"""
 
 from typing import Optional, List, Dict, Any
 from .relay import Relay
@@ -9,8 +15,34 @@ class RelayMetadata:
     """
     Class to represent metadata associated with a NOSTR relay.
 
-    This includes connection metrics, NIP-11 information document data,
-    and operational capabilities.
+    This class stores comprehensive information about a relay including
+    connection metrics, NIP-11 information document data, and operational
+    capabilities like read/write permissions.
+
+    Attributes:
+        relay (Relay): The relay object this metadata describes
+        generated_at (int): Timestamp when metadata was generated
+        connection_success (bool): Whether connection was successful
+        nip11_success (bool): Whether NIP-11 metadata was retrieved
+        openable (Optional[bool]): Whether relay accepts connections
+        readable (Optional[bool]): Whether relay allows reading events
+        writable (Optional[bool]): Whether relay allows writing events
+        rtt_open (Optional[int]): Round-trip time for connection (ms)
+        rtt_read (Optional[int]): Round-trip time for reading (ms)
+        rtt_write (Optional[int]): Round-trip time for writing (ms)
+        name (Optional[str]): Relay name from NIP-11
+        description (Optional[str]): Relay description from NIP-11
+        banner (Optional[str]): Banner image URL from NIP-11
+        icon (Optional[str]): Icon image URL from NIP-11
+        pubkey (Optional[str]): Relay public key from NIP-11
+        contact (Optional[str]): Contact information from NIP-11
+        supported_nips (Optional[List[int]]): List of supported NIPs
+        software (Optional[str]): Software name from NIP-11
+        version (Optional[str]): Software version from NIP-11
+        privacy_policy (Optional[str]): Privacy policy URL from NIP-11
+        terms_of_service (Optional[str]): Terms of service URL from NIP-11
+        limitation (Optional[Dict[str, Any]]): Relay limitations from NIP-11
+        extra_fields (Optional[Dict[str, Any]]): Additional custom fields
     """
 
     def __init__(
@@ -40,32 +72,32 @@ class RelayMetadata:
         extra_fields: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
-        Initialize a RelayMetadata object.
+        Initialize a RelayMetadata object with comprehensive validation.
 
         Args:
-            relay: The relay object
-            generated_at: Timestamp when metadata was generated
-            connection_success: Whether connection was successful
-            nip11_success: Whether NIP-11 metadata was retrieved
-            openable: Whether relay accepts connections
-            readable: Whether relay allows reading
-            writable: Whether relay allows writing
-            rtt_open: Round-trip time for connection (ms)
-            rtt_read: Round-trip time for reading (ms)
-            rtt_write: Round-trip time for writing (ms)
-            name: Relay name
-            description: Relay description
-            banner: Banner image URL
-            icon: Icon image URL
-            pubkey: Relay public key
-            contact: Contact information
-            supported_nips: List of supported NIPs
-            software: Software name
-            version: Software version
-            privacy_policy: Privacy policy URL
-            terms_of_service: Terms of service URL
-            limitation: Relay limitations
-            extra_fields: Additional custom fields
+            relay (Relay): The relay object
+            generated_at (int): Timestamp when metadata was generated
+            connection_success (bool): Whether connection was successful
+            nip11_success (bool): Whether NIP-11 metadata was retrieved
+            openable (Optional[bool]): Whether relay accepts connections
+            readable (Optional[bool]): Whether relay allows reading
+            writable (Optional[bool]): Whether relay allows writing
+            rtt_open (Optional[int]): Round-trip time for connection (ms)
+            rtt_read (Optional[int]): Round-trip time for reading (ms)
+            rtt_write (Optional[int]): Round-trip time for writing (ms)
+            name (Optional[str]): Relay name
+            description (Optional[str]): Relay description
+            banner (Optional[str]): Banner image URL
+            icon (Optional[str]): Icon image URL
+            pubkey (Optional[str]): Relay public key
+            contact (Optional[str]): Contact information
+            supported_nips (Optional[List[int]]): List of supported NIPs
+            software (Optional[str]): Software name
+            version (Optional[str]): Software version
+            privacy_policy (Optional[str]): Privacy policy URL
+            terms_of_service (Optional[str]): Terms of service URL
+            limitation (Optional[Dict[str, Any]]): Relay limitations
+            extra_fields (Optional[Dict[str, Any]]): Additional custom fields
 
         Raises:
             TypeError: If any argument is of incorrect type
@@ -73,38 +105,37 @@ class RelayMetadata:
         """
         # Validate inputs
         to_validate = [
-            ("relay", relay, Relay, True),
-            ("generated_at", generated_at, int, True),
-            ("connection_success", connection_success, bool, True),
-            ("nip11_success", nip11_success, bool, True),
-            ("openable", openable, bool, False),
-            ("readable", readable, bool, False),
-            ("writable", writable, bool, False),
-            ("rtt_open", rtt_open, int, False),
-            ("rtt_read", rtt_read, int, False),
-            ("rtt_write", rtt_write, int, False),
-            ("name", name, str, False),
-            ("description", description, str, False),
-            ("banner", banner, str, False),
-            ("icon", icon, str, False),
-            ("pubkey", pubkey, str, False),
-            ("contact", contact, str, False),
-            ("supported_nips", supported_nips, list, False),
-            ("software", software, str, False),
-            ("version", version, str, False),
-            ("privacy_policy", privacy_policy, str, False),
-            ("terms_of_service", terms_of_service, str, False),
-            ("limitation", limitation, dict, False),
-            ("extra_fields", extra_fields, dict, False),
+            ("relay", relay, Relay),
+            ("generated_at", generated_at, int),
+            ("connection_success", connection_success, bool),
+            ("nip11_success", nip11_success, bool),
+            ("openable", openable, (bool, type(None))),
+            ("readable", readable, (bool, type(None))),
+            ("writable", writable, (bool, type(None))),
+            ("rtt_open", rtt_open, (int, type(None))),
+            ("rtt_read", rtt_read, (int, type(None))),
+            ("rtt_write", rtt_write, (int, type(None))),
+            ("name", name, (str, type(None))),
+            ("description", description, (str, type(None))),
+            ("banner", banner, (str, type(None))),
+            ("icon", icon, (str, type(None))),
+            ("pubkey", pubkey, (str, type(None))),
+            ("contact", contact, (str, type(None))),
+            ("supported_nips", supported_nips, (list, type(None))),
+            ("software", software, (str, type(None))),
+            ("version", version, (str, type(None))),
+            ("privacy_policy", privacy_policy, (str, type(None))),
+            ("terms_of_service", terms_of_service, (str, type(None))),
+            ("limitation", limitation, (dict, type(None))),
+            ("extra_fields", extra_fields, (dict, type(None))),
         ]
-        for field_name, field_value, expected_type, is_required in to_validate:
-            if is_required and field_value is None:
-                raise ValueError(
-                    f"{field_name} is required and cannot be None")
-            if field_value is not None and not isinstance(field_value, expected_type):
+        for field_name, field_value, expected_type in to_validate:
+            if not isinstance(field_value, expected_type):
                 raise TypeError(
-                    f"{field_name} must be of type {expected_type.__name__} or None, not {type(field_value)}"
+                    f"{field_name} must be of type {expected_type}, not {type(field_value)}"
                 )
+
+        # Additional validation for specific fields
         if generated_at < 0:
             raise ValueError("generated_at must be a non-negative integer")
         if supported_nips is not None:
@@ -113,6 +144,8 @@ class RelayMetadata:
                     raise TypeError(
                         f"supported_nips items must be int or str, not {type(nip)}"
                     )
+
+        # Validate dictionary fields for JSON serializability
         to_validate = [
             ("limitation", limitation),
             ("extra_fields", extra_fields),
@@ -129,17 +162,21 @@ class RelayMetadata:
                     raise TypeError(
                         f"{field_name} values must be JSON serializable")
 
-        # Assign attributes
+        # Assign attributes with conditional logic based on success flags
         self.relay = relay
         self.generated_at = generated_at
         self.connection_success = connection_success
         self.nip11_success = nip11_success
+
+        # Connection-dependent attributes (only set if connection succeeded)
         self.openable = openable if connection_success else None
         self.readable = readable if connection_success else None
         self.writable = writable if connection_success else None
         self.rtt_open = rtt_open if connection_success else None
         self.rtt_read = rtt_read if connection_success else None
         self.rtt_write = rtt_write if connection_success else None
+
+        # NIP-11 dependent attributes (only set if NIP-11 retrieval succeeded)
         self.name = name if nip11_success else None
         self.description = description if nip11_success else None
         self.banner = banner if nip11_success else None
@@ -151,11 +188,16 @@ class RelayMetadata:
         self.version = version if nip11_success else None
         self.privacy_policy = privacy_policy if nip11_success else None
         self.terms_of_service = terms_of_service if nip11_success else None
-        self.limitation = limitation if connection_success else None
-        self.extra_fields = extra_fields if connection_success else None
+        self.limitation = limitation if nip11_success else None
+        self.extra_fields = extra_fields if nip11_success else None
 
     def __repr__(self) -> str:
-        """Return string representation of RelayMetadata."""
+        """
+        Return string representation of RelayMetadata.
+
+        Returns:
+            str: Comprehensive string representation of all metadata
+        """
         return (
             f"RelayMetadata(relay={self.relay}, generated_at={self.generated_at}, "
             f"connection_success={self.connection_success}, nip11_success={self.nip11_success}, "
@@ -169,7 +211,15 @@ class RelayMetadata:
         )
 
     def __eq__(self, other) -> bool:
-        """Check equality with another RelayMetadata."""
+        """
+        Check equality with another RelayMetadata.
+
+        Args:
+            other: Object to compare with
+
+        Returns:
+            bool: True if metadata objects are equal, False otherwise
+        """
         if not isinstance(other, RelayMetadata):
             return False
         return (
@@ -199,11 +249,24 @@ class RelayMetadata:
         )
 
     def __ne__(self, other) -> bool:
-        """Check inequality with another RelayMetadata."""
+        """
+        Check inequality with another RelayMetadata.
+
+        Args:
+            other: Object to compare with
+
+        Returns:
+            bool: True if metadata objects are not equal, False otherwise
+        """
         return not self.__eq__(other)
 
     def __hash__(self) -> int:
-        """Return hash of the RelayMetadata."""
+        """
+        Return hash of the RelayMetadata.
+
+        Returns:
+            int: Hash value for the metadata object
+        """
         return hash((
             self.relay,
             self.generated_at,
@@ -237,10 +300,15 @@ class RelayMetadata:
         Create RelayMetadata from dictionary.
 
         Args:
-            data: Dictionary containing metadata
+            data (Dict[str, Any]): Dictionary containing metadata with required keys:
+                relay, generated_at, connection_success, nip11_success
 
         Returns:
-            RelayMetadata object
+            RelayMetadata: New RelayMetadata object
+
+        Raises:
+            TypeError: If data is not a dictionary
+            KeyError: If required keys are missing
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, not {type(data)}")
@@ -280,7 +348,7 @@ class RelayMetadata:
         Convert RelayMetadata to dictionary.
 
         Returns:
-            Dictionary representation of the metadata
+            Dict[str, Any]: Dictionary representation of the metadata
         """
         return {
             "relay": self.relay,

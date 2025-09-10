@@ -1,3 +1,66 @@
+"""
+Utility functions for Nostr protocol operations.
+
+This module provides various utility functions for working with the Nostr
+protocol, including URL parsing, cryptographic operations, data sanitization,
+and encoding/decoding utilities.
+
+The main categories of utilities include:
+
+WebSocket Relay Discovery:
+    - find_websocket_relay_urls: Extract and validate WebSocket URLs from text
+
+Data Sanitization:
+    - sanitize: Remove null bytes and clean data structures recursively
+
+Cryptographic Operations:
+    - calc_event_id: Calculate Nostr event IDs according to NIP-01
+    - verify_sig: Verify Schnorr signatures for events
+    - sig_event_id: Create Schnorr signatures for event IDs
+    - generate_event: Create complete signed events with optional proof-of-work
+    - test_keypair: Validate private/public key pairs
+    - generate_keypair: Generate new secp256k1 key pairs
+
+Encoding Utilities:
+    - to_bech32: Convert hex strings to Bech32 format (npub, nsec, etc.)
+    - to_hex: Convert Bech32 strings back to hex format
+
+Response Parsing:
+    - parse_nip11_response: Parse and validate NIP-11 relay information
+    - parse_connection_response: Parse relay connection test results
+
+Constants:
+    - TLDS: List of valid top-level domains for URL validation
+    - URI_GENERIC_REGEX: Comprehensive URI regex pattern following RFC 3986
+
+All cryptographic functions use the secp256k1 elliptic curve and Schnorr
+signatures as specified in the Nostr protocol. URL validation supports
+both clearnet and Tor (.onion) domains.
+
+Example:
+    Basic usage of key utility functions:
+    
+    >>> # Generate a new key pair
+    >>> private_key, public_key = generate_keypair()
+    
+    >>> # Create a signed event
+    >>> event = generate_event(
+    ...     private_key, public_key, 
+    ...     kind=1, tags=[], content="Hello Nostr!"
+    ... )
+    
+    >>> # Verify the event signature
+    >>> is_valid = verify_sig(event['id'], event['pubkey'], event['sig'])
+    
+    >>> # Convert keys to Bech32 format
+    >>> npub = to_bech32('npub', public_key)
+    >>> nsec = to_bech32('nsec', private_key)
+    
+    >>> # Find relay URLs in text
+    >>> text = "Connect to wss://relay.damus.io"
+    >>> relays = find_websocket_relay_urls(text)
+"""
+
 import re
 import hashlib
 import json
@@ -109,11 +172,16 @@ def find_websocket_relay_urls(text: str) -> List[str]:
     """
     Find all WebSocket relay URLs in the given text.
 
+    This function searches for valid WebSocket URLs (ws:// or wss://) in text,
+    validates them according to URI standards, and returns normalized URLs.
+    It supports both clearnet and Tor (.onion) domains.
+
     Args:
-        text: The text to search for WebSocket relays
+        text (str): The text to search for WebSocket relays
 
     Returns:
-        List of WebSocket relay URLs found in the text
+        List[str]: List of valid WebSocket relay URLs found in the text,
+                   normalized to use wss:// scheme
 
     Example:
         >>> text = "Connect to wss://relay.example.com:443 and ws://relay.example.com"
@@ -132,24 +200,24 @@ def find_websocket_relay_urls(text: str) -> List[str]:
         path = "" if path in ["", "/", None] else "/" + path.strip("/")
         domain = match.group("domain")
 
-        # Only WebSocket schemes
+        # Only process WebSocket schemes
         if scheme not in ["ws", "wss"]:
             continue
 
-        # Validate port range
+        # Validate port range (0-65535)
         if port and (port < 0 or port > 65535):
             continue
 
-        # Validate .onion domains
+        # Validate .onion domains for Tor relays
         if domain and domain.lower().endswith(".onion"):
             if not re.match(r"^([a-z2-7]{16}|[a-z2-7]{56})\.onion$", domain.lower()):
                 continue
 
-        # Validate TLD
+        # Validate TLD for clearnet domains
         if domain and (domain.split(".")[-1].upper() not in TLDS + ["ONION"]):
             continue
 
-        # Construct final URL
+        # Construct final URL (normalize to wss://)
         port_str = ":" + str(port) if port else ""
         url = "wss://" + host.lower() + port_str + path
         result.append(url)
@@ -161,11 +229,14 @@ def sanitize(value: Any) -> Any:
     """
     Sanitize values by removing null bytes and recursively cleaning data structures.
 
+    This function removes null bytes (\x00) from strings and recursively processes
+    lists and dictionaries to ensure all contained data is sanitized.
+
     Args:
-        value: Value to sanitize
+        value (Any): Value to sanitize (str, list, dict, or other)
 
     Returns:
-        Sanitized value
+        Any: Sanitized value with null bytes removed from strings
     """
     if isinstance(value, str):
         return value.replace('\x00', '')
@@ -179,17 +250,20 @@ def sanitize(value: Any) -> Any:
 
 def calc_event_id(pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str) -> str:
     """
-    Calculate the event ID for a Nostr event.
+    Calculate the event ID for a Nostr event according to NIP-01.
+
+    The event ID is calculated as the SHA-256 hash of the serialized event data
+    in the format: [0, pubkey, created_at, kind, tags, content]
 
     Args:
-        pubkey: Public key in hex format
-        created_at: Unix timestamp
-        kind: Event kind
-        tags: List of tags
-        content: Event content
+        pubkey (str): Public key in hex format (64 characters)
+        created_at (int): Unix timestamp of event creation
+        kind (int): Event kind (0-65535)
+        tags (List[List[str]]): List of event tags
+        content (str): Event content
 
     Returns:
-        Event ID as hex string
+        str: Event ID as lowercase hex string (64 characters)
     """
     event_data = [0, pubkey, created_at, kind, tags, content]
     event_json = json.dumps(
@@ -201,38 +275,41 @@ def calc_event_id(pubkey: str, created_at: int, kind: int, tags: List[List[str]]
 
 def verify_sig(event_id: str, pubkey: str, signature: str) -> bool:
     """
-    Verify an event signature.
+    Verify an event signature using Schnorr verification.
+
+    This function verifies that the given signature was created by the private key
+    corresponding to the public key for the given event ID.
 
     Args:
-        event_id: Event ID in hex format
-        pubkey: Public key in hex format  
-        signature: Signature in hex format
+        event_id (str): Event ID in hex format (64 characters)
+        pubkey (str): Public key in hex format (64 characters)
+        signature (str): Signature in hex format (128 characters)
 
     Returns:
-        True if signature is valid
+        bool: True if signature is valid, False otherwise
     """
     try:
         pub_key = secp256k1.PublicKey(bytes.fromhex("02" + pubkey), True)
         result = pub_key.schnorr_verify(bytes.fromhex(
             event_id), bytes.fromhex(signature), None, raw=True)
-        if result:
-            return True
-        else:
-            return False
-    except (ValueError, TypeError) as e:
+        return bool(result)
+    except (ValueError, TypeError):
         return False
 
 
 def sig_event_id(event_id: str, private_key: str) -> str:
     """
-    Sign an event ID with a private key.
+    Sign an event ID with a private key using Schnorr signatures.
+
+    This function creates a Schnorr signature of the event ID using the
+    provided private key.
 
     Args:
-        event_id: Event ID in hex format
-        private_key: Private key in hex format
+        event_id (str): Event ID in hex format (64 characters)
+        private_key (str): Private key in hex format (64 characters)
 
     Returns:
-        Signature as hex string
+        str: Signature as hex string (128 characters)
     """
     priv_key = secp256k1.PrivateKey(bytes.fromhex(private_key), raw=True)
     signature = priv_key.schnorr_sign(
@@ -251,22 +328,27 @@ def generate_event(
     timeout: int = 20
 ) -> Dict[str, Any]:
     """
-    Generate a signed Nostr event.
+    Generate a signed Nostr event with optional proof-of-work.
+
+    This function creates a complete Nostr event with proper ID calculation,
+    signature generation, and optional proof-of-work nonce mining.
 
     Args:
-        private_key: Private key in hex format
-        public_key: Public key in hex format
-        kind: Event kind
-        tags: List of tags
-        content: Event content
-        created_at: Unix timestamp (defaults to current time)
-        target_difficulty: Proof of work difficulty target
-        timeout: Timeout for proof of work in seconds
+        private_key (str): Private key in hex format (64 characters)
+        public_key (str): Public key in hex format (64 characters)  
+        kind (int): Event kind (0-65535)
+        tags (List[List[str]]): List of event tags
+        content (str): Event content
+        created_at (Optional[int]): Unix timestamp (defaults to current time)
+        target_difficulty (Optional[int]): Proof of work difficulty target (leading zero bits)
+        timeout (int): Timeout for proof of work mining in seconds (default: 20)
 
     Returns:
-        Complete signed event as dictionary
+        Dict[str, Any]: Complete signed event dictionary with keys:
+                       id, pubkey, created_at, kind, tags, content, sig
     """
     def count_leading_zero_bits(hex_str):
+        """Count leading zero bits in a hex string for proof-of-work."""
         bits = 0
         for char in hex_str:
             val = int(char, 16)
@@ -276,30 +358,40 @@ def generate_event(
                 bits += (4 - val.bit_length())
                 break
         return bits
+
     original_tags = tags.copy()
     created_at = created_at if created_at is not None else int(time.time())
+
     if target_difficulty is None:
+        # No proof of work required
         tags = original_tags
         event_id = calc_event_id(public_key, created_at, kind, tags, content)
     else:
+        # Mine proof of work
         nonce = 0
         non_nonce_tags = [tag for tag in original_tags if tag[0] != "nonce"]
         start_time = time.time()
+
         while True:
             tags = non_nonce_tags + \
                 [["nonce", str(nonce), str(target_difficulty)]]
             event_id = calc_event_id(
                 public_key, created_at, kind, tags, content)
             difficulty = count_leading_zero_bits(event_id)
+
             if difficulty >= target_difficulty:
                 break
             if (time.time() - start_time) >= timeout:
+                # Timeout reached, use original tags without nonce
                 tags = original_tags
                 event_id = calc_event_id(
                     public_key, created_at, kind, tags, content)
                 break
             nonce += 1
+
+    # Sign the event
     sig = sig_event_id(event_id, private_key)
+
     return {
         "id": event_id,
         "pubkey": public_key,
@@ -313,17 +405,21 @@ def generate_event(
 
 def test_keypair(private_key: str, public_key: str) -> bool:
     """
-    Test if a private/public key pair is valid.
+    Test if a private/public key pair is valid and matches.
+
+    This function verifies that the given private key generates the
+    corresponding public key using secp256k1 elliptic curve cryptography.
 
     Args:
-        private_key: Private key in hex format
-        public_key: Public key in hex format
+        private_key (str): Private key in hex format (64 characters)
+        public_key (str): Public key in hex format (64 characters)
 
     Returns:
-        True if the key pair is valid
+        bool: True if the key pair is valid and matches, False otherwise
     """
     if len(private_key) != 64 or len(public_key) != 64:
         return False
+
     try:
         private_key_bytes = bytes.fromhex(private_key)
         private_key_obj = secp256k1.PrivateKey(private_key_bytes)
@@ -338,12 +434,19 @@ def to_bech32(prefix: str, hex_str: str) -> str:
     """
     Convert a hex string to Bech32 format.
 
+    This function converts hexadecimal data to Bech32 encoding with the
+    specified prefix, commonly used for Nostr keys and identifiers.
+
     Args:
-        prefix: The prefix for the Bech32 encoding (e.g., 'nsec', 'npub')
-        hex_str: The hex string to convert
+        prefix (str): The prefix for the Bech32 encoding (e.g., 'nsec', 'npub')
+        hex_str (str): The hex string to convert
 
     Returns:
-        The Bech32 encoded string
+        str: The Bech32 encoded string
+
+    Example:
+        >>> to_bech32('npub', '1234567890abcdef...')
+        'npub1...'
     """
     byte_data = bytes.fromhex(hex_str)
     data = bech32.convertbits(byte_data, 8, 5, True)
@@ -354,11 +457,18 @@ def to_hex(bech32_str: str) -> str:
     """
     Convert a Bech32 string to hex format.
 
+    This function decodes a Bech32 string and returns the underlying
+    data as a hexadecimal string.
+
     Args:
-        bech32_str: The Bech32 string to convert
+        bech32_str (str): The Bech32 string to convert
 
     Returns:
-        The hex encoded string
+        str: The hex encoded string
+
+    Example:
+        >>> to_hex('npub1...')
+        '1234567890abcdef...'
     """
     prefix, data = bech32.bech32_decode(bech32_str)
     byte_data = bech32.convertbits(data, 5, 8, False)
@@ -367,10 +477,19 @@ def to_hex(bech32_str: str) -> str:
 
 def generate_keypair() -> tuple[str, str]:
     """
-    Generate a new private/public key pair.
+    Generate a new private/public key pair for Nostr.
+
+    This function creates a new secp256k1 key pair suitable for use
+    with the Nostr protocol.
 
     Returns:
-        Tuple of (private_key_hex, public_key_hex)
+        tuple[str, str]: Tuple of (private_key_hex, public_key_hex)
+                        Both keys are 64-character hex strings
+
+    Example:
+        >>> priv, pub = generate_keypair()
+        >>> len(priv), len(pub)
+        (64, 64)
     """
     private_key = os.urandom(32)
     private_key_obj = secp256k1.PrivateKey(private_key)
@@ -381,8 +500,23 @@ def generate_keypair() -> tuple[str, str]:
 
 
 def parse_nip11_response(nip11_response):
+    """
+    Parse NIP-11 relay information document response.
+
+    This function processes the response from a NIP-11 relay information
+    endpoint and extracts valid metadata fields with proper validation.
+
+    Args:
+        nip11_response: Response data from NIP-11 endpoint (dict expected)
+
+    Returns:
+        dict: Parsed NIP-11 metadata with validated fields, or
+              {'nip11_success': False} if parsing fails
+    """
     if not isinstance(nip11_response, dict):
         return {'nip11_success': False}
+
+    # Extract basic fields from NIP-11 response
     result = {
         'nip11_success': True,
         'name': nip11_response.get('name'),
@@ -405,15 +539,24 @@ def parse_nip11_response(nip11_response):
             ]
         }
     }
-    for key in ['name', 'description', 'banner', 'icon', 'pubkey', 'contact', 'software', 'version', 'privacy_policy', 'terms_of_service']:
+
+    # Validate string fields
+    string_fields = ['name', 'description', 'banner', 'icon', 'pubkey',
+                     'contact', 'software', 'version', 'privacy_policy', 'terms_of_service']
+    for key in string_fields:
         if not (isinstance(result[key], str) or result[key] is None):
             result[key] = None
+
+    # Validate supported_nips list
     if not isinstance(result['supported_nips'], list):
         result['supported_nips'] = None
     else:
         result['supported_nips'] = [
             nip for nip in result['supported_nips'] if isinstance(nip, (int, str))]
-    for key in ['limitation', 'extra_fields']:
+
+    # Validate dictionary fields
+    dict_fields = ['limitation', 'extra_fields']
+    for key in dict_fields:
         if not isinstance(result[key], dict):
             result[key] = None
         else:
@@ -426,6 +569,8 @@ def parse_nip11_response(nip11_response):
                     except (TypeError, ValueError):
                         pass
             result[key] = data
+
+    # Check if any valid data was found
     for value in result.values():
         if value is not None:
             return result
@@ -434,8 +579,22 @@ def parse_nip11_response(nip11_response):
 
 
 def parse_connection_response(connection_response):
+    """
+    Parse connection test response data.
+
+    This function processes connection test results and validates
+    the response format and data types.
+
+    Args:
+        connection_response: Response data from connection test (dict expected)
+
+    Returns:
+        dict: Parsed connection metadata with validated fields, or
+              {'connection_success': False} if parsing fails
+    """
     if not isinstance(connection_response, dict):
         return {'connection_success': False}
+
     return {
         'connection_success': True,
         'rtt_open': connection_response['rtt_open'],
