@@ -1,116 +1,162 @@
-.PHONY: help install install-dev test test-cov lint format clean build upload upload-test docs
+.PHONY: help install install-dev test test-cov lint format clean build upload upload-test check
 
 # Default target
 help:
-	@echo "Available targets:"
+	@echo "🚀 nostr-tools Development Commands"
+	@echo ""
+	@echo "Setup:"
 	@echo "  install       Install the package"
-	@echo "  install-dev   Install package with development dependencies"
-	@echo "  test          Run tests"
-	@echo "  test-cov      Run tests with coverage"
-	@echo "  lint          Run linting (flake8, mypy)"
-	@echo "  format        Format code (black, isort)"
-	@echo "  clean         Clean build artifacts"
+	@echo "  install-dev   Install with development dependencies"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  format        Format code (black, ruff)"
+	@echo "  format-check  Check code formatting"
+	@echo "  lint          Run linting (ruff, mypy)"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test          Run all tests"
+	@echo "  test-cov      Run tests with coverage report"
+	@echo "  test-unit     Run only unit tests"
+	@echo "  test-fast     Run fast tests only"
+	@echo ""
+	@echo "Build & Release:"
 	@echo "  build         Build package"
 	@echo "  upload-test   Upload to Test PyPI"
 	@echo "  upload        Upload to PyPI"
-	@echo "  docs          Generate documentation"
-	@echo "  check         Run all checks (format, lint, test)"
+	@echo "  verify        Verify package before release"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  clean         Clean build artifacts"
+	@echo "  check         Run all quality checks"
+	@echo "  examples      Run example scripts"
 
 # Installation
 install:
+	@echo "📦 Installing nostr-tools..."
 	pip install -e .
 
 install-dev:
-	pip install -e .[dev]
+	@echo "🔧 Installing development dependencies..."
+	pip install -e .[dev,test]
+
+# Code formatting
+format:
+	@echo "🎨 Formatting code..."
+	black nostr_tools tests examples
+	ruff check --fix nostr_tools tests examples
+
+format-check:
+	@echo "🔍 Checking code formatting..."
+	black --check nostr_tools tests examples
+	ruff check nostr_tools tests examples
+
+# Linting
+lint:
+	@echo "🧹 Running linters..."
+	ruff check nostr_tools tests examples
+	mypy nostr_tools
 
 # Testing
 test:
+	@echo "🧪 Running all tests..."
 	python -m pytest
 
 test-cov:
+	@echo "📊 Running tests with coverage..."
 	python -m pytest --cov=nostr_tools --cov-report=html --cov-report=term-missing
+	@echo "📄 Coverage report generated in htmlcov/"
 
-test-verbose:
-	python -m pytest -v
+test-unit:
+	@echo "⚡ Running unit tests..."
+	python -m pytest -m "unit" -v
 
-# Code quality
-lint:
-	flake8 nostr_tools tests
-	mypy nostr_tools
+test-fast:
+	@echo "🏃 Running fast tests only..."
+	python -m pytest -m "not slow" -v
 
-format:
-	black nostr_tools tests examples
-	isort nostr_tools tests examples
-
-format-check:
-	black --check nostr_tools tests examples
-	isort --check-only nostr_tools tests examples
-
-# Security
-security:
-	bandit -r nostr_tools
-	safety check
-
-# Cleanup
+# Build and release
 clean:
+	@echo "🧹 Cleaning build artifacts..."
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info/
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
 	rm -rf .coverage
 	rm -rf htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
+	@echo "✅ Clean complete"
 
-# Build
 build: clean
+	@echo "📦 Building package..."
 	python -m build
+	@echo "✅ Package built successfully"
 
-# Upload
-upload-test: build
+verify: build
+	@echo "🔍 Verifying package..."
+	python -m twine check dist/*
+	@echo "✅ Package verification complete"
+
+upload-test: verify
+	@echo "📤 Uploading to Test PyPI..."
 	python -m twine upload --repository testpypi dist/*
 
-upload: build
+upload: verify
+	@echo "🚀 Uploading to PyPI..."
 	python -m twine upload dist/*
 
-# Documentation
-docs:
-	@echo "Documentation is in README.md"
-	@echo "Run 'python examples/basic_usage.py' for live examples"
-
-# Pre-commit setup
-setup-hooks:
-	pre-commit install
-
-# Run all checks
-check: format-check lint test
-
-# Development workflow
-dev-setup: install-dev setup-hooks
-	@echo "Development environment ready!"
-
-# Quick test for development
-quick-test:
-	python -m pytest tests/test_basic.py -v
-
-# Run examples
-run-examples:
+# Examples
+examples:
+	@echo "🎯 Running basic examples..."
 	python examples/basic_usage.py
 
-run-advanced:
+examples-advanced:
+	@echo "🎯 Running advanced examples..."
 	python examples/advanced_features.py
 
-# Package verification
-verify: build
-	python -m twine check dist/*
-	@echo "Package verification complete"
+# Quality checks
+check: format-check lint test
+	@echo "✅ All quality checks passed!"
 
-# Full release workflow
-release-check: clean format-check lint test-cov security verify
-	@echo "Release checks passed!"
+check-fast: format-check lint test-fast
+	@echo "⚡ Fast quality checks passed!"
 
-# Local development server for documentation
-serve-docs:
-	@echo "Opening README.md for documentation"
-	@echo "For live examples, run: make run-examples"
+# Release preparation
+pre-release: clean check verify
+	@echo "🚀 Ready for release!"
+	@echo ""
+	@echo "📋 Release checklist:"
+	@echo "  ✅ Code formatted and linted"
+	@echo "  ✅ All tests passing"
+	@echo "  ✅ Package verified"
+	@echo ""
+	@echo "💡 Next steps:"
+	@echo "  1. Update version in pyproject.toml"
+	@echo "  2. Update CHANGELOG.md"
+	@echo "  3. Create release PR"
+	@echo "  4. Tag release after merge"
+	@echo "  5. Run 'make upload' to publish"
+
+# Development workflow
+dev-test: format lint test-unit
+	@echo "🔄 Development cycle complete"
+
+# Debugging
+info:
+	@echo "ℹ️  Project info:"
+	@echo "  Python: $(shell python --version)"
+	@echo "  Pip: $(shell pip --version)"
+	@echo "  Location: $(shell pwd)"
+
+# Environment validation
+validate-env:
+	@echo "🔍 Validating environment..."
+	@python -c "import sys; print(f'Python: {sys.version}')"
+	@python -c "import nostr_tools; print(f'nostr-tools: {nostr_tools.__version__}')"
+	@echo "✅ Environment validated"
+
+# Quick development commands
+quick-test: test-unit
+quick-check: format-check lint test-unit

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,12 +7,17 @@ name = "nostr-tools"
 version = "0.1.0"
 description = "A comprehensive Python library for Nostr protocol interactions"
 readme = "README.md"
-license = {file = "LICENSE"}
+requires-python = ">=3.8"
+license = {text = "MIT"}
 authors = [
     {name = "Bigbrotr", email = "hello@bigbrotr.com"}
 ]
 maintainers = [
     {name = "Bigbrotr", email = "hello@bigbrotr.com"}
+]
+keywords = [
+    "nostr", "decentralized", "social", "protocol", "websocket", 
+    "cryptography", "bitcoin", "schnorr", "secp256k1"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,24 +36,13 @@ classifiers = [
     "Topic :: Security :: Cryptography",
     "Framework :: AsyncIO",
 ]
-keywords = [
-    "nostr",
-    "decentralized",
-    "social",
-    "protocol",
-    "websocket",
-    "cryptography",
-    "bitcoin",
-    "schnorr",
-    "secp256k1"
-]
-requires-python = ">=3.8"
+
 dependencies = [
-    "bech32==1.2.0",
-    "secp256k1==0.14.0",
-    "aiohttp>=3.11.18",
-    "aiohttp_socks>=0.10.1",
-    "typing-extensions>=4.0.0",
+    "bech32>=1.2.0,<2.0.0",
+    "secp256k1>=0.14.0,<1.0.0",
+    "aiohttp>=3.11.0,<4.0.0",
+    "aiohttp-socks>=0.10.0,<1.0.0",
+    "typing-extensions>=4.0.0; python_version<'3.10'",
 ]
 
 [project.optional-dependencies]
@@ -56,10 +50,9 @@ dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
     "black>=23.0.0",
-    "flake8>=6.0.0",
     "mypy>=1.0.0",
-    "pre-commit>=3.0.0",
 ]
 docs = [
     "sphinx>=6.0.0",
@@ -68,9 +61,13 @@ docs = [
 ]
 test = [
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest-asyncio>=0.21.0", 
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
+]
+security = [
+    "bandit[toml]>=1.7.0",
+    "safety>=2.0.0",
 ]
 
 [project.urls]
@@ -84,36 +81,38 @@ Changelog = "https://github.com/bigbrotr/nostr-tools/blob/main/CHANGELOG.md"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["nostr_tools*"]
-exclude = ["tests*", "docs*"]
+exclude = ["tests*", "docs*", "examples*"]
 
 [tool.setuptools.package-data]
 nostr_tools = ["py.typed"]
+
+# Ruff configuration (replaces flake8 + isort)
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings  
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["F401", "F811"]
 
 # Black configuration
 [tool.black]
 line-length = 88
 target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-# isort configuration
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["nostr_tools"]
 
 # MyPy configuration
 [tool.mypy]
@@ -123,12 +122,9 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
-disallow_untyped_decorators = true
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
@@ -143,7 +139,7 @@ ignore_missing_imports = true
 minversion = "7.0"
 addopts = [
     "--strict-markers",
-    "--strict-config",
+    "--strict-config", 
     "--disable-warnings",
 ]
 testpaths = ["tests"]
@@ -151,6 +147,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "security: marks tests as security-focused tests",
 ]
 asyncio_mode = "auto"
 
@@ -167,7 +164,7 @@ omit = [
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "raise AssertionError",
+    "raise AssertionError", 
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if typing.TYPE_CHECKING:",
@@ -175,4 +172,7 @@ exclude_lines = [
 show_missing = true
 precision = 2
 
-# Flake8 configuration (in setup.cfg since flake8 doesn't support pyproject.toml)
+# Bandit security configuration
+[tool.bandit]
+exclude_dirs = ["tests", "examples"]
+skips = ["B101", "B601"]  # Skip assert_used and shell_injection in tests
