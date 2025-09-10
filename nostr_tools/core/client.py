@@ -24,7 +24,7 @@ class Client:
     def __init__(
         self,
         relay: Relay,
-        timeout: int = 10,
+        timeout: Optional[int] = 10,
         socks5_proxy_url: Optional[str] = None
     ):
         """
@@ -35,6 +35,15 @@ class Client:
             timeout: Connection timeout in seconds
             socks5_proxy_url: SOCKS5 proxy URL for Tor relays
         """
+        to_validate = [
+            ("relay", relay, Relay),
+            ("timeout", timeout, (int, type(None))),
+            ("socks5_proxy_url", socks5_proxy_url, (str, type(None)))
+        ]
+        for name, value, types in to_validate:
+            if not isinstance(value, types):
+                raise TypeError(f"{name} must be of type {types}")
+
         self.relay = relay
         self.timeout = timeout
         self.socks5_proxy_url = socks5_proxy_url
