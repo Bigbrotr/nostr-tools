@@ -163,17 +163,18 @@ async def check_writability(client: Client, sec: str, pub: str, target_difficult
     rtt_write = None
     writable = False
     try:
-        event = generate_event(
+        event_dict = generate_event(
             sec,
             pub,
             30166,
             [["d", client.relay.url]],
             "{}",
             target_difficulty=target_difficulty,
-            timeout=event_creation_timeout or client.timeout*10
+            timeout=event_creation_timeout if event_creation_timeout is not None else client.timeout
         )
+        event = Event.from_dict(event_dict)
         time_start = time.perf_counter()
-        writable = client.publish(event)
+        writable = await client.publish(event)
         time_end = time.perf_counter()
         rtt_write = int((time_end - time_start) * 1000)
     except Exception:
@@ -220,7 +221,7 @@ async def fetch_connection(client: Client, sec: str, pub: str, target_difficulty
         return None
 
 
-async def compute_relay_metadata(client: Client, sec: str, pub: str) -> RelayMetadata:
+async def compute_relay_metadata(client: Client, sec: str, pub: str, event_creation_timeout: Optional[int] = None) -> RelayMetadata:
     if client.is_connected:
         raise RelayConnectionError("Client is already connected")
     nip11_response = await fetch_nip11(client)
@@ -230,10 +231,10 @@ async def compute_relay_metadata(client: Client, sec: str, pub: str) -> RelayMet
         target_difficulty, dict) else target_difficulty.get('min_pow_difficulty')
     target_difficulty = target_difficulty if isinstance(
         target_difficulty, int) else None
-    connection_response = await fetch_connection(client, sec, pub, target_difficulty)
+    connection_response = await fetch_connection(client, sec, pub, target_difficulty, event_creation_timeout)
     connection_metadata = parse_connection_response(connection_response)
     metadata = {
-        'relay': client.relay.url,
+        'relay': client.relay,
         'generated_at': int(time.time()),
         **nip11_metadata,
         **connection_metadata
