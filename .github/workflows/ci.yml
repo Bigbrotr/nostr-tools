@@ -25,42 +25,32 @@ jobs:
     # Install build dependencies for Windows
     - name: Install Windows build dependencies
       if: runner.os == 'Windows'
+      shell: powershell
       run: |
-        # Install Microsoft C++ Build Tools and pkg-config
         choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive" -y
         choco install pkgconfiglite -y
-        # Add to PATH
-        echo "C:\ProgramData\chocolatey\lib\pkgconfiglite\tools\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
-        # Set compiler environment
-        echo "CC=cl.exe" >> $GITHUB_ENV
-        echo "CXX=cl.exe" >> $GITHUB_ENV
-      shell: powershell
-
-    # Alternative: Install pre-compiled wheels for Windows
-    - name: Install Windows pre-compiled dependencies
-      if: runner.os == 'Windows'
-      run: |
-        # Install from wheel index that has pre-compiled secp256k1
-        python -m pip install --upgrade pip wheel
-        python -m pip install --only-binary=all secp256k1==0.14.0 || echo "Failed to install binary wheel"
-        # If binary wheel fails, try alternative approach
-        if ($LASTEXITCODE -ne 0) {
-          python -m pip install --find-links https://github.com/rustyrussell/secp256k1-py/releases secp256k1==0.14.0
-        }
-      shell: powershell
+        echo "C:\ProgramData\chocolatey\lib\pkgconfiglite\tools\pkg-config-lite-0.28-1\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "CC=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "CXX=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "DISTUTILS_USE_SDK=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "MSSdk=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     # Install build dependencies for macOS
     - name: Install macOS build dependencies
       if: runner.os == 'macOS'
       run: |
-        brew install pkg-config libffi autoconf automake libtool
+        brew update
+        brew install pkg-config libffi autoconf automake libtool gmp
+        echo "PKG_CONFIG_PATH=$(brew --prefix libffi)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix libffi)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix libffi)/include" >> $GITHUB_ENV
 
     # Install build dependencies for Linux
     - name: Install Linux build dependencies
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool
+        sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool libgmp-dev
 
     - name: Cache pip dependencies
       uses: actions/cache@v3
@@ -70,21 +60,78 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    # Try to install with pre-compiled wheels first
-    - name: Install dependencies (with fallback)
+    - name: Upgrade pip and install build tools
       run: |
-        python -m pip install --upgrade pip wheel
-        # Try to install with only binary wheels first
-        python -m pip install --only-binary=all -e .[test] || echo "Binary installation failed, trying source build..."
-        # If binary fails, install with source compilation
-        if [ $? -ne 0 ]; then
-          python -m pip install -e .[test]
-        fi
-      shell: bash
+        python -m pip install --upgrade pip setuptools wheel cffi
 
-    - name: Run unit tests only (skip integration)
+    # Try installing secp256k1 with multiple strategies
+    - name: Install secp256k1 (Strategy 1 - Binary wheel)
+      id: secp256k1_binary
+      continue-on-error: true
       run: |
-        python -m pytest -m "not integration" --cov=nostr_tools --cov-report=xml --cov-report=term-missing
+        python -m pip install --only-binary=all secp256k1==0.14.0
+
+    - name: Install secp256k1 (Strategy 2 - Source compilation)
+      if: steps.secp256k1_binary.outcome == 'failure'
+      id: secp256k1_source
+      continue-on-error: true
+      run: |
+        python -m pip cache purge
+        python -m pip install --no-cache-dir --force-reinstall secp256k1==0.14.0
+
+    - name: Install secp256k1 (Strategy 3 - Older version)
+      if: steps.secp256k1_source.outcome == 'failure'
+      id: secp256k1_old
+      continue-on-error: true
+      run: |
+        python -m pip install --no-cache-dir secp256k1==0.13.2
+
+    # Windows-specific fallback
+    - name: Install secp256k1 (Strategy 4 - Windows fallback)
+      if: runner.os == 'Windows' && steps.secp256k1_old.outcome == 'failure'
+      shell: powershell
+      continue-on-error: true
+      run: |
+        try {
+          python -m pip install --find-links https://github.com/rustyrussell/secp256k1-py/releases secp256k1==0.14.0
+          Write-Host "Success: Installed from GitHub releases"
+        } catch {
+          Write-Host "Installing cryptography fallback"
+          python -m pip install cryptography ecdsa
+        }
+
+    # Final fallback for all platforms
+    - name: Install cryptography fallback
+      if: |
+        steps.secp256k1_binary.outcome == 'failure' &&
+        steps.secp256k1_source.outcome == 'failure' &&
+        steps.secp256k1_old.outcome == 'failure'
+      run: |
+        python -m pip install cryptography ecdsa
+
+    - name: Install remaining dependencies
+      run: |
+        python -m pip install --no-deps -e .
+        python -m pip install pytest pytest-asyncio pytest-cov pytest-mock
+
+    - name: Verify secp256k1 installation
+      id: verify_secp256k1
+      continue-on-error: true
+      run: |
+        python -c "import secp256k1; print('secp256k1 available')"
+
+    - name: Verify cryptography fallback
+      if: steps.verify_secp256k1.outcome == 'failure'
+      run: |
+        python -c "import cryptography; print('cryptography fallback available')"
+
+    - name: Verify nostr-tools installation
+      run: |
+        python -c "import nostr_tools; print('nostr-tools installed successfully')"
+
+    - name: Run unit tests
+      run: |
+        python -m pytest -m "not integration" --cov=nostr_tools --cov-report=xml --cov-report=term-missing -v
       env:
         NOSTR_SKIP_INTEGRATION: "true"
 
@@ -110,7 +157,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev]
+        python -m pip install ruff mypy
 
     - name: Run Ruff linting
       run: ruff check nostr_tools tests examples
@@ -131,16 +178,19 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install dependencies
+    - name: Install security scanning tools
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[security]
+        python -m pip install bandit safety pip-audit
 
     - name: Run Bandit security checks
       run: bandit -r nostr_tools -f json || true
 
     - name: Run Safety dependency checks
       run: safety check || true
+
+    - name: Run pip-audit
+      run: pip-audit --desc || true
 
   build:
     runs-on: ubuntu-latest
