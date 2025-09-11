@@ -26,10 +26,27 @@ jobs:
     - name: Install Windows build dependencies
       if: runner.os == 'Windows'
       run: |
-        # Install pkg-config and libffi via chocolatey
+        # Install Microsoft C++ Build Tools and pkg-config
+        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive" -y
         choco install pkgconfiglite -y
         # Add to PATH
         echo "C:\ProgramData\chocolatey\lib\pkgconfiglite\tools\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
+        # Set compiler environment
+        echo "CC=cl.exe" >> $GITHUB_ENV
+        echo "CXX=cl.exe" >> $GITHUB_ENV
+      shell: powershell
+
+    # Alternative: Install pre-compiled wheels for Windows
+    - name: Install Windows pre-compiled dependencies
+      if: runner.os == 'Windows'
+      run: |
+        # Install from wheel index that has pre-compiled secp256k1
+        python -m pip install --upgrade pip wheel
+        python -m pip install --only-binary=all secp256k1==0.14.0 || echo "Failed to install binary wheel"
+        # If binary wheel fails, try alternative approach
+        if ($LASTEXITCODE -ne 0) {
+          python -m pip install --find-links https://github.com/rustyrussell/secp256k1-py/releases secp256k1==0.14.0
+        }
       shell: powershell
 
     # Install build dependencies for macOS
@@ -53,10 +70,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Install dependencies
+    # Try to install with pre-compiled wheels first
+    - name: Install dependencies (with fallback)
       run: |
-        python -m pip install --upgrade pip
-        pip install -e .[test]
+        python -m pip install --upgrade pip wheel
+        # Try to install with only binary wheels first
+        python -m pip install --only-binary=all -e .[test] || echo "Binary installation failed, trying source build..."
+        # If binary fails, install with source compilation
+        if [ $? -ne 0 ]; then
+          python -m pip install -e .[test]
+        fi
+      shell: bash
 
     - name: Run unit tests only (skip integration)
       run: |
