@@ -10,7 +10,7 @@ import asyncio
 import json
 import uuid
 from typing import Optional, Dict, Any, List, AsyncGenerator
-from aiohttp import ClientSession, WSMsgType, TCPConnector, ClientTimeout
+from aiohttp import ClientSession, WSMsgType, TCPConnector, ClientWSTimeout
 from aiohttp_socks import ProxyConnector
 
 from .relay import Relay
@@ -143,11 +143,11 @@ class Client:
             connector = self.connector()
             self._session = self.session(connector=connector)
             relay_id = self.relay.url.removeprefix('wss://')
-            timeout = ClientTimeout(total=self.timeout) if self.timeout else None
+            ws_timeout = ClientWSTimeout(ws_close=self.timeout) if self.timeout else None
             # Try both WSS and WS protocols
             for schema in ['wss://', 'ws://']:
                 try:
-                    self._ws = await self._session.ws_connect(schema + relay_id, timeout=timeout)
+                    self._ws = await self._session.ws_connect(schema + relay_id, timeout=ws_timeout)
                     break
                 except Exception:
                     continue
