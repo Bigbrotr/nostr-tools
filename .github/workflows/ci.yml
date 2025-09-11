@@ -22,6 +22,29 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    # Install build dependencies for Windows
+    - name: Install Windows build dependencies
+      if: runner.os == 'Windows'
+      run: |
+        # Install pkg-config and libffi via chocolatey
+        choco install pkgconfiglite -y
+        # Add to PATH
+        echo "C:\ProgramData\chocolatey\lib\pkgconfiglite\tools\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
+      shell: powershell
+
+    # Install build dependencies for macOS
+    - name: Install macOS build dependencies  
+      if: runner.os == 'macOS'
+      run: |
+        brew install pkg-config libffi autoconf automake libtool
+
+    # Install build dependencies for Linux
+    - name: Install Linux build dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
