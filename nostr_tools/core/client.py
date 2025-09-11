@@ -8,15 +8,22 @@ relay communications.
 
 import asyncio
 import json
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 import uuid
-from typing import Optional, Dict, Any, List, AsyncGenerator
-from aiohttp import ClientSession, WSMsgType, TCPConnector, ClientWSTimeout
+
+from aiohttp import (
+    ClientSession,
+    ClientWebSocketResponse,
+    ClientWSTimeout,
+    TCPConnector,
+    WSMsgType,
+)
 from aiohttp_socks import ProxyConnector
 
-from .relay import Relay
+from ..exceptions import RelayConnectionError
 from .event import Event
 from .filter import Filter
-from ..exceptions import RelayConnectionError
+from .relay import Relay
 
 
 class Client:
@@ -37,7 +44,7 @@ class Client:
         self,
         relay: Relay,
         timeout: Optional[int] = 10,
-        socks5_proxy_url: Optional[str] = None
+        socks5_proxy_url: Optional[str] = None,
     ):
         """
         Initialize the WebSocket client.
@@ -51,23 +58,31 @@ class Client:
             TypeError: If arguments are of incorrect type
             ValueError: If SOCKS5 proxy URL is required for Tor but not provided
         """
-        # Validate input types
-        to_validate = [
-            ("relay", relay, Relay),
-            ("timeout", timeout, (int, type(None))),
-            ("socks5_proxy_url", socks5_proxy_url, (str, type(None)))
+        # Validate inputs
+        fields_to_validate = [
+            ("relay", relay, Relay, False),
+            ("timeout", timeout, int, True),
+            ("socks5_proxy_url", socks5_proxy_url, str, True),
         ]
-        for name, value, types in to_validate:
-            if not isinstance(value, types):
-                raise TypeError(f"{name} must be of type {types}")
-        if relay.network == 'tor' and not socks5_proxy_url:
-            raise ValueError(
-                "socks5_proxy_url is required for Tor relays")
+        for field_name, field_value, expected_type, optional in fields_to_validate:
+            if optional and field_value is None:
+                continue
+            if not isinstance(field_value, expected_type):
+                type_desc = f"{expected_type.__name__}" + (
+                    " or None" if optional else ""
+                )
+                raise TypeError(
+                    f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
+                )
+
+        # Additional validation
+        if relay.network == "tor" and not socks5_proxy_url:
+            raise ValueError("socks5_proxy_url is required for Tor relays")
         self.relay = relay
         self.timeout = timeout
         self.socks5_proxy_url = socks5_proxy_url
         self._session: Optional[ClientSession] = None
-        self._ws = None
+        self._ws: Optional[ClientWebSocketResponse] = None
         self._subscriptions: Dict[str, Dict[str, Any]] = {}
 
     async def __aenter__(self):
@@ -91,28 +106,27 @@ class Client:
         """
         await self.disconnect()
 
-    def connector(self):
+    def connector(self) -> Union[TCPConnector, ProxyConnector]:
         """
         Create appropriate connector based on network type.
 
         Returns:
-            Connector: TCPConnector for clearnet or ProxyConnector for Tor
+            Union[TCPConnector, ProxyConnector]: TCPConnector for clearnet or ProxyConnector for Tor
 
         Raises:
             RelayConnectionError: If SOCKS5 proxy URL required for Tor but not provided
         """
         # Choose connector based on network type
-        if self.relay.network == 'tor':
+        if self.relay.network == "tor":
             if not self.socks5_proxy_url:
-                raise RelayConnectionError(
-                    "SOCKS5 proxy URL required for Tor relays")
-            connector = ProxyConnector.from_url(
-                self.socks5_proxy_url, force_close=True)
+                raise RelayConnectionError("SOCKS5 proxy URL required for Tor relays")
+            return ProxyConnector.from_url(self.socks5_proxy_url, force_close=True)
         else:
-            connector = TCPConnector(force_close=True)
-        return connector
+            return TCPConnector(force_close=True)
 
-    def session(self, connector=None):
+    def session(
+        self, connector: Optional[Union[TCPConnector, ProxyConnector]] = None
+    ) -> ClientSession:
         """
         Create HTTP session with specified connector.
 
@@ -142,12 +156,18 @@ class Client:
         try:
             connector = self.connector()
             self._session = self.session(connector=connector)
-            relay_id = self.relay.url.removeprefix('wss://')
-            ws_timeout = ClientWSTimeout(ws_close=self.timeout) if self.timeout else None
+            relay_id = self.relay.url.removeprefix("wss://")
+
             # Try both WSS and WS protocols
-            for schema in ['wss://', 'ws://']:
+            for schema in ["wss://", "ws://"]:
                 try:
-                    self._ws = await self._session.ws_connect(schema + relay_id, timeout=ws_timeout)
+                    if self.timeout is not None:
+                        ws_timeout = ClientWSTimeout(ws_close=self.timeout)
+                        self._ws = await self._session.ws_connect(
+                            schema + relay_id, timeout=ws_timeout
+                        )
+                    else:
+                        self._ws = await self._session.ws_connect(schema + relay_id)
                     break
                 except Exception:
                     continue
@@ -160,7 +180,8 @@ class Client:
                 await self._session.close()
                 self._session = None
             raise RelayConnectionError(
-                f"Failed to connect to {self.relay.url}: {e}")
+                f"Failed to connect to {self.relay.url}: {e}"
+            ) from e
 
     async def disconnect(self) -> None:
         """
@@ -195,12 +216,10 @@ class Client:
         try:
             await self._ws.send_str(json.dumps(message))
         except Exception as e:
-            raise RelayConnectionError(f"Failed to send message: {e}")
+            raise RelayConnectionError(f"Failed to send message: {e}") from e
 
     async def subscribe(
-        self,
-        filter: Filter,
-        subscription_id: Optional[str] = None
+        self, filter: Filter, subscription_id: Optional[str] = None
     ) -> str:
         """
         Subscribe to events matching the given filter.
@@ -221,10 +240,7 @@ class Client:
         request = ["REQ", subscription_id, filter.filter_dict]
         await self.send_message(request)
 
-        self._subscriptions[subscription_id] = {
-            "filter": filter,
-            "active": True
-        }
+        self._subscriptions[subscription_id] = {"filter": filter, "active": True}
 
         return subscription_id
 
@@ -259,7 +275,7 @@ class Client:
         # Wait for OK response
         async for message in self.listen():
             if message[0] == "OK" and message[1] == event.id:
-                return message[2]  # Success flag
+                return bool(message[2])  # Explicit bool conversion
             elif message[0] == "NOTICE":
                 continue  # Ignore notices
 
@@ -287,7 +303,7 @@ class Client:
         # Wait for OK response
         async for message in self.listen():
             if message[0] == "OK" and message[1] == event.id:
-                return message[2]  # Success flag
+                return bool(message[2])  # Explicit bool conversion
             elif message[0] == "NOTICE":
                 continue
 
@@ -311,7 +327,12 @@ class Client:
 
         try:
             while True:
-                msg = await asyncio.wait_for(self._ws.receive(), timeout=self.timeout)
+                if self.timeout is not None:
+                    msg = await asyncio.wait_for(
+                        self._ws.receive(), timeout=self.timeout
+                    )
+                else:
+                    msg = await self._ws.receive()
 
                 if msg.type == WSMsgType.TEXT:
                     try:
@@ -324,13 +345,12 @@ class Client:
                 elif msg.type == WSMsgType.CLOSED:
                     break
                 else:
-                    raise RelayConnectionError(
-                        f"Unexpected message type: {msg.type}")
+                    raise RelayConnectionError(f"Unexpected message type: {msg.type}")
 
         except asyncio.TimeoutError:
             pass
         except Exception as e:
-            raise RelayConnectionError(f"Error listening to relay: {e}")
+            raise RelayConnectionError(f"Error listening to relay: {e}") from e
 
     async def listen_events(
         self,
@@ -377,6 +397,7 @@ class Client:
             List[str]: List of subscription IDs that are currently active
         """
         return [
-            sub_id for sub_id, sub_data in self._subscriptions.items()
+            sub_id
+            for sub_id, sub_data in self._subscriptions.items()
             if sub_data["active"]
         ]

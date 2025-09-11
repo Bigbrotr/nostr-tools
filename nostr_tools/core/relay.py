@@ -6,7 +6,8 @@ Nostr relay configurations, including URL validation and network type
 detection.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ..utils import find_websocket_relay_urls
 
 
@@ -63,7 +64,7 @@ class Relay:
         """
         return f"Relay(url={self.url}, network={self.network})"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Check equality with another Relay.
 
@@ -75,12 +76,9 @@ class Relay:
         """
         if not isinstance(other, Relay):
             return False
-        return (
-            self.url == other.url and
-            self.network == other.network
-        )
+        return self.url == other.url and self.network == other.network
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         """
         Check inequality with another Relay.
 
@@ -131,7 +129,4 @@ class Relay:
         Returns:
             Dict[str, Any]: Dictionary representation of the relay
         """
-        return {
-            "url": self.url,
-            "network": self.network
-        }
+        return {"url": self.url, "network": self.network}

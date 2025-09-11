@@ -39,41 +39,70 @@ both clearnet and Tor (.onion) domains.
 
 Example:
     Basic usage of key utility functions:
-    
+
     >>> # Generate a new key pair
     >>> private_key, public_key = generate_keypair()
-    
+
     >>> # Create a signed event
     >>> event = generate_event(
-    ...     private_key, public_key, 
+    ...     private_key, public_key,
     ...     kind=1, tags=[], content="Hello Nostr!"
     ... )
-    
+
     >>> # Verify the event signature
     >>> is_valid = verify_sig(event['id'], event['pubkey'], event['sig'])
-    
+
     >>> # Convert keys to Bech32 format
     >>> npub = to_bech32('npub', public_key)
     >>> nsec = to_bech32('nsec', private_key)
-    
+
     >>> # Find relay URLs in text
     >>> text = "Connect to wss://relay.damus.io"
     >>> relays = find_websocket_relay_urls(text)
 """
 
-import re
 import hashlib
 import json
-import time
 import os
-from typing import List, Optional, Dict, Any, Tuple
-import secp256k1
+import re
+import time
+from typing import Any, Dict, List, Optional, Tuple
+from urllib import request
+
 import bech32
+import secp256k1
 
 
 # https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-TLDS = ["AAA", "AARP", "ABB", "ABBOTT", "ABBVIE", "ABC", "ABLE", "ABOGADO", "ABUDHABI", "AC", "ACADEMY", "ACCENTURE", "ACCOUNTANT", "ACCOUNTANTS", "ACO", "ACTOR", "AD", "ADS", "ADULT", "AE", "AEG", "AERO", "AETNA", "AF", "AFL", "AFRICA", "AG", "AGAKHAN", "AGENCY", "AI", "AIG", "AIRBUS", "AIRFORCE", "AIRTEL", "AKDN", "AL", "ALIBABA", "ALIPAY", "ALLFINANZ", "ALLSTATE", "ALLY", "ALSACE", "ALSTOM", "AM", "AMAZON", "AMERICANEXPRESS", "AMERICANFAMILY", "AMEX", "AMFAM", "AMICA", "AMSTERDAM", "ANALYTICS", "ANDROID", "ANQUAN", "ANZ", "AO", "AOL", "APARTMENTS", "APP", "APPLE", "AQ", "AQUARELLE", "AR", "ARAB", "ARAMCO", "ARCHI", "ARMY", "ARPA", "ART", "ARTE", "AS", "ASDA", "ASIA", "ASSOCIATES", "AT", "ATHLETA", "ATTORNEY", "AU", "AUCTION", "AUDI", "AUDIBLE", "AUDIO", "AUSPOST", "AUTHOR", "AUTO", "AUTOS", "AW", "AWS", "AX", "AXA", "AZ", "AZURE", "BA", "BABY", "BAIDU", "BANAMEX", "BAND", "BANK", "BAR", "BARCELONA", "BARCLAYCARD", "BARCLAYS", "BAREFOOT", "BARGAINS", "BASEBALL", "BASKETBALL", "BAUHAUS", "BAYERN", "BB", "BBC", "BBT", "BBVA", "BCG", "BCN", "BD", "BE", "BEATS", "BEAUTY", "BEER", "BERLIN", "BEST", "BESTBUY", "BET", "BF", "BG", "BH", "BHARTI", "BI", "BIBLE", "BID", "BIKE", "BING", "BINGO", "BIO", "BIZ", "BJ", "BLACK", "BLACKFRIDAY", "BLOCKBUSTER", "BLOG", "BLOOMBERG", "BLUE", "BM", "BMS", "BMW", "BN", "BNPPARIBAS", "BO", "BOATS", "BOEHRINGER", "BOFA", "BOM", "BOND", "BOO", "BOOK", "BOOKING", "BOSCH", "BOSTIK", "BOSTON", "BOT", "BOUTIQUE", "BOX", "BR", "BRADESCO", "BRIDGESTONE", "BROADWAY", "BROKER", "BROTHER", "BRUSSELS", "BS", "BT", "BUILD", "BUILDERS", "BUSINESS", "BUY", "BUZZ", "BV", "BW", "BY", "BZ", "BZH", "CA", "CAB", "CAFE", "CAL", "CALL", "CALVINKLEIN", "CAM", "CAMERA", "CAMP", "CANON", "CAPETOWN", "CAPITAL", "CAPITALONE", "CAR", "CARAVAN", "CARDS", "CARE", "CAREER", "CAREERS", "CARS", "CASA", "CASE", "CASH", "CASINO", "CAT", "CATERING", "CATHOLIC", "CBA", "CBN", "CBRE", "CC", "CD", "CENTER", "CEO", "CERN", "CF", "CFA", "CFD", "CG", "CH", "CHANEL", "CHANNEL", "CHARITY", "CHASE", "CHAT", "CHEAP", "CHINTAI", "CHRISTMAS", "CHROME", "CHURCH", "CI", "CIPRIANI", "CIRCLE", "CISCO", "CITADEL", "CITI", "CITIC", "CITY", "CK", "CL", "CLAIMS", "CLEANING", "CLICK", "CLINIC", "CLINIQUE", "CLOTHING", "CLOUD", "CLUB", "CLUBMED", "CM", "CN", "CO", "COACH", "CODES", "COFFEE", "COLLEGE", "COLOGNE", "COM", "COMMBANK", "COMMUNITY", "COMPANY", "COMPARE", "COMPUTER", "COMSEC", "CONDOS", "CONSTRUCTION", "CONSULTING", "CONTACT", "CONTRACTORS", "COOKING", "COOL", "COOP", "CORSICA", "COUNTRY", "COUPON", "COUPONS", "COURSES", "CPA", "CR", "CREDIT", "CREDITCARD", "CREDITUNION", "CRICKET", "CROWN", "CRS", "CRUISE", "CRUISES", "CU", "CUISINELLA", "CV", "CW", "CX", "CY", "CYMRU", "CYOU", "CZ", "DAD", "DANCE", "DATA", "DATE", "DATING", "DATSUN", "DAY", "DCLK", "DDS", "DE", "DEAL", "DEALER", "DEALS", "DEGREE", "DELIVERY", "DELL", "DELOITTE", "DELTA", "DEMOCRAT", "DENTAL", "DENTIST", "DESI", "DESIGN", "DEV", "DHL", "DIAMONDS", "DIET", "DIGITAL", "DIRECT", "DIRECTORY", "DISCOUNT", "DISCOVER", "DISH", "DIY", "DJ", "DK", "DM", "DNP", "DO", "DOCS", "DOCTOR", "DOG", "DOMAINS", "DOT", "DOWNLOAD", "DRIVE", "DTV", "DUBAI", "DUNLOP", "DUPONT", "DURBAN", "DVAG", "DVR", "DZ", "EARTH", "EAT", "EC", "ECO", "EDEKA", "EDU", "EDUCATION", "EE", "EG", "EMAIL", "EMERCK", "ENERGY", "ENGINEER", "ENGINEERING", "ENTERPRISES", "EPSON", "EQUIPMENT", "ER", "ERICSSON", "ERNI", "ES", "ESQ", "ESTATE", "ET", "EU", "EUROVISION", "EUS", "EVENTS", "EXCHANGE", "EXPERT", "EXPOSED", "EXPRESS", "EXTRASPACE", "FAGE", "FAIL", "FAIRWINDS", "FAITH", "FAMILY", "FAN", "FANS", "FARM", "FARMERS", "FASHION", "FAST", "FEDEX", "FEEDBACK", "FERRARI", "FERRERO", "FI", "FIDELITY", "FIDO", "FILM", "FINAL", "FINANCE", "FINANCIAL", "FIRE", "FIRESTONE", "FIRMDALE", "FISH", "FISHING", "FIT", "FITNESS", "FJ", "FK", "FLICKR", "FLIGHTS", "FLIR", "FLORIST", "FLOWERS", "FLY", "FM", "FO", "FOO", "FOOD", "FOOTBALL", "FORD", "FOREX", "FORSALE", "FORUM", "FOUNDATION", "FOX", "FR", "FREE", "FRESENIUS", "FRL", "FROGANS", "FRONTIER", "FTR", "FUJITSU", "FUN", "FUND", "FURNITURE", "FUTBOL", "FYI", "GA", "GAL", "GALLERY", "GALLO", "GALLUP", "GAME", "GAMES", "GAP", "GARDEN", "GAY", "GB", "GBIZ", "GD", "GDN", "GE", "GEA", "GENT", "GENTING", "GEORGE", "GF", "GG", "GGEE", "GH", "GI", "GIFT", "GIFTS", "GIVES", "GIVING", "GL", "GLASS", "GLE", "GLOBAL", "GLOBO", "GM", "GMAIL", "GMBH", "GMO", "GMX", "GN", "GODADDY", "GOLD", "GOLDPOINT", "GOLF", "GOO", "GOODYEAR", "GOOG", "GOOGLE", "GOP", "GOT", "GOV", "GP", "GQ", "GR", "GRAINGER", "GRAPHICS", "GRATIS", "GREEN", "GRIPE", "GROCERY", "GROUP", "GS", "GT", "GU", "GUCCI", "GUGE", "GUIDE", "GUITARS", "GURU", "GW", "GY", "HAIR", "HAMBURG", "HANGOUT", "HAUS", "HBO", "HDFC", "HDFCBANK", "HEALTH", "HEALTHCARE", "HELP", "HELSINKI", "HERE", "HERMES", "HIPHOP", "HISAMITSU", "HITACHI", "HIV", "HK", "HKT", "HM", "HN", "HOCKEY", "HOLDINGS", "HOLIDAY", "HOMEDEPOT", "HOMEGOODS", "HOMES", "HOMESENSE", "HONDA", "HORSE", "HOSPITAL", "HOST", "HOSTING", "HOT", "HOTELS", "HOTMAIL", "HOUSE", "HOW", "HR", "HSBC", "HT", "HU", "HUGHES", "HYATT", "HYUNDAI", "IBM", "ICBC", "ICE", "ICU", "ID", "IE", "IEEE", "IFM", "IKANO", "IL", "IM", "IMAMAT", "IMDB", "IMMO", "IMMOBILIEN", "IN", "INC", "INDUSTRIES", "INFINITI", "INFO", "ING", "INK", "INSTITUTE", "INSURANCE", "INSURE", "INT", "INTERNATIONAL", "INTUIT", "INVESTMENTS", "IO", "IPIRANGA", "IQ", "IR", "IRISH", "IS", "ISMAILI", "IST", "ISTANBUL", "IT", "ITAU", "ITV", "JAGUAR", "JAVA", "JCB", "JE", "JEEP", "JETZT", "JEWELRY", "JIO", "JLL", "JM", "JMP", "JNJ", "JO", "JOBS", "JOBURG", "JOT", "JOY", "JP", "JPMORGAN", "JPRS", "JUEGOS", "JUNIPER", "KAUFEN", "KDDI", "KE", "KERRYHOTELS", "KERRYPROPERTIES", "KFH", "KG", "KH", "KI", "KIA", "KIDS", "KIM", "KINDLE", "KITCHEN", "KIWI", "KM", "KN", "KOELN", "KOMATSU", "KOSHER", "KP", "KPMG", "KPN", "KR", "KRD", "KRED", "KUOKGROUP", "KW", "KY", "KYOTO", "KZ", "LA", "LACAIXA", "LAMBORGHINI", "LAMER", "LAND", "LANDROVER", "LANXESS", "LASALLE", "LAT", "LATINO", "LATROBE", "LAW", "LAWYER", "LB", "LC", "LDS", "LEASE", "LECLERC", "LEFRAK", "LEGAL", "LEGO", "LEXUS", "LGBT", "LI", "LIDL", "LIFE", "LIFEINSURANCE", "LIFESTYLE", "LIGHTING", "LIKE", "LILLY", "LIMITED", "LIMO", "LINCOLN", "LINK", "LIVE", "LIVING", "LK", "LLC", "LLP", "LOAN", "LOANS", "LOCKER", "LOCUS", "LOL", "LONDON", "LOTTE", "LOTTO", "LOVE", "LPL", "LPLFINANCIAL", "LR", "LS", "LT", "LTD", "LTDA", "LU", "LUNDBECK", "LUXE", "LUXURY", "LV", "LY", "MA", "MADRID", "MAIF", "MAISON", "MAKEUP", "MAN", "MANAGEMENT", "MANGO", "MAP", "MARKET", "MARKETING", "MARKETS", "MARRIOTT", "MARSHALLS", "MATTEL", "MBA", "MC", "MCKINSEY", "MD", "ME", "MED", "MEDIA", "MEET", "MELBOURNE", "MEME", "MEMORIAL", "MEN", "MENU", "MERCKMSD", "MG", "MH", "MIAMI", "MICROSOFT", "MIL", "MINI", "MINT", "MIT", "MITSUBISHI", "MK", "ML", "MLB", "MLS", "MM", "MMA", "MN", "MO", "MOBI", "MOBILE", "MODA", "MOE", "MOI", "MOM", "MONASH", "MONEY", "MONSTER", "MORMON", "MORTGAGE", "MOSCOW",
-        "MOTO", "MOTORCYCLES", "MOV", "MOVIE", "MP", "MQ", "MR", "MS", "MSD", "MT", "MTN", "MTR", "MU", "MUSEUM", "MUSIC", "MV", "MW", "MX", "MY", "MZ", "NA", "NAB", "NAGOYA", "NAME", "NAVY", "NBA", "NC", "NE", "NEC", "NET", "NETBANK", "NETFLIX", "NETWORK", "NEUSTAR", "NEW", "NEWS", "NEXT", "NEXTDIRECT", "NEXUS", "NF", "NFL", "NG", "NGO", "NHK", "NI", "NICO", "NIKE", "NIKON", "NINJA", "NISSAN", "NISSAY", "NL", "NO", "NOKIA", "NORTON", "NOW", "NOWRUZ", "NOWTV", "NP", "NR", "NRA", "NRW", "NTT", "NU", "NYC", "NZ", "OBI", "OBSERVER", "OFFICE", "OKINAWA", "OLAYAN", "OLAYANGROUP", "OLLO", "OM", "OMEGA", "ONE", "ONG", "ONL", "ONLINE", "OOO", "OPEN", "ORACLE", "ORANGE", "ORG", "ORGANIC", "ORIGINS", "OSAKA", "OTSUKA", "OTT", "OVH", "PA", "PAGE", "PANASONIC", "PARIS", "PARS", "PARTNERS", "PARTS", "PARTY", "PAY", "PCCW", "PE", "PET", "PF", "PFIZER", "PG", "PH", "PHARMACY", "PHD", "PHILIPS", "PHONE", "PHOTO", "PHOTOGRAPHY", "PHOTOS", "PHYSIO", "PICS", "PICTET", "PICTURES", "PID", "PIN", "PING", "PINK", "PIONEER", "PIZZA", "PK", "PL", "PLACE", "PLAY", "PLAYSTATION", "PLUMBING", "PLUS", "PM", "PN", "PNC", "POHL", "POKER", "POLITIE", "PORN", "POST", "PR", "PRAMERICA", "PRAXI", "PRESS", "PRIME", "PRO", "PROD", "PRODUCTIONS", "PROF", "PROGRESSIVE", "PROMO", "PROPERTIES", "PROPERTY", "PROTECTION", "PRU", "PRUDENTIAL", "PS", "PT", "PUB", "PW", "PWC", "PY", "QA", "QPON", "QUEBEC", "QUEST", "RACING", "RADIO", "RE", "READ", "REALESTATE", "REALTOR", "REALTY", "RECIPES", "RED", "REDSTONE", "REDUMBRELLA", "REHAB", "REISE", "REISEN", "REIT", "RELIANCE", "REN", "RENT", "RENTALS", "REPAIR", "REPORT", "REPUBLICAN", "REST", "RESTAURANT", "REVIEW", "REVIEWS", "REXROTH", "RICH", "RICHARDLI", "RICOH", "RIL", "RIO", "RIP", "RO", "ROCKS", "RODEO", "ROGERS", "ROOM", "RS", "RSVP", "RU", "RUGBY", "RUHR", "RUN", "RW", "RWE", "RYUKYU", "SA", "SAARLAND", "SAFE", "SAFETY", "SAKURA", "SALE", "SALON", "SAMSCLUB", "SAMSUNG", "SANDVIK", "SANDVIKCOROMANT", "SANOFI", "SAP", "SARL", "SAS", "SAVE", "SAXO", "SB", "SBI", "SBS", "SC", "SCB", "SCHAEFFLER", "SCHMIDT", "SCHOLARSHIPS", "SCHOOL", "SCHULE", "SCHWARZ", "SCIENCE", "SCOT", "SD", "SE", "SEARCH", "SEAT", "SECURE", "SECURITY", "SEEK", "SELECT", "SENER", "SERVICES", "SEVEN", "SEW", "SEX", "SEXY", "SFR", "SG", "SH", "SHANGRILA", "SHARP", "SHELL", "SHIA", "SHIKSHA", "SHOES", "SHOP", "SHOPPING", "SHOUJI", "SHOW", "SI", "SILK", "SINA", "SINGLES", "SITE", "SJ", "SK", "SKI", "SKIN", "SKY", "SKYPE", "SL", "SLING", "SM", "SMART", "SMILE", "SN", "SNCF", "SO", "SOCCER", "SOCIAL", "SOFTBANK", "SOFTWARE", "SOHU", "SOLAR", "SOLUTIONS", "SONG", "SONY", "SOY", "SPA", "SPACE", "SPORT", "SPOT", "SR", "SRL", "SS", "ST", "STADA", "STAPLES", "STAR", "STATEBANK", "STATEFARM", "STC", "STCGROUP", "STOCKHOLM", "STORAGE", "STORE", "STREAM", "STUDIO", "STUDY", "STYLE", "SU", "SUCKS", "SUPPLIES", "SUPPLY", "SUPPORT", "SURF", "SURGERY", "SUZUKI", "SV", "SWATCH", "SWISS", "SX", "SY", "SYDNEY", "SYSTEMS", "SZ", "TAB", "TAIPEI", "TALK", "TAOBAO", "TARGET", "TATAMOTORS", "TATAR", "TATTOO", "TAX", "TAXI", "TC", "TCI", "TD", "TDK", "TEAM", "TECH", "TECHNOLOGY", "TEL", "TEMASEK", "TENNIS", "TEVA", "TF", "TG", "TH", "THD", "THEATER", "THEATRE", "TIAA", "TICKETS", "TIENDA", "TIPS", "TIRES", "TIROL", "TJ", "TJMAXX", "TJX", "TK", "TKMAXX", "TL", "TM", "TMALL", "TN", "TO", "TODAY", "TOKYO", "TOOLS", "TOP", "TORAY", "TOSHIBA", "TOTAL", "TOURS", "TOWN", "TOYOTA", "TOYS", "TR", "TRADE", "TRADING", "TRAINING", "TRAVEL", "TRAVELERS", "TRAVELERSINSURANCE", "TRUST", "TRV", "TT", "TUBE", "TUI", "TUNES", "TUSHU", "TV", "TVS", "TW", "TZ", "UA", "UBANK", "UBS", "UG", "UK", "UNICOM", "UNIVERSITY", "UNO", "UOL", "UPS", "US", "UY", "UZ", "VA", "VACATIONS", "VANA", "VANGUARD", "VC", "VE", "VEGAS", "VENTURES", "VERISIGN", "VERSICHERUNG", "VET", "VG", "VI", "VIAJES", "VIDEO", "VIG", "VIKING", "VILLAS", "VIN", "VIP", "VIRGIN", "VISA", "VISION", "VIVA", "VIVO", "VLAANDEREN", "VN", "VODKA", "VOLVO", "VOTE", "VOTING", "VOTO", "VOYAGE", "VU", "WALES", "WALMART", "WALTER", "WANG", "WANGGOU", "WATCH", "WATCHES", "WEATHER", "WEATHERCHANNEL", "WEBCAM", "WEBER", "WEBSITE", "WED", "WEDDING", "WEIBO", "WEIR", "WF", "WHOSWHO", "WIEN", "WIKI", "WILLIAMHILL", "WIN", "WINDOWS", "WINE", "WINNERS", "WME", "WOLTERSKLUWER", "WOODSIDE", "WORK", "WORKS", "WORLD", "WOW", "WS", "WTC", "WTF", "XBOX", "XEROX", "XIHUAN", "XIN", "XN--11B4C3D", "XN--1CK2E1B", "XN--1QQW23A", "XN--2SCRJ9C", "XN--30RR7Y", "XN--3BST00M", "XN--3DS443G", "XN--3E0B707E", "XN--3HCRJ9C", "XN--3PXU8K", "XN--42C2D9A", "XN--45BR5CYL", "XN--45BRJ9C", "XN--45Q11C", "XN--4DBRK0CE", "XN--4GBRIM", "XN--54B7FTA0CC", "XN--55QW42G", "XN--55QX5D", "XN--5SU34J936BGSG", "XN--5TZM5G", "XN--6FRZ82G", "XN--6QQ986B3XL", "XN--80ADXHKS", "XN--80AO21A", "XN--80AQECDR1A", "XN--80ASEHDB", "XN--80ASWG", "XN--8Y0A063A", "XN--90A3AC", "XN--90AE", "XN--90AIS", "XN--9DBQ2A", "XN--9ET52U", "XN--9KRT00A", "XN--B4W605FERD", "XN--BCK1B9A5DRE4C", "XN--C1AVG", "XN--C2BR7G", "XN--CCK2B3B", "XN--CCKWCXETD", "XN--CG4BKI", "XN--CLCHC0EA0B2G2A9GCD", "XN--CZR694B", "XN--CZRS0T", "XN--CZRU2D", "XN--D1ACJ3B", "XN--D1ALF", "XN--E1A4C", "XN--ECKVDTC9D", "XN--EFVY88H", "XN--FCT429K", "XN--FHBEI", "XN--FIQ228C5HS", "XN--FIQ64B", "XN--FIQS8S", "XN--FIQZ9S", "XN--FJQ720A", "XN--FLW351E", "XN--FPCRJ9C3D", "XN--FZC2C9E2C", "XN--FZYS8D69UVGM", "XN--G2XX48C", "XN--GCKR3F0F", "XN--GECRJ9C", "XN--GK3AT1E", "XN--H2BREG3EVE", "XN--H2BRJ9C", "XN--H2BRJ9C8C", "XN--HXT814E", "XN--I1B6B1A6A2E", "XN--IMR513N", "XN--IO0A7I", "XN--J1AEF", "XN--J1AMH", "XN--J6W193G", "XN--JLQ480N2RG", "XN--JVR189M", "XN--KCRX77D1X4A", "XN--KPRW13D", "XN--KPRY57D", "XN--KPUT3I", "XN--L1ACC", "XN--LGBBAT1AD8J", "XN--MGB9AWBF", "XN--MGBA3A3EJT", "XN--MGBA3A4F16A", "XN--MGBA7C0BBN0A", "XN--MGBAAM7A8H", "XN--MGBAB2BD", "XN--MGBAH1A3HJKRD", "XN--MGBAI9AZGQP6J", "XN--MGBAYH7GPA", "XN--MGBBH1A", "XN--MGBBH1A71E", "XN--MGBC0A9AZCG", "XN--MGBCA7DZDO", "XN--MGBCPQ6GPA1A", "XN--MGBERP4A5D4AR", "XN--MGBGU82A", "XN--MGBI4ECEXP", "XN--MGBPL2FH", "XN--MGBT3DHD", "XN--MGBTX2B", "XN--MGBX4CD0AB", "XN--MIX891F", "XN--MK1BU44C", "XN--MXTQ1M", "XN--NGBC5AZD", "XN--NGBE9E0A", "XN--NGBRX", "XN--NODE", "XN--NQV7F", "XN--NQV7FS00EMA", "XN--NYQY26A", "XN--O3CW4H", "XN--OGBPF8FL", "XN--OTU796D", "XN--P1ACF", "XN--P1AI", "XN--PGBS0DH", "XN--PSSY2U", "XN--Q7CE6A", "XN--Q9JYB4C", "XN--QCKA1PMC", "XN--QXA6A", "XN--QXAM", "XN--RHQV96G", "XN--ROVU88B", "XN--RVC1E0AM3E", "XN--S9BRJ9C", "XN--SES554G", "XN--T60B56A", "XN--TCKWE", "XN--TIQ49XQYJ", "XN--UNUP4Y", "XN--VERMGENSBERATER-CTB", "XN--VERMGENSBERATUNG-PWB", "XN--VHQUV", "XN--VUQ861B", "XN--W4R85EL8FHU5DNRA", "XN--W4RS40L", "XN--WGBH1C", "XN--WGBL6A", "XN--XHQ521B", "XN--XKC2AL3HYE2A", "XN--XKC2DL3A5EE0H", "XN--Y9A3AQ", "XN--YFRO4I67O", "XN--YGBI2AMMX", "XN--ZFR164B", "XXX", "XYZ", "YACHTS", "YAHOO", "YAMAXUN", "YANDEX", "YE", "YODOBASHI", "YOGA", "YOKOHAMA", "YOU", "YOUTUBE", "YT", "YUN", "ZA", "ZAPPOS", "ZARA", "ZERO", "ZIP", "ZM", "ZONE", "ZUERICH", "ZW"]
+def _load_tlds() -> List[str]:
+    """
+    Load TLD list from IANA registry.
+
+    Returns:
+        List[str]: List of valid top-level domains in uppercase
+
+    Raises:
+        Exception: If unable to fetch TLD list from IANA
+    """
+    try:
+        with request.urlopen(
+            "https://data.iana.org/TLD/tlds-alpha-by-domain.txt"
+        ) as response:
+            content = response.read().decode("utf-8")
+        # Skip comment lines and empty lines
+        tlds = []
+        for line in content.strip().split("\n"):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                tlds.append(line.upper())
+        return tlds
+    except Exception as e:
+        raise Exception(f"Failed to load TLD list from IANA: {e}") from e
+
+
+# Load TLDs dynamically from IANA
+TLDS = _load_tlds()
+
 
 # https://www.rfc-editor.org/rfc/rfc3986
 # URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
@@ -96,7 +125,7 @@ TLDS = ["AAA", "AARP", "ABB", "ABBOTT", "ABBVIE", "ABC", "ABLE", "ABOGADO", "ABU
 # path: /path/to/resource
 # query: query=value
 # fragment: fragment
-URI_GENERIC_REGEX = r'''
+URI_GENERIC_REGEX = r"""
     # ==== Scheme ====
     (?P<scheme>[a-zA-Z][a-zA-Z0-9+\-.]*):       # Group 1 for the scheme:
                                                # - Starts with a letter
@@ -123,7 +152,7 @@ URI_GENERIC_REGEX = r'''
 
         # --- IPv4 Address ---
         (?P<ipv4>(\d{1,3}\.){3}                 # Group 5 for IPv4 address part
-            \d{1,3})                            # Final group of 1–3 digits (e.g., 192.168.0.1)
+            \d{1,3})                            # Final group of 1 to 3 digits (e.g., 192.168.0.1)
 
         |                                      # OR
 
@@ -137,9 +166,9 @@ URI_GENERIC_REGEX = r'''
             )+                                    # Repeat for each subdomain
             [a-zA-Z]{2,}                         # TLD must be at least 2 alphabetic characters
         )                                        # End of domain group
-        
+
         # |                                       # OR
-        
+
         # (?P<localhost>localhost)                 # Group 7 Special case for 'localhost'
     )                                          # End of host group
 
@@ -153,7 +182,7 @@ URI_GENERIC_REGEX = r'''
             [a-zA-Z0-9\-_~!$&'()*+,;=:%]+       # Path segments (e.g., '/files', '/images', etc.)
             (?:/[a-zA-Z0-9\-_~!$&'()*+,;=:%]+)* # Optional repeated path segments
             (?:\.[a-zA-Z0-9\-]+)*                # Allow a file extension (e.g., '.txt', '.jpg', '.html')
-        )?                                       
+        )?
     )                                          # End of path group
 
     # ==== Optional Query ====
@@ -165,7 +194,7 @@ URI_GENERIC_REGEX = r'''
     (?P<fragment>\#                             # Group 11 for fragment starts with '#'
         [a-zA-Z0-9\-_~!$&'()*+,;=:%/?]*         # Fragment identifier (can include same characters as query)
     )?                                         # Entire fragment is optional
-'''
+"""
 
 
 def find_websocket_relay_urls(text: str) -> List[str]:
@@ -209,12 +238,15 @@ def find_websocket_relay_urls(text: str) -> List[str]:
             continue
 
         # Validate .onion domains for Tor relays
-        if domain and domain.lower().endswith(".onion"):
-            if not re.match(r"^([a-z2-7]{16}|[a-z2-7]{56})\.onion$", domain.lower()):
-                continue
+        if (
+            domain
+            and domain.lower().endswith(".onion")
+            and not re.match(r"^([a-z2-7]{16}|[a-z2-7]{56})\.onion$", domain.lower())
+        ):
+            continue
 
         # Validate TLD for clearnet domains
-        if domain and (domain.split(".")[-1].upper() not in TLDS + ["ONION"]):
+        if domain and (domain.split(".")[-1].upper() not in [*TLDS, "ONION"]):
             continue
 
         # Construct final URL (normalize to wss://)
@@ -239,7 +271,7 @@ def sanitize(value: Any) -> Any:
         Any: Sanitized value with null bytes removed from strings
     """
     if isinstance(value, str):
-        return value.replace('\x00', '')
+        return value.replace("\x00", "")
     elif isinstance(value, list):
         return [sanitize(item) for item in value]
     elif isinstance(value, dict):
@@ -248,7 +280,9 @@ def sanitize(value: Any) -> Any:
         return value
 
 
-def calc_event_id(pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str) -> str:
+def calc_event_id(
+    pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str
+) -> str:
     """
     Calculate the event ID for a Nostr event according to NIP-01.
 
@@ -266,9 +300,8 @@ def calc_event_id(pubkey: str, created_at: int, kind: int, tags: List[List[str]]
         str: Event ID as lowercase hex string (64 characters)
     """
     event_data = [0, pubkey, created_at, kind, tags, content]
-    event_json = json.dumps(
-        event_data, separators=(',', ':'), ensure_ascii=False)
-    event_bytes = event_json.encode('utf-8')
+    event_json = json.dumps(event_data, separators=(",", ":"), ensure_ascii=False)
+    event_bytes = event_json.encode("utf-8")
     event_hash = hashlib.sha256(event_bytes).digest()
     return event_hash.hex()
 
@@ -290,8 +323,9 @@ def verify_sig(event_id: str, pubkey: str, signature: str) -> bool:
     """
     try:
         pub_key = secp256k1.PublicKey(bytes.fromhex("02" + pubkey), True)
-        result = pub_key.schnorr_verify(bytes.fromhex(
-            event_id), bytes.fromhex(signature), None, raw=True)
+        result = pub_key.schnorr_verify(
+            bytes.fromhex(event_id), bytes.fromhex(signature), None, raw=True
+        )
         return bool(result)
     except (ValueError, TypeError):
         return False
@@ -312,9 +346,8 @@ def sig_event_id(event_id: str, private_key: str) -> str:
         str: Signature as hex string (128 characters)
     """
     priv_key = secp256k1.PrivateKey(bytes.fromhex(private_key), raw=True)
-    signature = priv_key.schnorr_sign(
-        bytes.fromhex(event_id), bip340tag=None, raw=True)
-    return signature.hex()
+    signature = priv_key.schnorr_sign(bytes.fromhex(event_id), bip340tag=None, raw=True)
+    return str(signature.hex())
 
 
 def generate_event(
@@ -325,7 +358,7 @@ def generate_event(
     content: str,
     created_at: Optional[int] = None,
     target_difficulty: Optional[int] = None,
-    timeout: int = 20
+    timeout: int = 20,
 ) -> Dict[str, Any]:
     """
     Generate a signed Nostr event with optional proof-of-work.
@@ -335,7 +368,7 @@ def generate_event(
 
     Args:
         private_key (str): Private key in hex format (64 characters)
-        public_key (str): Public key in hex format (64 characters)  
+        public_key (str): Public key in hex format (64 characters)
         kind (int): Event kind (0-65535)
         tags (List[List[str]]): List of event tags
         content (str): Event content
@@ -347,6 +380,7 @@ def generate_event(
         Dict[str, Any]: Complete signed event dictionary with keys:
                        id, pubkey, created_at, kind, tags, content, sig
     """
+
     def count_leading_zero_bits(hex_str: str) -> int:
         """Count leading zero bits in a hex string for proof-of-work."""
         bits = 0
@@ -355,7 +389,7 @@ def generate_event(
             if val == 0:
                 bits += 4
             else:
-                bits += (4 - val.bit_length())
+                bits += 4 - val.bit_length()
                 break
         return bits
 
@@ -373,10 +407,8 @@ def generate_event(
         start_time = time.time()
 
         while True:
-            tags = non_nonce_tags + \
-                [["nonce", str(nonce), str(target_difficulty)]]
-            event_id = calc_event_id(
-                public_key, created_at, kind, tags, content)
+            tags = [*non_nonce_tags, ["nonce", str(nonce), str(target_difficulty)]]
+            event_id = calc_event_id(public_key, created_at, kind, tags, content)
             difficulty = count_leading_zero_bits(event_id)
 
             if difficulty >= target_difficulty:
@@ -384,8 +416,7 @@ def generate_event(
             if (time.time() - start_time) >= timeout:
                 # Timeout reached, use original tags without nonce
                 tags = original_tags
-                event_id = calc_event_id(
-                    public_key, created_at, kind, tags, content)
+                event_id = calc_event_id(public_key, created_at, kind, tags, content)
                 break
             nonce += 1
 
@@ -399,7 +430,7 @@ def generate_event(
         "kind": kind,
         "tags": tags,
         "content": content,
-        "sig": sig
+        "sig": sig,
     }
 
 
@@ -424,8 +455,9 @@ def validate_keypair(private_key: str, public_key: str) -> bool:
         private_key_bytes = bytes.fromhex(private_key)
         private_key_obj = secp256k1.PrivateKey(private_key_bytes)
         generated_public_key = private_key_obj.pubkey.serialize(compressed=True)[
-            1:].hex()
-        return generated_public_key == public_key
+            1:
+        ].hex()
+        return bool(generated_public_key == public_key)
     except Exception:
         return False
 
@@ -450,7 +482,10 @@ def to_bech32(prefix: str, hex_str: str) -> str:
     """
     byte_data = bytes.fromhex(hex_str)
     data = bech32.convertbits(byte_data, 8, 5, True)
-    return bech32.bech32_encode(prefix, data)
+    if data is None:
+        return ""
+    result = bech32.bech32_encode(prefix, data)
+    return str(result) if result is not None else ""
 
 
 def to_hex(bech32_str: str) -> str:
@@ -470,9 +505,13 @@ def to_hex(bech32_str: str) -> str:
         >>> to_hex('npub1...')
         '1234567890abcdef...'
     """
-    prefix, data = bech32.bech32_decode(bech32_str)
+    _, data = bech32.bech32_decode(bech32_str)
+    if data is None:
+        return ""
     byte_data = bech32.convertbits(data, 5, 8, False)
-    return bytes(byte_data).hex()
+    if byte_data is None:
+        return ""
+    return str(bytes(byte_data).hex())
 
 
 def generate_keypair() -> Tuple[str, str]:
@@ -514,54 +553,78 @@ def parse_nip11_response(nip11_response):
               {'nip11_success': False} if parsing fails
     """
     if not isinstance(nip11_response, dict):
-        return {'nip11_success': False}
+        return {"nip11_success": False}
 
     # Extract basic fields from NIP-11 response
     result = {
-        'nip11_success': True,
-        'name': nip11_response.get('name'),
-        'description': nip11_response.get('description'),
-        'banner': nip11_response.get('banner'),
-        'icon': nip11_response.get('icon'),
-        'pubkey': nip11_response.get('pubkey'),
-        'contact': nip11_response.get('contact'),
-        'supported_nips': nip11_response.get('supported_nips'),
-        'software': nip11_response.get('software'),
-        'version': nip11_response.get('version'),
-        'privacy_policy': nip11_response.get('privacy_policy'),
-        'terms_of_service': nip11_response.get('terms_of_service'),
-        'limitation': nip11_response.get('limitation'),
-        'extra_fields': {
-            key: value for key, value in nip11_response.items() if key not in [
-                'name', 'description', 'banner', 'icon', 'pubkey', 'contact',
-                'supported_nips', 'software', 'version', 'privacy_policy',
-                'terms_of_service', 'limitation'
+        "nip11_success": True,
+        "name": nip11_response.get("name"),
+        "description": nip11_response.get("description"),
+        "banner": nip11_response.get("banner"),
+        "icon": nip11_response.get("icon"),
+        "pubkey": nip11_response.get("pubkey"),
+        "contact": nip11_response.get("contact"),
+        "supported_nips": nip11_response.get("supported_nips"),
+        "software": nip11_response.get("software"),
+        "version": nip11_response.get("version"),
+        "privacy_policy": nip11_response.get("privacy_policy"),
+        "terms_of_service": nip11_response.get("terms_of_service"),
+        "limitation": nip11_response.get("limitation"),
+        "extra_fields": {
+            key: value
+            for key, value in nip11_response.items()
+            if key
+            not in [
+                "name",
+                "description",
+                "banner",
+                "icon",
+                "pubkey",
+                "contact",
+                "supported_nips",
+                "software",
+                "version",
+                "privacy_policy",
+                "terms_of_service",
+                "limitation",
             ]
-        }
+        },
     }
 
     # Validate string fields
-    string_fields = ['name', 'description', 'banner', 'icon', 'pubkey',
-                     'contact', 'software', 'version', 'privacy_policy', 'terms_of_service']
+    string_fields = [
+        "name",
+        "description",
+        "banner",
+        "icon",
+        "pubkey",
+        "contact",
+        "software",
+        "version",
+        "privacy_policy",
+        "terms_of_service",
+    ]
     for key in string_fields:
         if not (isinstance(result[key], str) or result[key] is None):
             result[key] = None
 
     # Validate supported_nips list
-    if not isinstance(result['supported_nips'], list):
-        result['supported_nips'] = None
+    if not isinstance(result["supported_nips"], list):
+        result["supported_nips"] = None
     else:
-        result['supported_nips'] = [
-            nip for nip in result['supported_nips'] if isinstance(nip, (int, str))]
+        result["supported_nips"] = [
+            nip for nip in result["supported_nips"] if isinstance(nip, (int, str))
+        ]
 
     # Validate dictionary fields
-    dict_fields = ['limitation', 'extra_fields']
+    dict_fields = ["limitation", "extra_fields"]
     for key in dict_fields:
-        if not isinstance(result[key], dict):
+        field_value = result[key]
+        if not isinstance(field_value, dict):
             result[key] = None
         else:
             data = {}
-            for dict_key, value in result[key].items():
+            for dict_key, value in field_value.items():
                 if isinstance(dict_key, str):
                     try:
                         json.dumps(value)
@@ -575,7 +638,7 @@ def parse_nip11_response(nip11_response):
         if value is not None:
             return result
 
-    return {'nip11_success': False}
+    return {"nip11_success": False}
 
 
 def parse_connection_response(connection_response):
@@ -593,14 +656,14 @@ def parse_connection_response(connection_response):
               {'connection_success': False} if parsing fails
     """
     if not isinstance(connection_response, dict):
-        return {'connection_success': False}
+        return {"connection_success": False}
 
     return {
-        'connection_success': True,
-        'rtt_open': connection_response['rtt_open'],
-        'rtt_read': connection_response['rtt_read'],
-        'rtt_write': connection_response['rtt_write'],
-        'openable': connection_response['openable'],
-        'writable': connection_response['writable'],
-        'readable': connection_response['readable']
+        "connection_success": True,
+        "rtt_open": connection_response["rtt_open"],
+        "rtt_read": connection_response["rtt_read"],
+        "rtt_write": connection_response["rtt_write"],
+        "openable": connection_response["openable"],
+        "writable": connection_response["writable"],
+        "readable": connection_response["readable"],
     }

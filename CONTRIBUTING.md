@@ -106,9 +106,9 @@ When reporting bugs, please include:
 **Actual Behavior**: What actually happens
 
 **Environment**:
-- Python version: 
-- OS: 
-- nostr-tools version: 
+- Python version:
+- OS:
+- nostr-tools version:
 
 **Additional Context**: Any other relevant information
 ```
@@ -216,7 +216,7 @@ class TestEvent:
             private_key, public_key, 1, [], "test content"
         )
         event = Event.from_dict(event_data)
-        
+
         assert event.content == "test content"
         assert event.kind == 1
         assert len(event.id) == 64

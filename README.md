@@ -43,11 +43,11 @@ from nostr_tools import Client, Relay, Filter, generate_keypair, generate_event
 async def main():
     # Generate a new key pair
     private_key, public_key = generate_keypair()
-    
+
     # Create a relay connection
     relay = Relay("wss://relay.damus.io")
     client = Client(relay)
-    
+
     # Connect and publish an event
     async with client:
         # Create and publish a text note
@@ -58,23 +58,23 @@ async def main():
             tags=[],
             content="Hello Nostr! 🚀"
         )
-        
+
         from nostr_tools import Event
         event = Event.from_dict(event_data)
         success = await client.publish(event)
         print(f"Event published: {success}")
-        
+
         # Subscribe to events
         filter = Filter(kinds=[1], limit=10)
         events = []
-        
+
         subscription_id = await client.subscribe(filter)
         async for event_message in client.listen_events(subscription_id):
             event = Event.from_dict(event_message[2])
             events.append(event)
             if len(events) >= 10:
                 break
-        
+
         await client.unsubscribe(subscription_id)
         print(f"Retrieved {len(events)} events")
 
@@ -93,18 +93,18 @@ async def advanced_example():
     private_key, public_key = generate_keypair()
     relay = Relay("wss://relay.nostr.band")
     client = Client(relay)
-    
+
     # Test relay capabilities
     metadata = await compute_relay_metadata(client, private_key, public_key)
     print(f"Relay readable: {metadata.readable}")
     print(f"Relay writable: {metadata.writable}")
     print(f"Relay software: {metadata.software}")
-    
+
     # Fetch events with high-level API
     async with client:
         filter = Filter(kinds=[1], limit=5)
         events = await fetch_events(client, filter)
-        
+
         for event in events:
             print(f"Event from {event.pubkey[:8]}...: {event.content[:50]}...")
 
@@ -243,9 +243,9 @@ async def analyze_relay():
     private_key, public_key = generate_keypair()
     relay = Relay("wss://relay.nostr.band")
     client = Client(relay)
-    
+
     metadata = await compute_relay_metadata(client, private_key, public_key)
-    
+
     print(f"Name: {metadata.name}")
     print(f"Description: {metadata.description}")
     print(f"Software: {metadata.software} {metadata.version}")
@@ -268,11 +268,11 @@ from nostr_tools import Client, Relay, Filter, stream_events
 async def stream_realtime():
     relay = Relay("wss://relay.damus.io")
     client = Client(relay)
-    
+
     async with client:
         # Stream all new text notes
         filter = Filter(kinds=[1])
-        
+
         async for event in stream_events(client, filter):
             print(f"New event: {event.content[:100]}...")
             # Process events in real-time
@@ -292,7 +292,7 @@ from nostr_tools import Client, Relay, RelayConnectionError
 async def handle_errors():
     relay = Relay("wss://invalid-relay.example.com")
     client = Client(relay, timeout=5)
-    
+
     try:
         async with client:
             print("Connected successfully")
@@ -327,7 +327,7 @@ from nostr_tools import Client, Relay
 # Tor relay
 tor_relay = Relay("wss://example.onion")
 client = Client(
-    tor_relay, 
+    tor_relay,
     socks5_proxy_url="socks5://127.0.0.1:9050"
 )
 

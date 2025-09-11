@@ -5,7 +5,7 @@ This module provides the Filter class for creating event filters according
 to NIP-01 specification for querying Nostr relays.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 
 class Filter:
@@ -28,7 +28,7 @@ class Filter:
         since: Optional[int] = None,
         until: Optional[int] = None,
         limit: Optional[int] = None,
-        **tags: List[str]
+        **tags: List[str],
     ):
         """
         Create a Nostr filter with specified criteria.
@@ -68,16 +68,24 @@ class Filter:
             raise TypeError("All kinds must be integers")
         if not all(isinstance(tag_values, list) for tag_values in tags.values()):
             raise TypeError("All tag values must be lists")
-        if not all(isinstance(tag_value, str) for tag_values in tags.values() for tag_value in tag_values):
+        if not all(
+            isinstance(tag_value, str)
+            for tag_values in tags.values()
+            for tag_value in tag_values
+        ):
             raise TypeError("All tag values must be strings")
 
         # Value validation
-        if not all(len(id) == 64 and all(c in '0123456789abcdef' for c in id) for id in ids or []):
-            raise ValueError(
-                "All ids must be 64-character hexadecimal strings")
-        if not all(len(author) == 64 and all(c in '0123456789abcdef' for c in author) for author in authors or []):
-            raise ValueError(
-                "All authors must be 64-character hexadecimal strings")
+        if not all(
+            len(id) == 64 and all(c in "0123456789abcdef" for c in id)
+            for id in ids or []
+        ):
+            raise ValueError("All ids must be 64-character hexadecimal strings")
+        if not all(
+            len(author) == 64 and all(c in "0123456789abcdef" for c in author)
+            for author in authors or []
+        ):
+            raise ValueError("All authors must be 64-character hexadecimal strings")
         if not all(0 <= kind <= 65535 for kind in kinds or []):
             raise ValueError("All kinds must be integers between 0 and 65535")
         if since is not None and since <= 0:
@@ -88,9 +96,10 @@ class Filter:
             raise ValueError("limit must be a positive integer")
         if since is not None and until is not None and since > until:
             raise ValueError("since must be less than or equal to until")
-        if not all(tag_name.isalpha() and len(tag_name) == 1 for tag_name in tags.keys()):
+        if not all(tag_name.isalpha() and len(tag_name) == 1 for tag_name in tags):
             raise ValueError(
-                "Tag names must be single alphabetic characters a-z or A-Z")
+                "Tag names must be single alphabetic characters a-z or A-Z"
+            )
 
         # Build filter dictionary
         self.filter_dict: Dict[str, Any] = {}

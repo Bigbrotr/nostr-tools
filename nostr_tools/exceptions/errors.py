@@ -16,4 +16,5 @@ class RelayConnectionError(Exception):
     Args:
         message (str): Description of the connection error
     """
+
     pass

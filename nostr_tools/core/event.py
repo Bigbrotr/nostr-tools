@@ -1,13 +1,14 @@
 """
 Nostr event representation and validation.
 
-This module provides the Event class for creating, validating, and 
+This module provides the Event class for creating, validating, and
 manipulating Nostr events according to the NIP-01 specification.
 """
 
-from typing import List, Dict, Any, Optional
-from ..utils import calc_event_id, verify_sig
 import json
+from typing import Any, Dict, List, Optional
+
+from ..utils import calc_event_id, verify_sig
 
 
 class Event:
@@ -36,7 +37,7 @@ class Event:
         kind: int,
         tags: List[List[str]],
         content: str,
-        sig: str
+        sig: str,
     ) -> None:
         """
         Initialize an Event object with validation.
@@ -62,12 +63,13 @@ class Event:
             ("kind", kind, int),
             ("tags", tags, list),
             ("content", content, str),
-            ("sig", sig, str)
+            ("sig", sig, str),
         ]
         for name, value, expected_type in to_validate:
             if not isinstance(value, expected_type):
                 raise TypeError(
-                    f"{name} must be a {expected_type.__name__}, not {type(value).__name__}")
+                    f"{name} must be a {expected_type.__name__}, not {type(value).__name__}"
+                )
 
         if not all(isinstance(tag, list) for tag in tags):
             raise TypeError("tags must be a list of lists")
@@ -75,9 +77,9 @@ class Event:
             raise TypeError("tag items must be strings")
 
         # Value validation
-        if len(id) != 64 or not all(c in '0123456789abcdef' for c in id):
+        if len(id) != 64 or not all(c in "0123456789abcdef" for c in id):
             raise ValueError("id must be a 64-character hex string")
-        if len(pubkey) != 64 or not all(c in '0123456789abcdef' for c in pubkey):
+        if len(pubkey) != 64 or not all(c in "0123456789abcdef" for c in pubkey):
             raise ValueError("pubkey must be a 64-character hex string")
         if created_at < 0:
             raise ValueError("created_at must be a non-negative integer")
@@ -87,12 +89,12 @@ class Event:
             raise ValueError("tags cannot contain null characters")
         if "\\u0000" in content:
             raise ValueError("content cannot contain null characters")
-        if len(sig) != 128 or not all(c in '0123456789abcdef' for c in sig):
+        if len(sig) != 128 or not all(c in "0123456789abcdef" for c in sig):
             raise ValueError("sig must be a 128-character hex string")
 
         # Verify event ID matches computed ID
         if calc_event_id(pubkey, created_at, kind, tags, content) != id:
-            raise ValueError(f"id does not match the computed event id")
+            raise ValueError("id does not match the computed event id")
 
         # Verify signature
         if not verify_sig(id, pubkey, sig):
@@ -113,8 +115,10 @@ class Event:
         Returns:
             str: String representation showing all event attributes
         """
-        return (f"Event(id={self.id}, pubkey={self.pubkey}, created_at={self.created_at}, "
-                f"kind={self.kind}, tags={self.tags}, content={self.content}, sig={self.sig})")
+        return (
+            f"Event(id={self.id}, pubkey={self.pubkey}, created_at={self.created_at}, "
+            f"kind={self.kind}, tags={self.tags}, content={self.content}, sig={self.sig})"
+        )
 
     def __eq__(self, other):
         """
@@ -128,13 +132,15 @@ class Event:
         """
         if not isinstance(other, Event):
             return NotImplemented
-        return (self.id == other.id and
-                self.pubkey == other.pubkey and
-                self.created_at == other.created_at and
-                self.kind == other.kind and
-                self.tags == other.tags and
-                self.content == other.content and
-                self.sig == other.sig)
+        return (
+            self.id == other.id
+            and self.pubkey == other.pubkey
+            and self.created_at == other.created_at
+            and self.kind == other.kind
+            and self.tags == other.tags
+            and self.content == other.content
+            and self.sig == other.sig
+        )
 
     def __ne__(self, other):
         """
@@ -155,14 +161,23 @@ class Event:
         Returns:
             int: Hash value for the event
         """
-        return hash((self.id, self.pubkey, self.created_at, self.kind,
-                    tuple(tuple(tag) for tag in self.tags), self.content, self.sig))
+        return hash(
+            (
+                self.id,
+                self.pubkey,
+                self.created_at,
+                self.kind,
+                tuple(tuple(tag) for tag in self.tags),
+                self.content,
+                self.sig,
+            )
+        )
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Event":
         """
         Create an Event object from a dictionary.
-        
+
         Args:
             data (Dict[str, Any]): Dictionary containing event attributes
         Returns:
@@ -179,23 +194,52 @@ class Event:
             if key not in data:
                 raise KeyError(f"data must contain key {key}")
         try:
-            event = cls(data['id'], data['pubkey'], data['created_at'], data['kind'], data['tags'], data['content'], data['sig'])
+            event = cls(
+                data["id"],
+                data["pubkey"],
+                data["created_at"],
+                data["kind"],
+                data["tags"],
+                data["content"],
+                data["sig"],
+            )
         except ValueError:
             # Handle escape sequences in tags
             tags = []
-            for tag in data['tags']:
+            for tag in data["tags"]:
                 tag = [
-                    t.replace(r'\n', '\n').replace(r'\"', '\"').replace(r'\\', '\\').replace(
-                        r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
+                    t.replace(r"\n", "\n")
+                    .replace(r"\"", '"')
+                    .replace(r"\\", "\\")
+                    .replace(r"\r", "\r")
+                    .replace(r"\t", "\t")
+                    .replace(r"\b", "\b")
+                    .replace(r"\f", "\f")
                     for t in tag
                 ]
                 tags.append(tag)
-            data['tags'] = tags
+            data["tags"] = tags
 
             # Handle escape sequences in content
-            data['content'] = data['content'].replace(r'\n', '\n').replace(r'\"', '\"').replace(
-                r'\\', '\\').replace(r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
-            event = cls(data['id'], data['pubkey'], data['created_at'], data['kind'], data['tags'], data['content'], data['sig'])
+            data["content"] = (
+                data["content"]
+                .replace(r"\n", "\n")
+                .replace(r"\"", '"')
+                .replace(r"\\", "\\")
+                .replace(r"\r", "\r")
+                .replace(r"\t", "\t")
+                .replace(r"\b", "\b")
+                .replace(r"\f", "\f")
+            )
+            event = cls(
+                data["id"],
+                data["pubkey"],
+                data["created_at"],
+                data["kind"],
+                data["tags"],
+                data["content"],
+                data["sig"],
+            )
         return event
 
     def to_dict(self) -> Dict[str, Any]:
@@ -212,7 +256,7 @@ class Event:
             "kind": self.kind,
             "tags": self.tags,
             "content": self.content,
-            "sig": self.sig
+            "sig": self.sig,
         }
 
     def get_tag_values(self, tag_name: str) -> List[str]:
@@ -243,9 +287,10 @@ class Event:
             bool: True if the tag exists (and has the value if specified)
         """
         for tag in self.tags:
-            if len(tag) > 0 and tag[0] == tag_name:
-                if value is None:
-                    return True
-                elif len(tag) > 1 and value in tag[1:]:
-                    return True
+            if (
+                len(tag) > 0
+                and tag[0] == tag_name
+                and (value is None or (len(tag) > 1 and value in tag[1:]))
+            ):
+                return True
         return False

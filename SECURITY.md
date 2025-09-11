@@ -54,7 +54,7 @@ This library handles sensitive cryptographic operations including:
 
 **Important Security Notes:**
 
-1. **Private Key Management**: 
+1. **Private Key Management**:
    - Never hardcode private keys in your application
    - Store private keys securely (encrypted at rest)
    - Use environment variables or secure key management systems

@@ -6,9 +6,10 @@ comprehensive information about Nostr relays, including connection metrics,
 NIP-11 information document data, and operational capabilities.
 """
 
-from typing import Optional, List, Dict, Any
-from .relay import Relay
 import json
+from typing import Any, Dict, List, Optional
+
+from .relay import Relay
 
 
 class RelayMetadata:
@@ -104,35 +105,40 @@ class RelayMetadata:
             ValueError: If any argument has an invalid value
         """
         # Validate inputs
-        to_validate = [
-            ("relay", relay, Relay),
-            ("generated_at", generated_at, int),
-            ("connection_success", connection_success, bool),
-            ("nip11_success", nip11_success, bool),
-            ("openable", openable, (bool, type(None))),
-            ("readable", readable, (bool, type(None))),
-            ("writable", writable, (bool, type(None))),
-            ("rtt_open", rtt_open, (int, type(None))),
-            ("rtt_read", rtt_read, (int, type(None))),
-            ("rtt_write", rtt_write, (int, type(None))),
-            ("name", name, (str, type(None))),
-            ("description", description, (str, type(None))),
-            ("banner", banner, (str, type(None))),
-            ("icon", icon, (str, type(None))),
-            ("pubkey", pubkey, (str, type(None))),
-            ("contact", contact, (str, type(None))),
-            ("supported_nips", supported_nips, (list, type(None))),
-            ("software", software, (str, type(None))),
-            ("version", version, (str, type(None))),
-            ("privacy_policy", privacy_policy, (str, type(None))),
-            ("terms_of_service", terms_of_service, (str, type(None))),
-            ("limitation", limitation, (dict, type(None))),
-            ("extra_fields", extra_fields, (dict, type(None))),
+        fields_to_validate = [
+            ("relay", relay, Relay, False),
+            ("generated_at", generated_at, int, False),
+            ("connection_success", connection_success, bool, False),
+            ("nip11_success", nip11_success, bool, False),
+            ("openable", openable, bool, True),
+            ("readable", readable, bool, True),
+            ("writable", writable, bool, True),
+            ("rtt_open", rtt_open, int, True),
+            ("rtt_read", rtt_read, int, True),
+            ("rtt_write", rtt_write, int, True),
+            ("name", name, str, True),
+            ("description", description, str, True),
+            ("banner", banner, str, True),
+            ("icon", icon, str, True),
+            ("pubkey", pubkey, str, True),
+            ("contact", contact, str, True),
+            ("supported_nips", supported_nips, list, True),
+            ("software", software, str, True),
+            ("version", version, str, True),
+            ("privacy_policy", privacy_policy, str, True),
+            ("terms_of_service", terms_of_service, str, True),
+            ("limitation", limitation, dict, True),
+            ("extra_fields", extra_fields, dict, True),
         ]
-        for field_name, field_value, expected_type in to_validate:
+        for field_name, field_value, expected_type, optional in fields_to_validate:
+            if optional and field_value is None:
+                continue
             if not isinstance(field_value, expected_type):
+                type_desc = f"{expected_type.__name__}" + (
+                    " or None" if optional else ""
+                )
                 raise TypeError(
-                    f"{field_name} must be of type {expected_type}, not {type(field_value)}"
+                    f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
                 )
 
         # Additional validation for specific fields
@@ -146,21 +152,23 @@ class RelayMetadata:
                     )
 
         # Validate dictionary fields for JSON serializability
-        to_validate = [
+        dict_fields_to_validate = [
             ("limitation", limitation),
             ("extra_fields", extra_fields),
         ]
-        for field_name, field_value in to_validate:
-            for key, val in field_value.items():
-                if not isinstance(key, str):
-                    raise TypeError(
-                        f"{field_name} keys must be strings, not {type(key)}"
-                    )
-                try:
-                    json.dumps(val)
-                except (TypeError, ValueError):
-                    raise TypeError(
-                        f"{field_name} values must be JSON serializable")
+        for field_name, field_value in dict_fields_to_validate:
+            if field_value is not None:
+                for key, val in field_value.items():
+                    if not isinstance(key, str):
+                        raise TypeError(
+                            f"{field_name} keys must be strings, not {type(key)}"
+                        )
+                    try:
+                        json.dumps(val)
+                    except Exception as e:
+                        raise ValueError(
+                            f"{field_name} values must be JSON serializable: {e}"
+                        ) from e
 
         # Assign attributes with conditional logic based on success flags
         self.relay = relay
@@ -210,7 +218,7 @@ class RelayMetadata:
             f"extra_fields={self.extra_fields})"
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Check equality with another RelayMetadata.
 
@@ -223,32 +231,32 @@ class RelayMetadata:
         if not isinstance(other, RelayMetadata):
             return False
         return (
-            self.relay == other.relay and
-            self.generated_at == other.generated_at and
-            self.connection_success == other.connection_success and
-            self.nip11_success == other.nip11_success and
-            self.openable == other.openable and
-            self.readable == other.readable and
-            self.writable == other.writable and
-            self.rtt_open == other.rtt_open and
-            self.rtt_read == other.rtt_read and
-            self.rtt_write == other.rtt_write and
-            self.name == other.name and
-            self.description == other.description and
-            self.banner == other.banner and
-            self.icon == other.icon and
-            self.pubkey == other.pubkey and
-            self.contact == other.contact and
-            self.supported_nips == other.supported_nips and
-            self.software == other.software and
-            self.version == other.version and
-            self.privacy_policy == other.privacy_policy and
-            self.terms_of_service == other.terms_of_service and
-            self.limitation == other.limitation and
-            self.extra_fields == other.extra_fields
+            self.relay == other.relay
+            and self.generated_at == other.generated_at
+            and self.connection_success == other.connection_success
+            and self.nip11_success == other.nip11_success
+            and self.openable == other.openable
+            and self.readable == other.readable
+            and self.writable == other.writable
+            and self.rtt_open == other.rtt_open
+            and self.rtt_read == other.rtt_read
+            and self.rtt_write == other.rtt_write
+            and self.name == other.name
+            and self.description == other.description
+            and self.banner == other.banner
+            and self.icon == other.icon
+            and self.pubkey == other.pubkey
+            and self.contact == other.contact
+            and self.supported_nips == other.supported_nips
+            and self.software == other.software
+            and self.version == other.version
+            and self.privacy_policy == other.privacy_policy
+            and self.terms_of_service == other.terms_of_service
+            and self.limitation == other.limitation
+            and self.extra_fields == other.extra_fields
         )
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         """
         Check inequality with another RelayMetadata.
 
@@ -267,32 +275,33 @@ class RelayMetadata:
         Returns:
             int: Hash value for the metadata object
         """
-        return hash((
-            self.relay,
-            self.generated_at,
-            self.connection_success,
-            self.nip11_success,
-            self.openable,
-            self.readable,
-            self.writable,
-            self.rtt_open,
-            self.rtt_read,
-            self.rtt_write,
-            self.name,
-            self.description,
-            self.banner,
-            self.icon,
-            self.pubkey,
-            self.contact,
-            tuple(self.supported_nips) if self.supported_nips else None,
-            self.software,
-            self.version,
-            self.privacy_policy,
-            self.terms_of_service,
-            frozenset(self.limitation.items()) if self.limitation else None,
-            frozenset(self.extra_fields.items()
-                      ) if self.extra_fields else None,
-        ))
+        return hash(
+            (
+                self.relay,
+                self.generated_at,
+                self.connection_success,
+                self.nip11_success,
+                self.openable,
+                self.readable,
+                self.writable,
+                self.rtt_open,
+                self.rtt_read,
+                self.rtt_write,
+                self.name,
+                self.description,
+                self.banner,
+                self.icon,
+                self.pubkey,
+                self.contact,
+                tuple(self.supported_nips) if self.supported_nips else None,
+                self.software,
+                self.version,
+                self.privacy_policy,
+                self.terms_of_service,
+                frozenset(self.limitation.items()) if self.limitation else None,
+                frozenset(self.extra_fields.items()) if self.extra_fields else None,
+            )
+        )
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RelayMetadata":
@@ -312,8 +321,7 @@ class RelayMetadata:
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, not {type(data)}")
-        required_keys = ["relay", "generated_at",
-                         "connection_success", "nip11_success"]
+        required_keys = ["relay", "generated_at", "connection_success", "nip11_success"]
         for key in required_keys:
             if key not in data:
                 raise KeyError(f"data must contain key {key}")

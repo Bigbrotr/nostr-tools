@@ -33,7 +33,7 @@ jobs:
       shell: powershell
 
     # Install build dependencies for macOS
-    - name: Install macOS build dependencies  
+    - name: Install macOS build dependencies
       if: runner.os == 'macOS'
       run: |
         brew install pkg-config libffi autoconf automake libtool

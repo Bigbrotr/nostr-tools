@@ -16,7 +16,7 @@ maintainers = [
     {name = "Bigbrotr", email = "hello@bigbrotr.com"}
 ]
 keywords = [
-    "nostr", "decentralized", "social", "protocol", "websocket", 
+    "nostr", "decentralized", "social", "protocol", "websocket",
     "cryptography", "bitcoin", "schnorr", "secp256k1", "relay"
 ]
 classifiers = [
@@ -40,11 +40,11 @@ dependencies = [
     # Cryptographic dependencies
     "secp256k1>=0.14.0,<0.15.0",           # Elliptic curve cryptography for Nostr signatures
     "bech32>=1.2.0,<2.0.0",                # Bech32 encoding for Nostr keys (npub/nsec)
-    
-    # Network and WebSocket dependencies  
+
+    # Network and WebSocket dependencies
     "aiohttp>=3.8.0,<4.0.0",               # Async HTTP client for WebSocket connections
     "aiohttp-socks>=0.8.0,<1.0.0",         # SOCKS proxy support for Tor relays
-    
+
     # Python version compatibility
     "typing-extensions>=4.0.0; python_version<'3.10'",  # Extended type hints for older Python
 ]
@@ -54,15 +54,15 @@ dependencies = [
 dev = [
     # Testing framework
     "pytest>=7.0.0,<8.0.0",
-    "pytest-asyncio>=0.21.0,<1.0.0", 
+    "pytest-asyncio>=0.21.0,<1.0.0",
     "pytest-cov>=4.0.0,<5.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
-    
+
     # Code quality and formatting
     "ruff>=0.1.0,<1.0.0",                  # Fast Python linter and formatter
     "mypy>=1.0.0,<2.0.0",                  # Static type checker
     "pre-commit>=3.0.0,<4.0.0",            # Git hooks for code quality
-    
+
     # Build tools
     "build>=0.10.0",                       # PEP 517 build frontend
     "twine>=4.0.0",                        # Package uploading tool
@@ -71,7 +71,7 @@ dev = [
 # Testing dependencies (minimal set for CI)
 test = [
     "pytest>=7.0.0,<8.0.0",
-    "pytest-asyncio>=0.21.0,<1.0.0", 
+    "pytest-asyncio>=0.21.0,<1.0.0",
     "pytest-cov>=4.0.0,<5.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
 ]
@@ -90,7 +90,7 @@ docs = [
     "myst-parser>=1.0.0,<2.0.0",           # Markdown support for Sphinx
 ]
 
-# Performance profiling dependencies  
+# Performance profiling dependencies
 perf = [
     "pytest-benchmark>=4.0.0,<5.0.0",      # Performance benchmarking
     "memory-profiler>=0.60.0,<1.0.0",      # Memory usage profiling
@@ -184,13 +184,13 @@ ignore_missing_imports = true
 minversion = "7.0"
 addopts = [
     "--strict-markers",
-    "--strict-config", 
+    "--strict-config",
 ]
 testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests", 
+    "unit: marks tests as unit tests",
     "security: marks tests as security-focused tests",
 ]
 asyncio_mode = "auto"
@@ -208,7 +208,7 @@ omit = [
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "raise AssertionError", 
+    "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if typing.TYPE_CHECKING:",

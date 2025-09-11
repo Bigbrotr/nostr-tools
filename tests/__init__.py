@@ -31,13 +31,13 @@ Test Markers:
 Example Usage:
     # Run only unit tests
     python -m pytest -m unit
-    
+
     # Skip slow tests
     python -m pytest -m "not slow"
-    
+
     # Run security tests
     python -m pytest -m security
-    
+
     # Run with coverage
     python -m pytest --cov=nostr_tools --cov-report=html
 
@@ -64,7 +64,7 @@ SKIP_INTEGRATION = os.getenv("NOSTR_SKIP_INTEGRATION", "false").lower() == "true
 # when added to conftest.py
 
 __all__ = [
-    "TEST_RELAY_URL",
-    "TEST_TIMEOUT", 
     "SKIP_INTEGRATION",
+    "TEST_RELAY_URL",
+    "TEST_TIMEOUT",
 ]
