@@ -66,7 +66,7 @@ import hashlib
 import json
 import time
 import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import secp256k1
 import bech32
 
@@ -347,7 +347,7 @@ def generate_event(
         Dict[str, Any]: Complete signed event dictionary with keys:
                        id, pubkey, created_at, kind, tags, content, sig
     """
-    def count_leading_zero_bits(hex_str):
+    def count_leading_zero_bits(hex_str: str) -> int:
         """Count leading zero bits in a hex string for proof-of-work."""
         bits = 0
         for char in hex_str:
@@ -475,7 +475,7 @@ def to_hex(bech32_str: str) -> str:
     return bytes(byte_data).hex()
 
 
-def generate_keypair() -> tuple[str, str]:
+def generate_keypair() -> Tuple[str, str]:
     """
     Generate a new private/public key pair for Nostr.
 
