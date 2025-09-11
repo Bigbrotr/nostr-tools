@@ -68,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **typing-extensions >=4.0.0** - Extended type hints (Python <3.10)
 
 ### Platform Support
-- **Python 3.8+** - Full support for Python 3.8 through 3.12
+- **Python 3.9+** - Full support for Python 3.9 through 3.12
 - **Operating Systems** - Linux, macOS, Windows
 - **Architecture** - x86_64, ARM64
 

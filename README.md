@@ -387,7 +387,7 @@ This library implements the following Nostr Improvement Proposals (NIPs):
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 - aiohttp 3.11.18+
 - aiohttp-socks 0.10.1+
 - bech32 1.2.0+
