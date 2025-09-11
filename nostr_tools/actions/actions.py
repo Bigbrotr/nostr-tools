@@ -47,7 +47,7 @@ Example:
     ...         print(f"New event: {event.content}")
 """
 
-from typing import AsyncGenerator, List, Callable, Dict, Any, Optional
+from typing import AsyncGenerator, List, Optional
 import time
 from ..core.event import Event
 from ..core.relay_metadata import RelayMetadata
@@ -60,7 +60,6 @@ from ..utils import generate_event, parse_nip11_response, parse_connection_respo
 async def fetch_events(
     client: Client,
     filter: Filter,
-    event_handler: Callable[[Dict[str, Any]], Event] = Event.event_handler
 ) -> List[Event]:
     """
     Fetch events matching the filter using an existing client connection.
@@ -72,7 +71,6 @@ async def fetch_events(
     Args:
         client (Client): An instance of Client already connected to a relay
         filter (Filter): A Filter instance defining the criteria for fetching events
-        event_handler (Callable): Function to handle event parsing (default: Event.event_handler)
 
     Returns:
         List[Event]: A list of Event instances matching the filter
@@ -89,7 +87,7 @@ async def fetch_events(
     # Listen for events until end of stored events (EOSE)
     async for event_message in client.listen_events(subscription_id):
         try:
-            event = event_handler(event_message[2])
+            event = Event.from_dict(event_message[2])
             events.append(event)
         except Exception:
             continue  # Skip invalid events
@@ -101,7 +99,6 @@ async def fetch_events(
 async def stream_events(
     client: Client,
     filter: Filter,
-    event_handler: Callable[[Dict[str, Any]], Event] = Event.event_handler
 ) -> AsyncGenerator[Event, None]:
     """
     Stream events matching the filter using an existing client connection.
@@ -113,7 +110,6 @@ async def stream_events(
     Args:
         client (Client): An instance of Client already connected to a relay
         filter (Filter): A Filter instance defining the criteria for streaming events
-        event_handler (Callable): Function to handle event parsing (default: Event.event_handler)
 
     Yields:
         Event: Event instances matching the filter as they arrive
@@ -129,7 +125,7 @@ async def stream_events(
     # Stream events continuously
     async for event_message in client.listen_events(subscription_id):
         try:
-            event = event_handler(event_message[2])
+            event = Event.from_dict(event_message[2])
             yield event
         except Exception:
             continue  # Skip invalid events

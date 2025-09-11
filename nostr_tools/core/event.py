@@ -159,25 +159,27 @@ class Event:
                     tuple(tuple(tag) for tag in self.tags), self.content, self.sig))
 
     @classmethod
-    def event_handler(cls, data: Dict[str, Any]) -> "Event":
+    def from_dict(cls, data: Dict[str, Any]) -> "Event":
         """
-        Handle event creation from a dictionary with escape sequence handling.
-
-        This method attempts to create an Event from dictionary data, and if
-        validation fails due to escape sequences, it will unescape them and
-        try again.
-
+        Create an Event object from a dictionary.
+        
         Args:
-            data (Dict[str, Any]): Dictionary containing event data
-
+            data (Dict[str, Any]): Dictionary containing event attributes
         Returns:
-            Event: Validated Event object
-
+            Event: Event object created from the dictionary
         Raises:
-            ValueError: If data is invalid even after escape handling
+            TypeError: If data is not a dictionary
+            KeyError: If required keys are missing in the dictionary
+            ValueError: If any attribute has an invalid value
         """
+        if not isinstance(data, dict):
+            raise TypeError(f"data must be a dict, not {type(data)}")
+        required_keys = ["id", "pubkey", "created_at", "kind", "tags", "content", "sig"]
+        for key in required_keys:
+            if key not in data:
+                raise KeyError(f"data must contain key {key}")
         try:
-            event = cls.from_dict(data)
+            event = cls(data['id'], data['pubkey'], data['created_at'], data['kind'], data['tags'], data['content'], data['sig'])
         except ValueError:
             # Handle escape sequences in tags
             tags = []
@@ -193,37 +195,8 @@ class Event:
             # Handle escape sequences in content
             data['content'] = data['content'].replace(r'\n', '\n').replace(r'\"', '\"').replace(
                 r'\\', '\\').replace(r'\r', '\r').replace(r'\t', '\t').replace(r'\b', '\b').replace(r'\f', '\f')
-            event = cls.from_dict(data)
+            event = cls(data['id'], data['pubkey'], data['created_at'], data['kind'], data['tags'], data['content'], data['sig'])
         return event
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Event":
-        """
-        Create an Event object from a dictionary.
-
-        Args:
-            data (Dict[str, Any]): Dictionary containing event data with keys:
-                id, pubkey, created_at, kind, tags, content, sig
-
-        Returns:
-            Event: Validated Event object
-
-        Raises:
-            TypeError: If data is not a dictionary
-            KeyError: If required keys are missing
-            ValueError: If event data is invalid
-        """
-        if not isinstance(data, dict):
-            raise TypeError(f"data must be a dict, not {type(data)}")
-
-        required_keys = ["id", "pubkey", "created_at",
-                         "kind", "tags", "content", "sig"]
-        for key in required_keys:
-            if key not in data:
-                raise KeyError(f"data must contain key {key}")
-
-        return cls(data["id"], data["pubkey"], data["created_at"],
-                   data["kind"], data["tags"], data["content"], data["sig"])
 
     def to_dict(self) -> Dict[str, Any]:
         """

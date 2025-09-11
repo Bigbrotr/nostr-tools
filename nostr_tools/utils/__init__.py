@@ -20,7 +20,7 @@ from .utils import (
     generate_event,
 
     # Key operations
-    test_keypair,
+    validate_keypair,
     generate_keypair,
 
     # Encoding utilities
@@ -50,7 +50,7 @@ __all__ = [
     "generate_event",
 
     # Key operations
-    "test_keypair",
+    "validate_keypair",
     "generate_keypair",
 
     # Encoding utilities

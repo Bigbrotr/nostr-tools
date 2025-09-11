@@ -341,7 +341,7 @@ class TestErrorHandling:
     
     async def test_invalid_relay_connection(self):
         """Test connection to invalid relay."""
-        invalid_relay = Relay("wss://this-relay-does-not-exist-12345.invalid")
+        invalid_relay = Relay("wss://this-relay-does-not-exist-12345.com")
         client = Client(invalid_relay, timeout=5)
         
         with pytest.raises(RelayConnectionError):
@@ -369,7 +369,7 @@ class TestErrorHandling:
             async with sample_client:
                 # Very restrictive filter that might return no results
                 empty_filter = Filter(
-                    kinds=[99999],  # Uncommon kind
+                    kinds=[65535],  # Uncommon kind
                     limit=1,
                     since=int(time.time()) + 3600  # Future timestamp
                 )

@@ -586,5 +586,3 @@ class TestBenchmarkComparison:
         assert results['event_creation'] < 0.05, "Event creation too slow"
         assert results['signature_verification'] < 0.02, "Signature verification too slow"
         assert results['bech32_encoding'] < 0.001, "Bech32 encoding too slow"
-        
-        return results

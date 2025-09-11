@@ -70,7 +70,7 @@ async def main():
         
         subscription_id = await client.subscribe(filter)
         async for event_message in client.listen_events(subscription_id):
-            event = Event.event_handler(event_message[2])
+            event = Event.from_dict(event_message[2])
             events.append(event)
             if len(events) >= 10:
                 break
@@ -210,13 +210,13 @@ print(f"Event ID starts with zeros: {event_data['id']}")
 ### Key Management
 
 ```python
-from nostr_tools import generate_keypair, test_keypair, to_bech32, to_hex
+from nostr_tools import generate_keypair, validate_keypair, to_bech32, to_hex
 
 # Generate new keys
 private_key, public_key = generate_keypair()
 
 # Verify key pair
-is_valid = test_keypair(private_key, public_key)
+is_valid = validate_keypair(private_key, public_key)
 print(f"Key pair valid: {is_valid}")
 
 # Convert to Bech32 format
@@ -353,7 +353,7 @@ client = Client(
 
 - **generate_keypair()**: Generate new secp256k1 key pairs
 - **generate_event()**: Create signed events with optional proof-of-work
-- **test_keypair()**: Validate that a private/public key pair matches
+- **validate_keypair()**: Validate that a private/public key pair matches
 - **verify_sig()**: Verify event signatures using Schnorr verification
 - **calc_event_id()**: Calculate event IDs according to NIP-01 specification
 - **sig_event_id()**: Create Schnorr signatures for event IDs

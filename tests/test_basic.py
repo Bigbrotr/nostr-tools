@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from nostr_tools import (
     Event, Relay, Filter, generate_keypair, generate_event,
-    calc_event_id, verify_sig, to_bech32, to_hex, test_keypair
+    calc_event_id, verify_sig, to_bech32, to_hex, validate_keypair
 )
 
 
@@ -45,7 +45,7 @@ class TestKeyGeneration:
     def test_test_keypair_valid(self):
         """Test validation of valid key pairs."""
         private_key, public_key = generate_keypair()
-        assert test_keypair(private_key, public_key) is True
+        assert validate_keypair(private_key, public_key) is True
     
     def test_test_keypair_invalid(self):
         """Test validation of invalid key pairs."""
@@ -53,14 +53,14 @@ class TestKeyGeneration:
         private_key2, public_key2 = generate_keypair()
         
         # Mismatched keys should fail
-        assert test_keypair(private_key1, public_key2) is False
-        assert test_keypair(private_key2, public_key1) is False
+        assert validate_keypair(private_key1, public_key2) is False
+        assert validate_keypair(private_key2, public_key1) is False
     
     def test_test_keypair_malformed(self):
         """Test validation with malformed keys."""
-        assert test_keypair("invalid", "invalid") is False
-        assert test_keypair("", "") is False
-        assert test_keypair("x" * 63, "y" * 64) is False  # Wrong length
+        assert validate_keypair("invalid", "invalid") is False
+        assert validate_keypair("", "") is False
+        assert validate_keypair("x" * 63, "y" * 64) is False  # Wrong length
 
 
 class TestBech32Encoding:
@@ -275,7 +275,7 @@ class TestEventClass:
         )
         
         # Corrupt the signature
-        event_data["sig"] = "x" * 128
+        event_data["sig"] = "a" * 128
         
         with pytest.raises(ValueError, match="sig is not a valid signature"):
             Event.from_dict(event_data)
@@ -352,9 +352,9 @@ class TestRelay:
     
     def test_relay_creation_tor(self):
         """Test creating Tor relay."""
-        relay = Relay("wss://test1234567890abcdef.onion")
-        
-        assert relay.url == "wss://test1234567890abcdef.onion"
+        relay = Relay("wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion")
+
+        assert relay.url == "wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"
         assert relay.network == "tor"
     
     def test_relay_invalid_url(self):

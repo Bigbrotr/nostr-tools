@@ -29,7 +29,7 @@ _LAZY_IMPORTS = {
     "calc_event_id": ("nostr_tools.utils.utils", "calc_event_id"),
     "verify_sig": ("nostr_tools.utils.utils", "verify_sig"),
     "sig_event_id": ("nostr_tools.utils.utils", "sig_event_id"),
-    "test_keypair": ("nostr_tools.utils.utils", "test_keypair"),
+    "validate_keypair": ("nostr_tools.utils.utils", "validate_keypair"),
     
     # Utility functions - encoding
     "to_bech32": ("nostr_tools.utils.utils", "to_bech32"),
@@ -142,7 +142,7 @@ __all__ = [
     "calc_event_id",
     "verify_sig",
     "sig_event_id",
-    "test_keypair",
+    "validate_keypair",
     
     # Encoding utilities
     "to_bech32",

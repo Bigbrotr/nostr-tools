@@ -18,7 +18,7 @@ Cryptographic Operations:
     - verify_sig: Verify Schnorr signatures for events
     - sig_event_id: Create Schnorr signatures for event IDs
     - generate_event: Create complete signed events with optional proof-of-work
-    - test_keypair: Validate private/public key pairs
+    - validate_keypair: Validate private/public key pairs
     - generate_keypair: Generate new secp256k1 key pairs
 
 Encoding Utilities:
@@ -403,7 +403,7 @@ def generate_event(
     }
 
 
-def test_keypair(private_key: str, public_key: str) -> bool:
+def validate_keypair(private_key: str, public_key: str) -> bool:
     """
     Test if a private/public key pair is valid and matches.
 

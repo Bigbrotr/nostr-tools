@@ -85,7 +85,7 @@ async def basic_example():
             
             async for event_message in client.listen_events(subscription_id):
                 try:
-                    received_event = Event.event_handler(event_message[2])
+                    received_event = Event.from_dict(event_message[2])
                     events.append(received_event)
                     print(f"   📨 Event {len(events)}: {received_event.content[:50]}...")
                     
@@ -167,7 +167,7 @@ async def filtering_example():
             
             async for event_message in client.listen_events(subscription_id):
                 try:
-                    event = Event.event_handler(event_message[2])
+                    event = Event.from_dict(event_message[2])
                     metadata_events.append(event)
                     
                     # Try to parse metadata
@@ -200,7 +200,7 @@ async def filtering_example():
             
             async for event_message in client.listen_events(subscription_id):
                 try:
-                    event = Event.event_handler(event_message[2])
+                    event = Event.from_dict(event_message[2])
                     tagged_events.append(event)
                     print(f"   🏷️  Bitcoin-tagged: {event.content[:60]}...")
                     
