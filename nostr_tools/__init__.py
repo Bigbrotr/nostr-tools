@@ -6,6 +6,7 @@ including events, relays, WebSocket clients, and cryptographic utilities.
 """
 
 from typing import Any
+import sys
 
 __version__ = "0.1.0"
 __author__ = "Bigbrotr"
@@ -62,44 +63,69 @@ _LAZY_IMPORTS = {
 _module_cache = {}
 
 
+class _LazyLoader:
+    """A lazy loader that imports modules only when accessed."""
+    
+    def __init__(self, module_path: str, attr_name: str):
+        self.module_path = module_path
+        self.attr_name = attr_name
+        self._loaded = None
+    
+    def __call__(self, *args, **kwargs):
+        """Allow the lazy loader to be called like the actual function/class."""
+        return self._get_attr()(*args, **kwargs)
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to the loaded module."""
+        return getattr(self._get_attr(), name)
+    
+    def _get_attr(self):
+        """Load and return the actual attribute."""
+        if self._loaded is None:
+            cache_key = f"{self.module_path}.{self.attr_name}"
+            if cache_key in _module_cache:
+                self._loaded = _module_cache[cache_key]
+            else:
+                try:
+                    module = __import__(self.module_path, fromlist=[self.attr_name])
+                    self._loaded = getattr(module, self.attr_name)
+                    _module_cache[cache_key] = self._loaded
+                    
+                    # Replace the lazy loader with the actual object in the module
+                    current_module = sys.modules[__name__]
+                    for name, (mod_path, attr) in _LAZY_IMPORTS.items():
+                        if mod_path == self.module_path and attr == self.attr_name:
+                            setattr(current_module, name, self._loaded)
+                            break
+                            
+                except ImportError as e:
+                    raise AttributeError(
+                        f"Failed to import {self.attr_name} from {self.module_path}: {e}"
+                    ) from e
+                except AttributeError as e:
+                    raise AttributeError(
+                        f"Module {self.module_path} has no attribute {self.attr_name}"
+                    ) from e
+        
+        return self._loaded
+
+
+# Populate the module namespace with lazy loaders
+# This ensures 'from module import name' works immediately
+_current_module = sys.modules[__name__]
+for name, (module_path, attr_name) in _LAZY_IMPORTS.items():
+    setattr(_current_module, name, _LazyLoader(module_path, attr_name))
+
+
 def __getattr__(name: str) -> Any:
     """
-    Lazy loading for heavy imports.
+    Fallback for any remaining lazy loading needs.
     
-    This function is called when an attribute is not found in the module.
-    It enables lazy loading of heavy dependencies to improve import performance.
-    
-    Args:
-        name: The name of the attribute being accessed
-        
-    Returns:
-        Any: The requested attribute
-        
-    Raises:
-        AttributeError: If the attribute is not found
+    This should rarely be called since lazy loaders are pre-populated.
     """
     if name in _LAZY_IMPORTS:
         module_path, attr_name = _LAZY_IMPORTS[name]
-        
-        # Check cache first
-        cache_key = f"{module_path}.{attr_name}"
-        if cache_key in _module_cache:
-            return _module_cache[cache_key]
-        
-        # Import and cache
-        try:
-            module = __import__(module_path, fromlist=[attr_name])
-            attr = getattr(module, attr_name)
-            _module_cache[cache_key] = attr
-            return attr
-        except ImportError as e:
-            raise AttributeError(
-                f"Failed to import {name} from {module_path}: {e}"
-            ) from e
-        except AttributeError as e:
-            raise AttributeError(
-                f"Module {module_path} has no attribute {attr_name}"
-            ) from e
+        return _LazyLoader(module_path, attr_name)._get_attr()
     
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
