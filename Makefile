@@ -1,171 +1,260 @@
-.PHONY: help install install-dev test test-cov lint format clean build upload upload-test check
+.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance lint lint-fix format format-check format-all clean build upload upload-test verify pre-commit check check-all examples examples-advanced security-scan deps-check
+
+# Colors for output
+BLUE := \033[36m
+GREEN := \033[32m
+YELLOW := \033[33m
+RED := \033[31m
+RESET := \033[0m
+
+# Python and package info
+PYTHON := python
+PACKAGE := nostr_tools
+SRC_DIRS := $(PACKAGE) tests examples
 
 # Default target
 help:
-	@echo "🚀 nostr-tools Development Commands"
+	@echo "$(BLUE)🚀 nostr-tools Development Commands$(RESET)"
 	@echo ""
-	@echo "Setup:"
-	@echo "  install       Install the package"
-	@echo "  install-dev   Install with development dependencies"
+	@echo "$(GREEN)Setup:$(RESET)"
+	@echo "  install           Install package in development mode"
+	@echo "  install-dev       Install with all development dependencies"
+	@echo "  install-ci        Install for CI environment"
+	@echo "  deps-check        Check for dependency vulnerabilities"
 	@echo ""
-	@echo "Code Quality:"
-	@echo "  format        Format code with Ruff"
-	@echo "  format-check  Check code formatting"
-	@echo "  lint          Run linting (Ruff + MyPy)"
-	@echo "  lint-fix      Run linting and fix issues"
+	@echo "$(GREEN)Code Quality:$(RESET)"
+	@echo "  format            Format all code with Ruff"
+	@echo "  format-check      Check code formatting without changes"
+	@echo "  format-all        Format all files including notebooks"
+	@echo "  lint              Run all linting (Ruff + MyPy)"
+	@echo "  lint-fix          Run linting with auto-fix"
+	@echo "  security-scan     Run security checks"
 	@echo ""
-	@echo "Testing:"
-	@echo "  test          Run all tests"
-	@echo "  test-cov      Run tests with coverage report"
-	@echo "  test-unit     Run only unit tests"
-	@echo "  test-fast     Run fast tests only"
+	@echo "$(GREEN)Testing:$(RESET)"
+	@echo "  test              Run all tests"
+	@echo "  test-unit         Run only unit tests (fast)"
+	@echo "  test-integration  Run integration tests"
+	@echo "  test-security     Run security-focused tests"
+	@echo "  test-performance  Run performance tests"
+	@echo "  test-cov          Run tests with coverage report"
 	@echo ""
-	@echo "Build & Release:"
-	@echo "  build         Build package"
-	@echo "  upload-test   Upload to Test PyPI"
-	@echo "  upload        Upload to PyPI"
-	@echo "  verify        Verify package before release"
+	@echo "$(GREEN)Pre-commit & Quality:$(RESET)"
+	@echo "  pre-commit        Install and run pre-commit hooks"
+	@echo "  check             Run all quality checks (fast)"
+	@echo "  check-all         Run comprehensive quality checks"
 	@echo ""
-	@echo "Utilities:"
-	@echo "  clean         Clean build artifacts"
-	@echo "  check         Run all quality checks"
-	@echo "  examples      Run example scripts"
+	@echo "$(GREEN)Build & Release:$(RESET)"
+	@echo "  clean             Clean build artifacts and caches"
+	@echo "  build             Build package for distribution"
+	@echo "  verify            Verify package before release"
+	@echo "  upload-test       Upload to Test PyPI"
+	@echo "  upload            Upload to PyPI"
+	@echo ""
+	@echo "$(GREEN)Examples & Docs:$(RESET)"
+	@echo "  examples          Run basic examples"
+	@echo "  examples-advanced Run advanced examples"
+	@echo ""
+	@echo "$(YELLOW)Quick Commands:$(RESET)"
+	@echo "  make dev-check    # Quick development check"
+	@echo "  make ci-check     # Full CI-style check"
+	@echo "  make fix          # Auto-fix common issues"
 
-# Installation
+# Installation targets
 install:
-	@echo "📦 Installing nostr-tools..."
-	pip install -e .
+	@echo "$(BLUE)📦 Installing $(PACKAGE) in development mode...$(RESET)"
+	$(PYTHON) -m pip install -e .
 
 install-dev:
-	@echo "🔧 Installing development dependencies..."
-	pip install -e .[dev,test]
+	@echo "$(BLUE)🔧 Installing with all development dependencies...$(RESET)"
+	$(PYTHON) -m pip install -e .[dev,test,security,docs]
+
+install-ci:
+	@echo "$(BLUE)🤖 Installing for CI environment...$(RESET)"
+	$(PYTHON) -m pip install -e .[test,security]
+
+deps-check:
+	@echo "$(BLUE)🔍 Checking dependencies for vulnerabilities...$(RESET)"
+	$(PYTHON) -m pip install safety pip-audit
+	safety check --short-report
+	pip-audit --desc --format=text
 
 # Code formatting
 format:
-	@echo "🎨 Formatting code with Ruff..."
-	ruff format nostr_tools tests examples
-	ruff check --fix nostr_tools tests examples
+	@echo "$(BLUE)🎨 Formatting code with Ruff...$(RESET)"
+	ruff format $(SRC_DIRS)
+	@echo "$(GREEN)✅ Code formatted successfully$(RESET)"
 
 format-check:
-	@echo "🔍 Checking code formatting..."
-	ruff format --check nostr_tools tests examples
-	ruff check nostr_tools tests examples
+	@echo "$(BLUE)🔍 Checking code formatting...$(RESET)"
+	ruff format --check $(SRC_DIRS)
+	@echo "$(GREEN)✅ Code formatting is correct$(RESET)"
+
+format-all: format
+	@echo "$(BLUE)🎨 Formatting all files including notebooks...$(RESET)"
+	@command -v jupyter >/dev/null 2>&1 && find . -name "*.ipynb" -exec jupyter nbconvert --clear-output --inplace {} \; || echo "Jupyter not available, skipping notebooks"
 
 # Linting
 lint:
-	@echo "🧹 Running linters..."
-	ruff check nostr_tools tests examples
-	mypy nostr_tools --ignore-missing-imports
+	@echo "$(BLUE)🧹 Running linters...$(RESET)"
+	ruff check $(SRC_DIRS)
+	mypy $(PACKAGE) --ignore-missing-imports --show-error-codes
+	@echo "$(GREEN)✅ All linting checks passed$(RESET)"
 
 lint-fix:
-	@echo "🔧 Running linters with auto-fix..."
-	ruff check --fix nostr_tools tests examples
-	mypy nostr_tools --ignore-missing-imports
+	@echo "$(BLUE)🔧 Running linters with auto-fix...$(RESET)"
+	ruff check --fix $(SRC_DIRS)
+	mypy $(PACKAGE) --ignore-missing-imports --show-error-codes
+	@echo "$(GREEN)✅ Linting completed with fixes$(RESET)"
+
+# Security scanning
+security-scan:
+	@echo "$(BLUE)🔒 Running security scans...$(RESET)"
+	bandit -r $(PACKAGE) -f text --severity-level medium
+	@echo "$(GREEN)✅ Security scan completed$(RESET)"
 
 # Testing
 test:
-	@echo "🧪 Running all tests..."
-	python -m pytest
-
-test-cov:
-	@echo "📊 Running tests with coverage..."
-	python -m pytest --cov=nostr_tools --cov-report=html --cov-report=term-missing
-	@echo "📄 Coverage report generated in htmlcov/"
+	@echo "$(BLUE)🧪 Running all tests...$(RESET)"
+	$(PYTHON) -m pytest -v
+	@echo "$(GREEN)✅ All tests completed$(RESET)"
 
 test-unit:
-	@echo "⚡ Running unit tests..."
-	python -m pytest -m "unit" -v
+	@echo "$(BLUE)⚡ Running unit tests...$(RESET)"
+	$(PYTHON) -m pytest -m "not integration and not slow" -v
+	@echo "$(GREEN)✅ Unit tests completed$(RESET)"
 
-test-fast:
-	@echo "🏃 Running fast tests only..."
-	python -m pytest -m "not slow and not integration" -v
+test-integration:
+	@echo "$(BLUE)🌐 Running integration tests...$(RESET)"
+	$(PYTHON) -m pytest -m integration -v -s
+	@echo "$(GREEN)✅ Integration tests completed$(RESET)"
+
+test-security:
+	@echo "$(BLUE)🔐 Running security tests...$(RESET)"
+	$(PYTHON) -m pytest -m security -v
+	@echo "$(GREEN)✅ Security tests completed$(RESET)"
+
+test-performance:
+	@echo "$(BLUE)🏃 Running performance tests...$(RESET)"
+	$(PYTHON) -m pytest -m slow -v --tb=short
+	@echo "$(GREEN)✅ Performance tests completed$(RESET)"
+
+test-cov:
+	@echo "$(BLUE)📊 Running tests with coverage...$(RESET)"
+	$(PYTHON) -m pytest --cov=$(PACKAGE) --cov-report=html --cov-report=term-missing --cov-report=xml
+	@echo "$(GREEN)📄 Coverage report generated in htmlcov/$(RESET)"
+
+# Pre-commit and quality checks
+pre-commit:
+	@echo "$(BLUE)🎯 Setting up and running pre-commit hooks...$(RESET)"
+	$(PYTHON) -m pip install pre-commit
+	pre-commit install
+	pre-commit run --all-files
+	@echo "$(GREEN)✅ Pre-commit hooks installed and executed$(RESET)"
+
+check: format-check lint test-unit
+	@echo "$(GREEN)✅ Fast quality checks completed successfully!$(RESET)"
+
+check-all: format-check lint security-scan test-unit deps-check
+	@echo "$(GREEN)✅ All quality checks completed successfully!$(RESET)"
 
 # Build and release
 clean:
-	@echo "🧹 Cleaning build artifacts..."
-	rm -rf build/
-	rm -rf dist/
-	rm -rf *.egg-info/
-	rm -rf .pytest_cache/
-	rm -rf .mypy_cache/
-	rm -rf .ruff_cache/
-	rm -rf .coverage
-	rm -rf htmlcov/
-	find . -type d -name __pycache__ -exec rm -rf {} +
+	@echo "$(BLUE)🧹 Cleaning build artifacts and caches...$(RESET)"
+	rm -rf build/ dist/ *.egg-info/
+	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
+	rm -rf .coverage htmlcov/ coverage.xml
+	rm -rf .tox/ .nox/
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
-	@echo "✅ Clean complete"
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*.pyd" -delete
+	find . -type f -name ".coverage" -delete
+	@echo "$(GREEN)✅ Cleanup completed$(RESET)"
 
 build: clean
-	@echo "📦 Building package..."
-	python -m build
-	@echo "✅ Package built successfully"
+	@echo "$(BLUE)📦 Building package...$(RESET)"
+	$(PYTHON) -m build --wheel --sdist
+	@echo "$(GREEN)✅ Package built successfully$(RESET)"
+	@ls -la dist/
 
 verify: build
-	@echo "🔍 Verifying package..."
-	python -m twine check dist/*
-	@echo "✅ Package verification complete"
+	@echo "$(BLUE)🔍 Verifying package...$(RESET)"
+	$(PYTHON) -m twine check dist/*
+	@echo "$(GREEN)✅ Package verification completed$(RESET)"
 
 upload-test: verify
-	@echo "📤 Uploading to Test PyPI..."
-	python -m twine upload --repository testpypi dist/*
+	@echo "$(BLUE)📤 Uploading to Test PyPI...$(RESET)"
+	$(PYTHON) -m twine upload --repository testpypi dist/*
+	@echo "$(GREEN)✅ Package uploaded to Test PyPI$(RESET)"
 
 upload: verify
-	@echo "🚀 Uploading to PyPI..."
-	python -m twine upload dist/*
+	@echo "$(BLUE)🚀 Uploading to PyPI...$(RESET)"
+	$(PYTHON) -m twine upload dist/*
+	@echo "$(GREEN)✅ Package uploaded to PyPI$(RESET)"
 
 # Examples
 examples:
-	@echo "🎯 Running basic examples..."
-	python examples/basic_usage.py
+	@echo "$(BLUE)🎯 Running basic examples...$(RESET)"
+	cd examples && $(PYTHON) basic_usage.py
+	@echo "$(GREEN)✅ Basic examples completed$(RESET)"
 
 examples-advanced:
-	@echo "🎯 Running advanced examples..."
-	python examples/advanced_features.py
+	@echo "$(BLUE)🎯 Running advanced examples...$(RESET)"
+	cd examples && $(PYTHON) advanced_features.py
+	@echo "$(GREEN)✅ Advanced examples completed$(RESET)"
 
-# Quality checks
-check: format-check lint test-unit
-	@echo "✅ All quality checks passed!"
+# Development workflow shortcuts
+dev-check: format lint test-unit
+	@echo "$(GREEN)🔄 Development cycle completed successfully!$(RESET)"
 
-check-fast: format-check lint test-fast
-	@echo "⚡ Fast quality checks passed!"
+ci-check: format-check lint security-scan test-unit
+	@echo "$(GREEN)🤖 CI-style checks completed successfully!$(RESET)"
 
-# Release preparation
-pre-release: clean check verify
-	@echo "🚀 Ready for release!"
+fix: format lint-fix
+	@echo "$(GREEN)🔧 Auto-fixes applied successfully!$(RESET)"
+
+# Release workflow
+release-check: clean check-all verify
+	@echo "$(GREEN)🚀 Ready for release!$(RESET)"
 	@echo ""
-	@echo "📋 Release checklist:"
+	@echo "$(YELLOW)📋 Release checklist:$(RESET)"
 	@echo "  ✅ Code formatted and linted"
 	@echo "  ✅ All tests passing"
+	@echo "  ✅ Security checks passed"
 	@echo "  ✅ Package verified"
 	@echo ""
-	@echo "💡 Next steps:"
+	@echo "$(BLUE)💡 Next steps:$(RESET)"
 	@echo "  1. Update version in pyproject.toml"
 	@echo "  2. Update CHANGELOG.md"
 	@echo "  3. Create release PR"
 	@echo "  4. Tag release after merge"
 	@echo "  5. Run 'make upload' to publish"
 
-# Development workflow
-dev-test: format lint test-unit
-	@echo "🔄 Development cycle complete"
-
-# Debugging
+# Debugging and info
 info:
-	@echo "ℹ️  Project info:"
-	@echo "  Python: $(shell python --version)"
-	@echo "  Pip: $(shell pip --version)"
-	@echo "  Ruff: $(shell ruff --version)"
-	@echo "  Location: $(shell pwd)"
+	@echo "$(BLUE)ℹ️  Project Information:$(RESET)"
+	@echo "  Python: $$($(PYTHON) --version)"
+	@echo "  Pip: $$($(PYTHON) -m pip --version)"
+	@echo "  Package: $(PACKAGE)"
+	@echo "  Location: $$(pwd)"
+	@echo "  Git branch: $$(git branch --show-current 2>/dev/null || echo 'Not a git repository')"
+	@echo "  Git status: $$(git status --porcelain 2>/dev/null | wc -l || echo 'N/A') files changed"
 
-# Environment validation
 validate-env:
-	@echo "🔍 Validating environment..."
-	@python -c "import sys; print(f'Python: {sys.version}')"
-	@python -c "import nostr_tools; print(f'nostr-tools: {nostr_tools.__version__}')"
-	@ruff --version
-	@echo "✅ Environment validated"
+	@echo "$(BLUE)🔍 Validating environment...$(RESET)"
+	@$(PYTHON) -c "import sys; print(f'Python: {sys.version}')"
+	@$(PYTHON) -c "import $(PACKAGE); print(f'$(PACKAGE): {$(PACKAGE).__version__}')" 2>/dev/null || echo "$(PACKAGE) not installed"
+	@command -v ruff >/dev/null && ruff --version || echo "Ruff not available"
+	@command -v mypy >/dev/null && mypy --version || echo "MyPy not available"
+	@echo "$(GREEN)✅ Environment validated$(RESET)"
 
-# Quick development commands
-quick-test: test-unit
-quick-check: format-check lint test-unit
-quick-fix: format lint-fix test-unit
+# Watch mode for development (requires entr)
+watch-test:
+	@echo "$(BLUE)👀 Watching for changes to run tests...$(RESET)"
+	@command -v entr >/dev/null 2>&1 || (echo "$(RED)entr not found. Install with: brew install entr$(RESET)" && exit 1)
+	find $(SRC_DIRS) -name "*.py" | entr -c make test-unit
+
+watch-lint:
+	@echo "$(BLUE)👀 Watching for changes to run linting...$(RESET)"
+	@command -v entr >/dev/null 2>&1 || (echo "$(RED)entr not found. Install with: brew install entr$(RESET)" && exit 1)
+	find $(SRC_DIRS) -name "*.py" | entr -c make lint

@@ -1,46 +1,97 @@
 repos:
   # Pre-commit hooks for basic file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-toml
       - id: check-json
       - id: check-added-large-files
+        args: [--maxkb=1000]
       - id: check-merge-conflict
       - id: debug-statements
       - id: check-docstring-first
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
 
-  # Ruff - replaces black, isort, flake8, and more
+  # Ruff - modern Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.2.1
     hooks:
-      # Run the linter
+      # Run the linter with auto-fix
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-      # Run the formatter
+        types_or: [python, pyi, jupyter]
+        stages: [pre-commit]
+      # Run the formatter on ALL files
       - id: ruff-format
+        types_or: [python, pyi, jupyter]
+        stages: [pre-commit]
 
-  # MyPy type checking
+  # MyPy type checking (only on main code, not tests/examples)
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests]
-        args: [--ignore-missing-imports]
-        exclude: ^(tests/|examples/)
+        additional_dependencies: [
+          types-requests,
+          types-setuptools,
+          aiohttp,
+          aiohttp-socks,
+          bech32,
+          secp256k1
+        ]
+        args: [--ignore-missing-imports, --show-error-codes]
+        files: ^nostr_tools/
+        exclude: ^(tests/|examples/|setup\.py)
 
-  # Security checks - only HIGH severity issues
+  # Security checks
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
       - id: bandit
-        additional_dependencies: [pbr]
-        args: [-r, nostr_tools, --severity-level, high, -x, "tests examples"]
+        args: [
+          -r, nostr_tools,
+          --severity-level, medium,
+          --confidence-level, medium,
+          --exclude, tests,examples
+        ]
         pass_filenames: false
+
+  # Check Python docstrings
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        args: [--convention=google, --add-ignore=D100,D104,D105,D107]
+        files: ^nostr_tools/
+
+  # Check for common security issues
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: \.git/|\.pytest_cache/|\.mypy_cache/|\.ruff_cache/
 
 # Configuration
 default_stages: [pre-commit]
 fail_fast: false
+minimum_pre_commit_version: "3.0.0"
+
+# Run some hooks on all files for initial setup
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [mypy, bandit, detect-secrets]  # Skip slow hooks on CI
+  submodules: false

@@ -65,6 +65,15 @@ jobs:
       with:
         python-version: "3.11"
 
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-lint-
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -77,7 +86,7 @@ jobs:
       run: ruff format --check nostr_tools tests examples
 
     - name: Run MyPy type checking
-      run: mypy nostr_tools --ignore-missing-imports
+      run: mypy nostr_tools --ignore-missing-imports --show-error-codes
 
   security:
     runs-on: ubuntu-latest
