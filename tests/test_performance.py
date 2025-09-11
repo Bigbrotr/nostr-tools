@@ -7,16 +7,12 @@ meets performance requirements for key operations.
 
 import pytest
 import time
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import Mock
 
 from nostr_tools import (
-    generate_keypair, generate_event, Event, Filter, Relay,
-    calc_event_id, verify_sig, sig_event_id, to_bech32, to_hex
+    generate_keypair, generate_event, Event, Filter,
+    calc_event_id, verify_sig, to_bech32, to_hex
 )
-from tests.conftest import generate_test_events
-
 
 @pytest.mark.slow
 class TestCryptographicPerformance:

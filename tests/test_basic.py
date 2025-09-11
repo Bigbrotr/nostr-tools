@@ -7,8 +7,6 @@ network connections or external dependencies.
 
 import pytest
 import time
-import json
-from unittest.mock import Mock, patch
 
 from nostr_tools import (
     Event, Relay, Filter, generate_keypair, generate_event,

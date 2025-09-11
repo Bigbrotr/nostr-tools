@@ -8,8 +8,8 @@ that are used across multiple test files.
 import pytest
 import asyncio
 import time
-from typing import Generator, Tuple
-from unittest.mock import Mock, AsyncMock
+from typing import Tuple
+from unittest.mock import AsyncMock
 
 from nostr_tools import (
     generate_keypair, generate_event, Event, Relay, Client, Filter

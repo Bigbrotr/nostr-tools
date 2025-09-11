@@ -6,13 +6,11 @@ and protection against common attack vectors.
 """
 
 import pytest
-import json
-import secrets
 from unittest.mock import patch
 
 from nostr_tools import (
     generate_keypair, generate_event, Event, Filter, Relay,
-    verify_sig, calc_event_id, validate_keypair, to_bech32, to_hex,
+    verify_sig, validate_keypair, to_bech32, to_hex,
     sanitize, find_websocket_relay_urls
 )
 

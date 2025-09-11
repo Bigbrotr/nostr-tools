@@ -6,18 +6,16 @@ with real Nostr relays. They may be slower and less reliable than unit tests.
 """
 
 import pytest
-import asyncio
 import time
-from unittest.mock import patch
 
 from nostr_tools import (
-    Client, Relay, Filter, Event, generate_keypair, generate_event,
+    Client, Relay, Filter, Event, generate_event,
     fetch_events, stream_events, compute_relay_metadata,
     fetch_nip11, check_connectivity, check_readability, check_writability,
     RelayConnectionError
 )
-from tests.conftest import skip_integration, generate_test_events
-from tests import TEST_RELAY_URL, TEST_TIMEOUT
+from tests.conftest import skip_integration
+from tests import TEST_RELAY_URL
 
 
 @pytest.mark.integration
