@@ -258,7 +258,7 @@ def find_websocket_relay_urls(text: str) -> List[str]:
 
 
 def sanitize(value: Any) -> Any:
-    """
+    r"""
     Sanitize values by removing null bytes and recursively cleaning data structures.
 
     This function removes null bytes (\x00) from strings and recursively processes

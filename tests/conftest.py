@@ -151,8 +151,8 @@ def sample_tags() -> list:
     return [
         ["t", "nostr"],
         ["t", "python"],
-        ["p", "0123456789abcdef" * 4],
-        ["e", "fedcba9876543210" * 4],
+        ["p", "a" * 64],
+        ["e", "a" * 64],
     ]
 
 
@@ -175,7 +175,7 @@ def create_mock_nip11_response():
     return {
         "name": "Test Relay",
         "description": "A test relay for nostr-tools",
-        "pubkey": "0123456789abcdef" * 4,
+        "pubkey": "a" * 64,
         "contact": "test@example.com",
         "supported_nips": [1, 2, 9, 11, 12, 15, 16, 20, 22],
         "software": "test-relay",

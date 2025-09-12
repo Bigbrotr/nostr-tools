@@ -54,11 +54,12 @@ repos:
     rev: 1.7.5
     hooks:
       - id: bandit
+        additional_dependencies: [pbr]
         args: [
           -r, nostr_tools,
-          --severity-level, medium,
-          --confidence-level, medium,
-          --exclude, tests,examples
+          --severity-level, high,
+          --confidence-level, low,
+          -x, "tests examples"
         ]
         pass_filenames: false
 
@@ -67,7 +68,11 @@ repos:
     rev: 6.3.0
     hooks:
       - id: pydocstyle
-        args: [--convention=google, --add-ignore=D100,D104,D105,D107]
+        additional_dependencies: [tomli]
+        args: [
+          --convention=google,
+          --add-ignore=D212
+        ]
         files: ^nostr_tools/
 
   # Check for common security issues

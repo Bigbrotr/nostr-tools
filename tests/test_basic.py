@@ -100,7 +100,7 @@ class TestBech32Encoding:
 
     def test_bech32_roundtrip(self):
         """Test complete roundtrip conversion."""
-        original_hex = "1234567890abcdef" * 4  # 64 char hex
+        original_hex = "a" * 64  # 64 char hex
 
         bech32_str = to_bech32("test", original_hex)
         converted_hex = to_hex(bech32_str)

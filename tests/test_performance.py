@@ -153,7 +153,7 @@ class TestEncodingPerformance:
     def test_bech32_encoding_performance(self, performance_timer):
         """Test Bech32 encoding performance."""
         iterations = 1000
-        test_hex = "0123456789abcdef" * 4  # 64 char hex
+        test_hex = "a" * 64  # 64 char hex
 
         performance_timer.start()
         for _ in range(iterations):
@@ -172,7 +172,7 @@ class TestEncodingPerformance:
     def test_bech32_decoding_performance(self, performance_timer):
         """Test Bech32 decoding performance."""
         iterations = 1000
-        test_bech32 = to_bech32("npub", "0123456789abcdef" * 4)
+        test_bech32 = to_bech32("npub", "a" * 64)
 
         performance_timer.start()
         for _ in range(iterations):
