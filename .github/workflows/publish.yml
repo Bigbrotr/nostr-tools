@@ -3,9 +3,11 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
-  publish:
+  publish-testpypi:
+    name: Publish to TestPyPI
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -42,7 +44,42 @@ jobs:
         echo "⏳ Waiting for package to be available on Test PyPI..."
         sleep 60
         pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ nostr-tools[test]
-        python -c "import nostr_tools; print(f'✅ Test installation successful - version {nostr_tools.__version__}')"
+        python -c "import nostr_tools; print(f'✅ TestPyPI installation successful - version {nostr_tools.__version__}')"
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    needs: publish-testpypi
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Check package
+      run: twine check dist/*
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+
+    - name: Test installation from PyPI
+      run: |
+        echo "⏳ Waiting for package to be available on PyPI..."
+        sleep 60
+        pip install nostr-tools[test]
+        python -c "import nostr_tools; print(f'✅ PyPI installation successful - version {nostr_tools.__version__}')"
