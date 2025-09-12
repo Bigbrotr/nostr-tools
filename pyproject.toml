@@ -59,7 +59,7 @@ dev = [
     "pytest-mock>=3.10.0,<4.0.0",
 
     # Code quality and formatting
-    "ruff>=0.1.0,<1.0.0",                  # Fast Python linter and formatter
+    "ruff==0.8.4",                         # Linter and formatter
     "mypy>=1.0.0,<2.0.0",                  # Static type checker
     "pre-commit>=3.0.0,<4.0.0",            # Git hooks for code quality
 
