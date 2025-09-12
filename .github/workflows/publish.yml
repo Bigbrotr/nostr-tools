@@ -34,7 +34,7 @@ jobs:
       run: twine check dist/*
 
     - name: Publish to Test PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@v1.9.0
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
@@ -75,7 +75,7 @@ jobs:
       run: twine check dist/*
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@v1.9.0
 
     - name: Test installation from PyPI
       run: |
