@@ -10,12 +10,13 @@ jobs:
     environment: release
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      contents: read
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
@@ -38,9 +39,10 @@ jobs:
 
     - name: Test installation from Test PyPI
       run: |
-        sleep 60  # Wait for package to be available
+        echo "⏳ Waiting for package to be available on Test PyPI..."
+        sleep 60
         pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ nostr-tools[test]
-        python -c "import nostr_tools; print(f'Test installation successful - version {nostr_tools.__version__}')"
+        python -c "import nostr_tools; print(f'✅ Test installation successful - version {nostr_tools.__version__}')"
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1

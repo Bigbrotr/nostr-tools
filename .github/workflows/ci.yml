@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -28,7 +28,7 @@ jobs:
         sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool
 
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
@@ -48,7 +48,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
@@ -61,12 +61,12 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
@@ -88,9 +88,9 @@ jobs:
         if ruff format --check nostr_tools tests examples; then
           echo "✅ Code formatting is already correct"
         else
-          echo "🔧 Auto-fixing formatting issues..."
-          ruff format nostr_tools tests examples
-          echo "✅ Code formatted successfully"
+          echo "❌ Code formatting issues found"
+          echo "Run 'ruff format nostr_tools tests examples' to fix formatting"
+          exit 1
         fi
 
     - name: Run MyPy type checking
@@ -102,7 +102,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
@@ -112,10 +112,20 @@ jobs:
         pip install -e .[security]
 
     - name: Run Bandit security checks
-      run: bandit -r nostr_tools -f json || true
+      run: |
+        echo "🔒 Running Bandit security checks..."
+        bandit -r nostr_tools -f text --severity-level medium || {
+          echo "⚠️ Security issues found but continuing CI"
+          exit 0
+        }
 
     - name: Run Safety dependency checks
-      run: safety check || true
+      run: |
+        echo "🛡️ Checking dependencies for known vulnerabilities..."
+        safety check --json || {
+          echo "⚠️ Dependency vulnerabilities found but continuing CI"
+          exit 0
+        }
 
   build:
     runs-on: ubuntu-latest
@@ -124,7 +134,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
@@ -140,7 +150,57 @@ jobs:
       run: twine check dist/*
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-${{ github.sha }}
         path: dist/
+        retention-days: 30
+
+  integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, lint]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test]
+
+    - name: Run integration tests
+      run: |
+        echo "🌐 Running integration tests (with network access)..."
+        python -m pytest -m integration --tb=short -v
+      env:
+        NOSTR_SKIP_INTEGRATION: "false"
+        NOSTR_TEST_TIMEOUT: "30"
+      timeout-minutes: 10
+
+  performance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test]
+
+    - name: Run performance tests
+      run: |
+        echo "🏃 Running performance benchmarks..."
+        python -m pytest -m slow --tb=short -v
+      timeout-minutes: 15
