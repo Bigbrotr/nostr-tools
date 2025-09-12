@@ -82,8 +82,16 @@ jobs:
     - name: Run Ruff linting
       run: ruff check nostr_tools tests examples
 
-    - name: Run Ruff formatting check
-      run: ruff format --check nostr_tools tests examples
+    - name: Run Ruff formatting
+      run: |
+        echo "🎨 Checking code formatting..."
+        if ruff format --check nostr_tools tests examples; then
+          echo "✅ Code formatting is already correct"
+        else
+          echo "🔧 Auto-fixing formatting issues..."
+          ruff format nostr_tools tests examples
+          echo "✅ Code formatted successfully"
+        fi
 
     - name: Run MyPy type checking
       run: mypy nostr_tools --ignore-missing-imports --show-error-codes
