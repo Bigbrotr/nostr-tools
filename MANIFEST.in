@@ -1,41 +1,366 @@
-# Include important files in the distribution
+# MANIFEST.in - Package distribution file specification
+# This file specifies which files to include in the source distribution
+# when building packages for PyPI distribution.
+
+# =====================================================
+# Core Documentation Files
+# =====================================================
+
+# Essential project documentation
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include SECURITY.md
 include LICENSE
-include pyproject.toml
 
-# Include package data
+# Project configuration files
+include pyproject.toml
+include Makefile
+
+# =====================================================
+# Package Source Code
+# =====================================================
+
+# Main package code (recursive inclusion)
 recursive-include nostr_tools *.py
+
+# Type information for mypy support
 include nostr_tools/py.typed
 
-# Include examples for documentation
-recursive-include examples *.py
+# =====================================================
+# Examples and Documentation
+# =====================================================
 
-# Exclude unnecessary files
+# Example applications and demonstrations
+recursive-include examples *.py
+include examples/README.md
+
+# Additional documentation (if present)
+recursive-include docs *.md *.rst *.txt
+recursive-include docs *.html *.css *.js
+recursive-include docs Makefile
+
+# =====================================================
+# Development and Testing Files (EXCLUDED)
+# =====================================================
+
+# Exclude test files from distribution packages
+# Tests should not be included in user installations
+exclude tests
+recursive-exclude tests *
+prune tests
+
+# Exclude development configuration
+exclude .pre-commit-config.yaml
+exclude .secrets.baseline
+exclude conftest.py
+
+# =====================================================
+# Build and CI Configuration (EXCLUDED)
+# =====================================================
+
+# GitHub Actions and CI configuration
+exclude .github
+recursive-exclude .github *
+prune .github
+
+# Development environment files
+exclude .python-version
+exclude requirements*.txt
+exclude tox.ini
+exclude noxfile.py
+
+# =====================================================
+# IDE and Editor Files (EXCLUDED)
+# =====================================================
+
+# Visual Studio Code
+exclude .vscode
+recursive-exclude .vscode *
+prune .vscode
+
+# PyCharm/IntelliJ
+exclude .idea
+recursive-exclude .idea *
+prune .idea
+
+# Vim/Emacs temporary files
+global-exclude *~
+global-exclude *.swp
+global-exclude *.swo
+
+# =====================================================
+# Version Control Files (EXCLUDED)
+# =====================================================
+
+# Git repository files
+exclude .git
+recursive-exclude .git *
+exclude .gitignore
+exclude .gitattributes
+prune .git
+
+# Other VCS
+exclude .hg
+exclude .svn
+recursive-exclude .hg *
+recursive-exclude .svn *
+prune .hg
+prune .svn
+
+# =====================================================
+# Build Artifacts and Caches (EXCLUDED)
+# =====================================================
+
+# Python bytecode and cache files
 global-exclude *.pyc
 global-exclude *.pyo
 global-exclude *.pyd
 global-exclude __pycache__
-global-exclude .pytest_cache
-global-exclude .mypy_cache
-global-exclude .coverage
-global-exclude .DS_Store
-global-exclude .vscode
-global-exclude .idea
-global-exclude *.egg-info
-global-exclude build
-global-exclude dist
-global-exclude venv
-global-exclude .venv
-global-exclude .git
-global-exclude .gitignore
-global-exclude *.log
-global-exclude .tox
-global-exclude htmlcov
-global-exclude .github
+recursive-exclude * __pycache__
+prune __pycache__
 
-# Exclude test files from distribution
-exclude tests
-recursive-exclude tests *
+# Build directories and artifacts
+exclude build
+exclude dist
+recursive-exclude build *
+recursive-exclude dist *
+prune build
+prune dist
+
+# Setuptools build artifacts
+exclude *.egg-info
+recursive-exclude *.egg-info *
+prune *.egg-info
+
+# =====================================================
+# Testing and Coverage Artifacts (EXCLUDED)
+# =====================================================
+
+# Pytest cache and artifacts
+exclude .pytest_cache
+recursive-exclude .pytest_cache *
+prune .pytest_cache
+
+# Coverage reports and data
+exclude .coverage
+exclude .coverage.*
+exclude coverage.xml
+exclude htmlcov
+recursive-exclude htmlcov *
+prune htmlcov
+
+# Tox testing environments
+exclude .tox
+recursive-exclude .tox *
+prune .tox
+
+# Nox testing environments
+exclude .nox
+recursive-exclude .nox *
+prune .nox
+
+# =====================================================
+# Code Quality Tool Artifacts (EXCLUDED)
+# =====================================================
+
+# Ruff cache (modern linter/formatter)
+exclude .ruff_cache
+recursive-exclude .ruff_cache *
+prune .ruff_cache
+
+# MyPy cache (type checker)
+exclude .mypy_cache
+recursive-exclude .mypy_cache *
+prune .mypy_cache
+
+# Legacy linter caches (in case they exist)
+exclude .flake8_cache
+exclude .pylint_cache
+recursive-exclude .flake8_cache *
+recursive-exclude .pylint_cache *
+prune .flake8_cache
+prune .pylint_cache
+
+# =====================================================
+# Virtual Environments (EXCLUDED)
+# =====================================================
+
+# Common virtual environment directory names
+exclude venv
+exclude .venv
+exclude env
+exclude .env
+exclude ENV
+recursive-exclude venv *
+recursive-exclude .venv *
+recursive-exclude env *
+recursive-exclude .env *
+recursive-exclude ENV *
+prune venv
+prune .venv
+prune env
+prune .env
+prune ENV
+
+# Conda environments
+exclude .conda
+recursive-exclude .conda *
+prune .conda
+
+# =====================================================
+# Operating System Files (EXCLUDED)
+# =====================================================
+
+# macOS system files
+global-exclude .DS_Store
+global-exclude .DS_Store?
+global-exclude ._*
+global-exclude .Spotlight-V100
+global-exclude .Trashes
+
+# Windows system files
+global-exclude ehthumbs.db
+global-exclude Thumbs.db
+global-exclude Desktop.ini
+
+# Linux system files
+global-exclude .directory
+
+# =====================================================
+# Log Files and Temporary Files (EXCLUDED)
+# =====================================================
+
+# Log files
+global-exclude *.log
+exclude logs
+recursive-exclude logs *
+prune logs
+
+# Temporary files
+global-exclude *.tmp
+global-exclude *.temp
+global-exclude *.bak
+global-exclude *.backup
+global-exclude *~
+
+# =====================================================
+# Security and Sensitive Files (EXCLUDED)
+# =====================================================
+
+# Security sensitive files and keys
+global-exclude *.pem
+global-exclude *.key
+global-exclude *.p12
+global-exclude *.pfx
+exclude secrets.json
+exclude .env.local
+exclude .env.development
+exclude .env.test
+exclude .env.production
+
+# =====================================================
+# Documentation Build Artifacts (EXCLUDED)
+# =====================================================
+
+# Sphinx documentation builds
+exclude docs/_build
+recursive-exclude docs/_build *
+prune docs/_build
+
+# Other documentation generators
+exclude site
+recursive-exclude site *
+prune site
+
+# =====================================================
+# Jupyter Notebook Files (CONDITIONAL)
+# =====================================================
+
+# Include Jupyter notebooks only if they're examples or tutorials
+include examples/*.ipynb
+include docs/*.ipynb
+
+# Exclude notebook checkpoints and cache
+global-exclude .ipynb_checkpoints
+recursive-exclude * .ipynb_checkpoints
+prune .ipynb_checkpoints
+
+# =====================================================
+# Package Manager Files (EXCLUDED)
+# =====================================================
+
+# Node.js (if any JavaScript tooling is used)
+exclude node_modules
+exclude package.json
+exclude package-lock.json
+exclude yarn.lock
+recursive-exclude node_modules *
+prune node_modules
+
+# Ruby (if any Ruby tooling is used)
+exclude Gemfile
+exclude Gemfile.lock
+
+# =====================================================
+# Special Cases and Edge Cases
+# =====================================================
+
+# Exclude any development notes or temporary files
+exclude TODO.md
+exclude NOTES.md
+exclude note.txt
+exclude test.ipynb
+
+# Exclude any local configuration overrides
+exclude local_settings.py
+exclude local_config.py
+exclude .local
+
+# Exclude profiling and debugging output
+exclude *.prof
+exclude *.profile
+exclude gmon.out
+
+# Exclude any accidentally included binaries
+global-exclude *.exe
+global-exclude *.dll
+global-exclude *.so
+global-exclude *.dylib
+
+# =====================================================
+# Include Patterns for Special Cases
+# =====================================================
+
+# Force include important hidden files if they exist
+include .gitkeep
+
+# Include any configuration files that should be distributed
+include *.cfg
+include *.ini
+include *.toml
+include *.yaml
+include *.yml
+
+# Include data files if they exist (be cautious about size)
+recursive-include nostr_tools/data *.json
+recursive-include nostr_tools/data *.txt
+recursive-include nostr_tools/data *.csv
+
+# =====================================================
+# Final Cleanup Exclusions
+# =====================================================
+
+# Exclude any files that might be created by the build process
+exclude MANIFEST
+exclude pip-selfcheck.json
+
+# Exclude any backup files created by editors
+global-exclude #*#
+global-exclude .#*
+
+# Exclude any patch files
+global-exclude *.patch
+global-exclude *.diff
+global-exclude *.orig
+global-exclude *.rej

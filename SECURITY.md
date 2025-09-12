@@ -1,183 +1,582 @@
 # Security Policy
 
-## Supported Versions
+## Overview
 
-We actively support the following versions of nostr-tools with security updates:
+Security is fundamental to nostr-tools, as the library handles sensitive cryptographic operations and network communications in the Nostr protocol ecosystem. This document outlines our security policies, reporting procedures, and best practices for developers and users.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+## 📋 Supported Versions
 
-## Reporting a Vulnerability
+We provide security updates for the following versions of nostr-tools:
 
-We take the security of nostr-tools seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+| Version | Security Support | Support Status | End of Life |
+|---------|------------------|----------------|-------------|
+| 0.1.x   | ✅ **Active**   | Full support  | TBD         |
+| < 0.1.0 | ❌ **Deprecated** | None         | Immediate   |
 
-### How to Report
+### Security Update Policy
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+- **Critical vulnerabilities**: Patch released within 48 hours
+- **High severity**: Patch released within 1 week  
+- **Medium severity**: Patch released within 2 weeks
+- **Low severity**: Included in next scheduled release
 
-Instead, please report them via email to: **security@bigbrotr.com**
+## 🚨 Reporting Security Vulnerabilities
 
-Please include the following information in your report:
+**Please DO NOT report security vulnerabilities through public GitHub issues.**
 
-- Type of issue (buffer overflow, SQL injection, cross-site scripting, etc.)
-- Full paths of source file(s) related to the manifestation of the issue
-- The location of the affected source code (tag/branch/commit or direct URL)
-- Any special configuration required to reproduce the issue
-- Step-by-step instructions to reproduce the issue
-- Proof-of-concept or exploit code (if possible)
-- Impact of the issue, including how an attacker might exploit the issue
+### Reporting Process
 
-### Response Timeline
+1. **Email**: Send detailed vulnerability reports to **security@bigbrotr.com**
+2. **Response Time**: We will acknowledge receipt within 48 hours
+3. **Confidentiality**: Please keep vulnerability details confidential until we release a fix
 
-- **Initial Response**: We will acknowledge receipt of your vulnerability report within 48 hours.
-- **Investigation**: We will investigate and validate the vulnerability within 5 business days.
-- **Resolution**: For confirmed vulnerabilities, we aim to release a fix within 2 weeks for critical issues, and within 4 weeks for moderate issues.
-- **Disclosure**: We will coordinate with you on the timing of public disclosure.
+### Information to Include
 
-### Vulnerability Disclosure Policy
+Please provide as much detail as possible:
 
-- We will acknowledge your contribution in the security advisory (unless you prefer to remain anonymous)
-- We will provide you with a timeline for when you can expect resolution
-- We will notify you when the vulnerability is fixed
-- We request that you keep vulnerability details confidential until we can release a fix
+- **Vulnerability Type**: Buffer overflow, injection, authentication bypass, etc.
+- **Affected Components**: Specific modules, functions, or classes
+- **Impact Assessment**: Potential consequences if exploited
+- **Attack Scenario**: Step-by-step reproduction instructions
+- **Proof of Concept**: Code demonstrating the vulnerability (if safe to share)
+- **Affected Versions**: Which versions are vulnerable
+- **Suggested Fix**: If you have ideas for remediation
+- **Discovery Context**: How you discovered the vulnerability
+- **Credit Information**: How you'd like to be credited (or remain anonymous)
 
-## Security Considerations
+### Vulnerability Report Template
 
-### Cryptographic Operations
+```
+Subject: [SECURITY] Vulnerability Report - [Brief Description]
 
-This library handles sensitive cryptographic operations including:
+Vulnerability Details:
+- Type: [e.g., Cryptographic weakness, Input validation, etc.]
+- Severity: [Critical/High/Medium/Low - your assessment]
+- Component: [e.g., nostr_tools.core.event, utils.crypto, etc.]
+- Versions Affected: [e.g., 0.1.0 and later]
 
-- Private key generation and storage
-- Event signing with Schnorr signatures
-- Proof-of-work mining
+Description:
+[Detailed description of the vulnerability]
 
-**Important Security Notes:**
+Impact:
+[Potential security impact if exploited]
 
-1. **Private Key Management**:
-   - Never hardcode private keys in your application
-   - Store private keys securely (encrypted at rest)
-   - Use environment variables or secure key management systems
-   - Consider using hardware security modules (HSMs) for production
+Reproduction Steps:
+1. [Step one]
+2. [Step two]
+3. [Result/Impact]
 
-2. **Random Number Generation**:
-   - The library uses `os.urandom()` for secure random number generation
-   - Ensure your system has sufficient entropy
+Proof of Concept:
+[Code or commands demonstrating the issue - if safe to share]
 
-3. **Network Communication**:
-   - Always use WSS (WebSocket Secure) for relay connections when possible
-   - Be cautious when using cleartext WS connections
-   - Validate relay certificates
+Suggested Mitigation:
+[Your suggestions for fixing the vulnerability]
 
-4. **Input Validation**:
-   - The library validates all inputs, but always sanitize data from external sources
-   - Be cautious with event content that may contain malicious data
+Additional Information:
+[Any other relevant details]
 
-### Tor Network Considerations
+Credit:
+[How you'd like to be acknowledged, or "Anonymous" if preferred]
+```
 
-When using Tor relays:
+## 🔒 Security Architecture
 
-- Ensure your SOCKS5 proxy is properly configured
-- Be aware of potential timing correlation attacks
-- Consider using Tor Browser's SOCKS proxy for better anonymity
+### Cryptographic Security
 
-### Dependencies
+nostr-tools implements industry-standard cryptographic practices:
 
-We regularly update dependencies to address security vulnerabilities:
+#### **Elliptic Curve Cryptography**
+- **Library**: `secp256k1` (Bitcoin's elliptic curve)
+- **Key Generation**: Secure random number generation using `os.urandom()`
+- **Signature Scheme**: Schnorr signatures as specified in NIP-01
+- **Key Validation**: Comprehensive validation of all cryptographic inputs
 
-- **secp256k1**: Cryptographic operations
-- **aiohttp**: HTTP/WebSocket client
-- **bech32**: Address encoding
-- **aiohttp-socks**: SOCKS proxy support
+#### **Random Number Generation**
+```python
+# Secure entropy source
+import os
+private_key_bytes = os.urandom(32)  # 256 bits of entropy
+```
 
-Run `safety check` to scan for known vulnerabilities in dependencies.
+#### **Memory Safety**
+- Automatic cleanup of sensitive data structures
+- No persistence of private keys in memory longer than necessary
+- Protection against memory dumps containing sensitive data
 
-## Best Practices for Developers
+### Network Security
 
-### Secure Development
+#### **Transport Layer Security**
+- **Default Protocol**: WSS (WebSocket Secure) preferred over WS
+- **TLS Validation**: Proper certificate validation for secure connections
+- **Tor Support**: Native .onion relay support with SOCKS5 proxy
 
-1. **Code Review**: All code changes undergo security review
-2. **Static Analysis**: We use tools like `bandit` for security scanning
-3. **Dependency Scanning**: Regular scans with `safety` and `pip-audit`
-4. **Testing**: Comprehensive test suite including security edge cases
+#### **Connection Security**
+```python
+# ✅ Secure connection (recommended)
+relay = Relay("wss://relay.example.com")
+
+# ⚠️ Insecure connection (avoid in production)
+relay = Relay("ws://relay.example.com")
+```
+
+### Input Validation Security
+
+#### **Comprehensive Validation**
+- All inputs validated for type, format, and range
+- Protection against null-byte injection attacks
+- Validation of event structure according to NIP-01
+- Sanitization of untrusted data from network sources
+
+#### **Example Validation**
+```python
+def validate_event_data(data: Dict[str, Any]) -> None:
+    """Comprehensive event validation with security checks."""
+    # Type validation
+    if not isinstance(data, dict):
+        raise TypeError("Event data must be a dictionary")
+
+    # Required field validation
+    required_fields = ["id", "pubkey", "created_at", "kind", "tags", "content", "sig"]
+    for field in required_fields:
+        if field not in data:
+            raise KeyError(f"Missing required field: {field}")
+
+    # Format validation
+    if not re.match(r"^[0-9a-f]{64}$", data["id"]):
+        raise ValueError("Invalid event ID format")
+
+    # Content sanitization
+    if "\x00" in data["content"]:
+        raise ValueError("Null bytes not allowed in content")
+```
+
+## 🛡️ Security Best Practices
 
 ### For Library Users
 
-1. **Keep Updated**: Always use the latest version of nostr-tools
-2. **Validate Inputs**: Sanitize and validate all external inputs
-3. **Secure Storage**: Never store private keys in plaintext
-4. **Network Security**: Use secure connections and validate certificates
-5. **Error Handling**: Implement proper error handling to avoid information leakage
-
-### Example Secure Usage
-
+#### **Private Key Management**
 ```python
 import os
-from nostr_tools import generate_keypair, Client, Relay
+from nostr_tools import generate_keypair
 
-# Secure key generation
-private_key, public_key = generate_keypair()
+# ✅ DO: Use environment variables for key storage
+private_key = os.getenv('NOSTR_PRIVATE_KEY')
+if not private_key:
+    private_key, public_key = generate_keypair()
+    # Store securely (use proper key management in production)
 
-# Store keys securely (example - use proper key management in production)
-os.environ['NOSTR_PRIVATE_KEY'] = private_key  # Better: use encrypted storage
+# ✅ DO: Use secure key generation
+private_key, public_key = generate_keypair()  # Uses os.urandom()
 
-# Use secure relay connections
-relay = Relay("wss://relay.damus.io")  # WSS, not WS
-client = Client(relay, timeout=30)
+# ❌ DON'T: Hardcode private keys
+# private_key = "..."  # Never do this!
 
-# Proper error handling
-try:
-    async with client:
-        # Your code here
-        pass
-except Exception as e:
-    # Log errors securely (don't expose sensitive data)
-    print(f"Connection error occurred")  # Don't log the full exception
+# ❌ DON'T: Store keys in plaintext files
+# with open('private_key.txt', 'w') as f:
+#     f.write(private_key)  # Insecure!
 ```
 
-## Threat Model
+#### **Network Security**
+```python
+from nostr_tools import Relay, Client
 
-### Assets Protected
+# ✅ DO: Use secure WebSocket connections
+relay = Relay("wss://relay.example.com")  # Encrypted connection
 
-- Private keys and cryptographic material
-- Event content and metadata
-- Network communications
-- User privacy and anonymity
+# ✅ DO: Validate relay certificates (automatic)
+client = Client(relay, timeout=30)
 
-### Potential Threats
+# ✅ DO: Use Tor for enhanced privacy when needed
+tor_relay = Relay("wss://example.onion")
+tor_client = Client(
+    tor_relay,
+    socks5_proxy_url="socks5://127.0.0.1:9050"
+)
 
-1. **Key Compromise**: Unauthorized access to private keys
-2. **Network Attacks**: Man-in-the-middle, traffic analysis
-3. **Code Injection**: Malicious content in events
-4. **Denial of Service**: Resource exhaustion attacks
-5. **Privacy Leaks**: Correlation of identities or activities
+# ⚠️ AVOID: Unencrypted connections in production
+# relay = Relay("ws://relay.example.com")  # Unencrypted!
+```
 
-### Mitigations
+#### **Input Validation**
+```python
+from nostr_tools import Event, sanitize
 
-- Secure key generation and storage
-- Input validation and sanitization
-- Rate limiting and resource management
-- Secure network protocols
-- Privacy-preserving practices
+# ✅ DO: Validate all external data
+def safe_event_handler(event_data):
+    try:
+        # Automatic validation during Event creation
+        event = Event.from_dict(event_data)
 
-## Incident Response
+        # Additional sanitization for display
+        safe_content = sanitize(event.content)
+        return safe_content
+    except (ValueError, TypeError) as e:
+        print(f"Invalid event rejected: {e}")
+        return None
 
-In case of a security incident:
+# ✅ DO: Sanitize data from untrusted sources
+untrusted_data = {"content": "Hello\x00World"}
+clean_data = sanitize(untrusted_data)  # Removes null bytes
+```
 
-1. **Immediate Response**: Isolate affected systems
-2. **Assessment**: Determine scope and impact
-3. **Containment**: Prevent further damage
-4. **Recovery**: Restore normal operations
-5. **Lessons Learned**: Update security measures
+#### **Error Handling**
+```python
+from nostr_tools import RelayConnectionError
+import logging
 
-## Contact
+# ✅ DO: Handle errors gracefully without information leakage
+async def secure_relay_connection():
+    try:
+        async with client:
+            # Relay operations
+            pass
+    except RelayConnectionError as e:
+        # Log error securely (don't expose sensitive info)
+        logging.warning("Relay connection failed")
+        # Don't log the full exception in production
+    except Exception as e:
+        # Catch unexpected errors
+        logging.error("Unexpected error occurred")
+        # Don't expose internal details to users
 
-For security-related questions or concerns:
+# ❌ DON'T: Expose sensitive information in error messages
+# except Exception as e:
+#     print(f"Error: {e}")  # May contain sensitive details
+```
 
-- **Security Email**: security@bigbrotr.com
-- **General Contact**: hello@bigbrotr.com
-- **GitHub Issues**: For non-security bugs only
+### For Library Contributors
 
-## Acknowledgments
+#### **Secure Development Practices**
+```python
+# ✅ DO: Validate all inputs comprehensively
+def process_relay_metadata(data: Any) -> Optional[Dict[str, Any]]:
+    # Type validation
+    if not isinstance(data, dict):
+        return None
 
-We appreciate the security research community's efforts to improve the security of nostr-tools and the broader Nostr ecosystem.
+    # Sanitize all string values
+    sanitized = {}
+    for key, value in data.items():
+        if isinstance(key, str) and isinstance(value, (str, int, list, dict)):
+            sanitized[sanitize(key)] = sanitize(value)
+
+    return sanitized
+
+# ✅ DO: Use type hints for security clarity
+def sign_event(private_key: str, event_id: str) -> str:
+    """Sign event with proper type validation."""
+    if not isinstance(private_key, str) or len(private_key) != 64:
+        raise ValueError("Invalid private key format")
+    # Implementation...
+
+# ✅ DO: Implement comprehensive error handling
+def validate_signature(event_id: str, pubkey: str, signature: str) -> bool:
+    """Validate signature with proper error handling."""
+    try:
+        # Validation logic
+        return True
+    except Exception:
+        # Never expose internal cryptographic errors
+        return False
+```
+
+#### **Testing Security**
+```python
+# Security-focused test example
+@pytest.mark.security
+def test_private_key_not_exposed_in_error():
+    """Ensure private keys are not exposed in error messages."""
+    private_key = "..."
+
+    try:
+        # Trigger an error condition
+        result = some_operation(private_key)
+    except Exception as e:
+        error_message = str(e)
+
+        # Verify sensitive data is not in error message
+        assert private_key not in error_message
+        assert "sensitive" not in error_message.lower()
+```
+
+## 🔍 Security Testing and Auditing
+
+### Automated Security Testing
+
+We use multiple layers of automated security testing:
+
+#### **Static Security Analysis**
+```bash
+# Bandit - Security vulnerability scanner
+bandit -r nostr_tools -f json
+
+# Safety - Dependency vulnerability scanner  
+safety check --json
+
+# Semgrep - Static analysis security scanner
+semgrep --config=p/security-audit nostr_tools/
+```
+
+#### **Dependency Security**
+```bash
+# Check for known vulnerabilities in dependencies
+pip-audit --format=json --output=security-report.json
+
+# Regular dependency updates
+pip list --outdated
+```
+
+### Manual Security Review Checklist
+
+#### **Code Review Security Checklist**
+- [ ] **Input Validation**: All inputs validated and sanitized
+- [ ] **Cryptographic Operations**: Proper use of cryptographic libraries
+- [ ] **Error Handling**: No sensitive data leaked in error messages
+- [ ] **Memory Management**: Sensitive data properly cleaned up
+- [ ] **Network Security**: Secure connections used by default
+- [ ] **Authentication**: Proper authentication mechanisms
+- [ ] **Authorization**: Appropriate access controls
+- [ ] **Logging**: No sensitive data logged
+
+#### **Cryptographic Review**
+- [ ] **Random Number Generation**: Uses cryptographically secure randomness
+- [ ] **Key Management**: Proper key generation, storage, and disposal
+- [ ] **Signature Validation**: Comprehensive signature verification
+- [ ] **Hash Functions**: Appropriate hash functions for use case
+- [ ] **Timing Attacks**: Protection against timing-based attacks
+
+## 🚨 Incident Response
+
+### Security Incident Classification
+
+#### **Critical (P0)**
+- Remote code execution vulnerabilities
+- Private key extraction or compromise
+- Authentication bypass allowing unauthorized access
+- Mass data exposure or privacy breaches
+
+#### **High (P1)**  
+- Local privilege escalation
+- Signature verification bypass
+- Denial of service affecting availability
+- Information disclosure of sensitive data
+
+#### **Medium (P2)**
+- Input validation issues
+- Minor information disclosure
+- Performance degradation attacks
+- Configuration security issues
+
+#### **Low (P3)**
+- Security improvements
+- Hardening opportunities
+- Documentation security issues
+
+### Response Timeline
+
+| Severity | Acknowledgment | Initial Assessment | Patch Development | Patch Release |
+|----------|---------------|-------------------|-------------------|---------------|
+| Critical | 2 hours       | 4 hours           | 24 hours          | 48 hours      |
+| High     | 8 hours       | 1 day             | 3 days            | 1 week        |
+| Medium   | 1 day         | 3 days            | 1 week            | 2 weeks       |
+| Low      | 3 days        | 1 week            | Next release      | Next release  |
+
+### Incident Response Process
+
+1. **Initial Response**
+   - Acknowledge vulnerability report
+   - Assign severity level
+   - Form response team
+   - Begin impact assessment
+
+2. **Investigation**
+   - Reproduce the vulnerability
+   - Assess scope and impact
+   - Identify affected versions
+   - Develop mitigation strategy
+
+3. **Fix Development**
+   - Develop security patch
+   - Test fix comprehensively
+   - Prepare security advisory
+   - Coordinate disclosure timeline
+
+4. **Disclosure and Release**
+   - Release security update
+   - Publish security advisory
+   - Notify users and downstream projects
+   - Credit security researcher
+
+5. **Post-Incident**
+   - Conduct security review
+   - Improve security measures
+   - Update documentation
+   - Share lessons learned
+
+## 🛠️ Security Tools and Resources
+
+### Development Security Tools
+
+#### **Required Tools**
+- **Bandit**: Security issue identification in Python code
+- **Safety**: Known security vulnerabilities in dependencies  
+- **MyPy**: Static type checking to prevent type-related vulnerabilities
+- **Ruff**: Modern linter with security-focused rules
+
+#### **Recommended Tools**
+- **Semgrep**: Advanced static analysis for security patterns
+- **pip-audit**: Comprehensive dependency vulnerability scanning
+- **Detect-secrets**: Prevent accidental commit of secrets
+- **Pre-commit**: Automated security checks before commits
+
+#### **Security Testing Commands**
+```bash
+# Run comprehensive security scan
+make security-scan
+
+# Check dependencies for vulnerabilities  
+make deps-check
+
+# Run security-focused tests
+make test-security
+
+# Full security validation
+bandit -r nostr_tools && safety check && pytest -m security
+```
+
+### Security Resources
+
+#### **Nostr Protocol Security**
+- [NIP-01 Specification](https://github.com/nostr-protocol/nips/blob/master/01.md)
+- [Nostr Security Considerations](https://github.com/nostr-protocol/nips)
+- [Schnorr Signature Security](https://bip340.org/)
+
+#### **Cryptographic Resources**
+- [secp256k1 Documentation](https://github.com/bitcoin-core/secp256k1)
+- [Python Cryptography Best Practices](https://cryptography.io/)
+- [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)
+
+#### **Python Security**
+- [Python Security Documentation](https://docs.python.org/3/library/security.html)
+- [OWASP Python Security](https://owasp.org/www-project-python-security/)
+- [Bandit Security Linter](https://bandit.readthedocs.io/)
+
+## 📚 Security Education
+
+### Common Security Pitfalls
+
+#### **Cryptographic Mistakes**
+```python
+# ❌ DON'T: Use weak random number generation
+import random
+weak_key = random.randint(1, 2**256)  # Predictable!
+
+# ✅ DO: Use cryptographically secure random generation
+import os
+secure_key = os.urandom(32)  # Cryptographically secure
+```
+
+#### **Key Management Errors**
+```python
+# ❌ DON'T: Log private keys
+logging.info(f"Generated key: {private_key}")  # Sensitive data!
+
+# ✅ DO: Log only non-sensitive information
+logging.info("Keypair generated successfully")
+```
+
+#### **Input Validation Bypass**
+```python
+# ❌ DON'T: Trust external data
+def process_event(data):
+    event_id = data["id"]  # What if data is not a dict?
+    # Process without validation...
+
+# ✅ DO: Validate everything
+def process_event(data):
+    if not isinstance(data, dict):
+        raise TypeError("Expected dictionary")
+
+    event = Event.from_dict(data)  # Comprehensive validation
+    # Safe to process validated event
+```
+
+### Security Training Resources
+
+1. **Cryptography Fundamentals**
+   - Understanding elliptic curve cryptography
+   - Schnorr signature security properties
+   - Key generation and management best practices
+
+2. **Network Security**
+   - TLS/SSL certificate validation
+   - WebSocket security considerations
+   - Tor network privacy implications
+
+3. **Input Validation**
+   - Sanitization techniques
+   - Injection attack prevention
+   - Data structure validation
+
+4. **Secure Development**
+   - Threat modeling
+   - Security code review practices
+   - Vulnerability assessment techniques
+
+## 🤝 Security Community
+
+### Responsible Disclosure
+
+We support and encourage responsible disclosure of security vulnerabilities. Security researchers who follow our responsible disclosure process will receive:
+
+- **Recognition**: Public acknowledgment in security advisories (if desired)
+- **Response**: Timely communication throughout the process
+- **Collaboration**: Working together to understand and fix issues
+- **Credit**: Appropriate credit for discovering and reporting issues
+
+### Security Hall of Fame
+
+We maintain a security hall of fame to recognize researchers who have helped improve nostr-tools security:
+
+*[No security reports received yet - be the first!]*
+
+### Community Security Guidelines
+
+1. **Report Responsibly**: Follow our disclosure process
+2. **Test Safely**: Don't test vulnerabilities on production systems
+3. **Respect Privacy**: Don't access or modify data you don't own
+4. **Be Patient**: Allow time for proper fixes before public disclosure
+5. **Be Collaborative**: Work with us to understand and resolve issues
+
+## 📞 Contact Information
+
+### Security Team
+- **Email**: security@bigbrotr.com
+- **Response Time**: Within 48 hours
+- **Languages**: English
+
+### General Security Questions
+- **Email**: hello@bigbrotr.com
+- **Discussion**: [GitHub Discussions](https://github.com/bigbrotr/nostr-tools/discussions)
+
+### Emergency Contact
+For critical security issues requiring immediate attention:
+- **Email**: security@bigbrotr.com (mark as URGENT in subject)
+- **Response**: Within 2 hours during business hours
+
+---
+
+## 📋 Security Policy Updates
+
+This security policy is reviewed and updated regularly to reflect:
+- Changes in the threat landscape
+- New security features and improvements
+- Lessons learned from security incidents
+- Community feedback and best practices
+
+**Last Updated**: January 12, 2025
+**Next Review**: July 12, 2025
+
+---
+
+**Remember**: Security is everyone's responsibility. If you see something suspicious or have security concerns, please don't hesitate to reach out. Together, we can build a more secure Nostr ecosystem.
