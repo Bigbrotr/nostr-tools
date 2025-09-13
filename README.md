@@ -11,9 +11,9 @@ A comprehensive Python library for interacting with the Nostr protocol. This lib
 
 ## 🚀 Features
 
-- **Complete Nostr Protocol Support**: Full implementation of NIP-01 and related NIPs
+- **Complete Nostr Protocol Support**: Full implementation of NIP-01, NIP-11, NIP-13, and partial NIP-42
 - **Async/Await API**: Modern Python async support for high-performance applications
-- **Advanced Relay Management**: Connect to multiple relays with automatic failover and comprehensive metadata analysis
+- **Advanced Relay Management**: Connect to relays with comprehensive metadata analysis and capability testing
 - **Event Handling**: Create, sign, verify, and filter Nostr events with full validation
 - **Cryptographic Operations**: Built-in key generation, Schnorr signatures, and proof-of-work mining
 - **Tor Support**: Connect to .onion relays through SOCKS5 proxies with proper network detection
@@ -740,9 +740,9 @@ git push origin feature/your-feature
 
 ### Development Dependencies
 
-- **pytest**: 7.0.0+ (Testing framework)
-- **ruff**: 0.8.4 (Linting and formatting)
-- **mypy**: 1.0.0+ (Type checking)
+- **pytest**: 8.0.0+ (Testing framework)
+- **ruff**: 0.8.6 (Linting and formatting)
+- **mypy**: 1.14.0+ (Type checking)
 
 ## 📜 License
 

@@ -172,15 +172,6 @@ examples/                  # Example applications
 ├── basic_usage.py        # Fundamental operations and patterns
 └── advanced_features.py  # Complex use cases and advanced features
 
-docs/                      # Documentation (if added)
-└── ...
-
-.github/                   # GitHub configuration
-├── workflows/
-│   ├── ci.yml           # Continuous integration pipeline
-│   └── publish.yml      # PyPI publishing workflow
-└── ...
-
 # Configuration files
 pyproject.toml            # Project configuration and dependencies
 Makefile                  # Development task automation

@@ -501,28 +501,6 @@ def process_event(data):
     # Safe to process validated event
 ```
 
-### Security Training Resources
-
-1. **Cryptography Fundamentals**
-   - Understanding elliptic curve cryptography
-   - Schnorr signature security properties
-   - Key generation and management best practices
-
-2. **Network Security**
-   - TLS/SSL certificate validation
-   - WebSocket security considerations
-   - Tor network privacy implications
-
-3. **Input Validation**
-   - Sanitization techniques
-   - Injection attack prevention
-   - Data structure validation
-
-4. **Secure Development**
-   - Threat modeling
-   - Security code review practices
-   - Vulnerability assessment techniques
-
 ## 🤝 Security Community
 
 ### Responsible Disclosure

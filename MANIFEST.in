@@ -34,12 +34,6 @@ include nostr_tools/py.typed
 
 # Example applications and demonstrations
 recursive-include examples *.py
-include examples/README.md
-
-# Additional documentation (if present)
-recursive-include docs *.md *.rst *.txt
-recursive-include docs *.html *.css *.js
-recursive-include docs Makefile
 
 # =====================================================
 # Development and Testing Files (EXCLUDED)
@@ -280,7 +274,6 @@ prune site
 
 # Include Jupyter notebooks only if they're examples or tutorials
 include examples/*.ipynb
-include docs/*.ipynb
 
 # Exclude notebook checkpoints and cache
 global-exclude .ipynb_checkpoints

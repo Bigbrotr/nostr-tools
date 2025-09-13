@@ -1,4 +1,4 @@
-.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance lint lint-fix format format-check format-all clean build upload upload-test verify pre-commit check check-all examples examples-advanced security-scan deps-check type-check
+.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance lint lint-fix format format-check clean build upload upload-test verify pre-commit check check-all examples examples-advanced security-scan deps-check type-check docs-build docs-serve docs-clean
 
 # Colors for output
 BLUE := \033[36m
@@ -27,7 +27,6 @@ help:
 	@echo "$(BOLD)$(GREEN)🎨 Code Quality:$(RESET)"
 	@echo "  format            Format all code with Ruff formatter"
 	@echo "  format-check      Check code formatting without making changes"
-	@echo "  format-all        Format all files including notebooks and docs"
 	@echo "  lint              Run Ruff linting checks"
 	@echo "  lint-fix          Run linting with automatic fixes"
 	@echo "  type-check        Run MyPy static type checking"
@@ -38,8 +37,13 @@ help:
 	@echo "  test-unit         Run only fast unit tests (no network)"
 	@echo "  test-integration  Run integration tests (requires network)"
 	@echo "  test-security     Run security and cryptographic tests"
-	@echo "  test-performance  Run performance benchmarks and regression tests"
+	@echo "  test-performance  Run performance benchmarks"
 	@echo "  test-cov          Run tests with comprehensive coverage report"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)📚 Documentation:$(RESET)"
+	@echo "  docs-build        Build documentation with Sphinx"
+	@echo "  docs-serve        Serve documentation locally"
+	@echo "  docs-clean        Clean documentation build files"
 	@echo ""
 	@echo "$(BOLD)$(GREEN)⚡ Quality Checks:$(RESET)"
 	@echo "  pre-commit        Install and run pre-commit hooks on all files"
@@ -61,13 +65,6 @@ help:
 	@echo "  dev-check         Quick development cycle (format + lint + test-unit)"
 	@echo "  ci-check          CI-style checks (format-check + lint + test-unit + security)"
 	@echo "  fix               Auto-fix common issues (format + lint-fix)"
-	@echo "  release-check     Complete pre-release validation"
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)🔍 Monitoring & Info:$(RESET)"
-	@echo "  info              Display project and environment information"
-	@echo "  validate-env      Validate development environment setup"
-	@echo "  watch-test        Watch files and run unit tests on changes (requires entr)"
-	@echo "  watch-lint        Watch files and run linting on changes (requires entr)"
 
 # =====================================================
 # Installation and Dependencies
@@ -79,7 +76,7 @@ install:
 
 install-dev:
 	@echo "$(BLUE)🔧 Installing with all development dependencies...$(RESET)"
-	$(PYTHON) -m pip install -e .[dev,test,security,docs,perf]
+	$(PYTHON) -m pip install -e .[dev,test,security,docs]
 	@echo "$(GREEN)✅ Development environment ready!$(RESET)"
 
 install-ci:
@@ -90,7 +87,7 @@ deps-check:
 	@echo "$(BLUE)🔍 Checking dependencies for security vulnerabilities...$(RESET)"
 	@$(PYTHON) -m pip install --upgrade safety pip-audit 2>/dev/null || true
 	@echo "$(YELLOW)Running Safety check...$(RESET)"
-	@safety check --short-report --ignore 70612 || echo "$(YELLOW)⚠️ Safety check completed with warnings$(RESET)"
+	@safety check --short-report || echo "$(YELLOW)⚠️ Safety check completed with warnings$(RESET)"
 	@echo "$(YELLOW)Running pip-audit check...$(RESET)"
 	@pip-audit --desc --format=text || echo "$(YELLOW)⚠️ Pip-audit completed with warnings$(RESET)"
 	@echo "$(GREEN)✅ Dependency security check completed$(RESET)"
@@ -113,11 +110,6 @@ format-check:
 		echo "$(YELLOW)💡 Run 'make format' to fix formatting$(RESET)"; \
 		exit 1; \
 	fi
-
-format-all: format
-	@echo "$(BLUE)🎨 Formatting additional files...$(RESET)"
-	@command -v jupyter >/dev/null 2>&1 && find . -name "*.ipynb" -exec jupyter nbconvert --clear-output --inplace {} \; 2>/dev/null || echo "$(YELLOW)⚠️ Jupyter not available, skipping notebooks$(RESET)"
-	@echo "$(GREEN)✅ All files formatted$(RESET)"
 
 # =====================================================
 # Linting and Type Checking
@@ -146,8 +138,6 @@ security-scan:
 	@echo "$(BLUE)🔒 Running comprehensive security checks...$(RESET)"
 	@echo "$(YELLOW)Running Bandit security scanner...$(RESET)"
 	@bandit -r $(PACKAGE) -f text --severity-level medium --confidence-level low || echo "$(YELLOW)⚠️ Bandit completed with warnings$(RESET)"
-	@echo "$(YELLOW)Running additional security validations...$(RESET)"
-	@$(PYTHON) -c "import ssl; print('SSL/TLS support: OK')" 2>/dev/null || echo "$(RED)⚠️ SSL/TLS issues detected$(RESET)"
 	@echo "$(GREEN)✅ Security scan completed$(RESET)"
 
 # =====================================================
@@ -195,6 +185,36 @@ test-cov:
 	@echo "$(YELLOW)📄 XML coverage report: coverage.xml$(RESET)"
 
 # =====================================================
+# Documentation Generation
+# =====================================================
+
+docs-build:
+	@echo "$(BLUE)📚 Building documentation...$(RESET)"
+	@$(PYTHON) -m pip install -e .[docs] 2>/dev/null || true
+	@if [ ! -d "docs" ]; then \
+		echo "$(YELLOW)⚠️ docs/ directory not found. Create it first with documentation setup.$(RESET)"; \
+		exit 1; \
+	fi
+	@cd docs && $(PYTHON) -m sphinx -b html . _build/html -W --keep-going
+	@echo "$(GREEN)✅ Documentation built successfully$(RESET)"
+	@echo "$(YELLOW)🔗 Open docs/_build/html/index.html in your browser$(RESET)"
+
+docs-serve:
+	@echo "$(BLUE)🌐 Serving documentation locally...$(RESET)"
+	@if [ ! -d "docs/_build/html" ]; then \
+		echo "$(YELLOW)⚠️ Documentation not built. Running 'make docs-build' first...$(RESET)"; \
+		$(MAKE) docs-build; \
+	fi
+	@echo "$(YELLOW)🔗 Documentation server running at http://localhost:8000$(RESET)"
+	@echo "$(YELLOW)Press Ctrl+C to stop the server$(RESET)"
+	@cd docs/_build/html && $(PYTHON) -m http.server 8000
+
+docs-clean:
+	@echo "$(BLUE)🧹 Cleaning documentation build...$(RESET)"
+	@rm -rf docs/_build/
+	@echo "$(GREEN)✅ Documentation build cleaned$(RESET)"
+
+# =====================================================
 # Quality Assurance and Pre-commit
 # =====================================================
 
@@ -222,6 +242,7 @@ clean:
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
 	rm -rf .coverage htmlcov/ coverage.xml .coverage.*
 	rm -rf .tox/ .nox/
+	rm -rf docs/_build/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	find . -type f -name "*.pyo" -delete 2>/dev/null || true
@@ -248,7 +269,7 @@ verify: build
 upload-test: verify
 	@echo "$(BLUE)📤 Uploading to Test PyPI...$(RESET)"
 	@echo "$(YELLOW)⚠️ This will upload to https://test.pypi.org$(RESET)"
-	@read -p "Continue? (y/N): " confirm && [ "$confirm" = "y" ] || exit 1
+	@read -p "Continue? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
 	$(PYTHON) -m twine upload --repository testpypi dist/*
 	@echo "$(GREEN)✅ Package uploaded to Test PyPI$(RESET)"
 	@echo "$(YELLOW)🔗 Test installation: pip install --index-url https://test.pypi.org/simple/ nostr-tools$(RESET)"
@@ -257,7 +278,7 @@ upload: verify
 	@echo "$(BLUE)🚀 Uploading to PyPI (PRODUCTION)...$(RESET)"
 	@echo "$(RED)⚠️ WARNING: This will upload to PRODUCTION PyPI!$(RESET)"
 	@echo "$(YELLOW)Version: $(VERSION)$(RESET)"
-	@read -p "Are you sure you want to release v$(VERSION) to production? (y/N): " confirm && [ "$confirm" = "y" ] || exit 1
+	@read -p "Are you sure you want to release v$(VERSION) to production? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
 	$(PYTHON) -m twine upload dist/*
 	@echo "$(GREEN)$(BOLD)🎉 Package successfully released to PyPI!$(RESET)"
 	@echo "$(YELLOW)🔗 Installation: pip install nostr-tools$(RESET)"
@@ -269,14 +290,22 @@ upload: verify
 examples:
 	@echo "$(BLUE)🎯 Running basic usage examples...$(RESET)"
 	@echo "$(YELLOW)ℹ️ Running examples/basic_usage.py$(RESET)"
-	cd examples && $(PYTHON) basic_usage.py
+	@if [ -f "examples/basic_usage.py" ]; then \
+		cd examples && $(PYTHON) basic_usage.py; \
+	else \
+		echo "$(YELLOW)⚠️ examples/basic_usage.py not found$(RESET)"; \
+	fi
 	@echo "$(GREEN)✅ Basic examples completed successfully$(RESET)"
 
 examples-advanced:
 	@echo "$(BLUE)🎯 Running advanced feature demonstrations...$(RESET)"
 	@echo "$(YELLOW)ℹ️ Running examples/advanced_features.py$(RESET)"
 	@echo "$(YELLOW)⚠️ This may take several minutes and requires network access$(RESET)"
-	cd examples && $(PYTHON) advanced_features.py
+	@if [ -f "examples/advanced_features.py" ]; then \
+		cd examples && $(PYTHON) advanced_features.py; \
+	else \
+		echo "$(YELLOW)⚠️ examples/advanced_features.py not found$(RESET)"; \
+	fi
 	@echo "$(GREEN)✅ Advanced examples completed successfully$(RESET)"
 
 # =====================================================
@@ -296,303 +325,22 @@ fix: format lint-fix
 	@echo "$(YELLOW)💡 Review changes and run 'make dev-check' to verify$(RESET)"
 
 # =====================================================
-# Release and Quality Gates
-# =====================================================
-
-release-check: clean format-check lint type-check security-scan test-unit verify
-	@echo "$(GREEN)$(BOLD)🚀 Release validation completed!$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)📋 Pre-release checklist:$(RESET)"
-	@echo "  ✅ Code formatted and linted"
-	@echo "  ✅ Type checking passed"
-	@echo "  ✅ Security scans completed"
-	@echo "  ✅ Unit tests passing"
-	@echo "  ✅ Package verified for PyPI compliance"
-	@echo ""
-	@echo "$(BLUE)$(BOLD)📝 Manual checks still needed:$(RESET)"
-	@echo "  🔲 Version updated in pyproject.toml and __init__.py"
-	@echo "  🔲 CHANGELOG.md updated with new features and fixes"
-	@echo "  🔲 Documentation updated (README.md, docstrings)"
-	@echo "  🔲 Integration tests passing (run 'make test-integration')"
-	@echo "  🔲 Examples working correctly"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)🚀 Next steps for release:$(RESET)"
-	@echo "  1. Create release PR with version updates"
-	@echo "  2. Get PR approval and merge to main"
-	@echo "  3. Create and push Git tag: git tag v$(VERSION) && git push --tags"
-	@echo "  4. GitHub Actions will automatically publish to PyPI"
-	@echo "  5. Create GitHub release with changelog notes"
-
-# =====================================================
-# Environment and Project Information
+# Project Information
 # =====================================================
 
 info:
-	@echo "$(BLUE)$(BOLD)ℹ️  nostr-tools Project Information$(RESET)"
+	@echo "$(BLUE)$(BOLD)ℹ️  nostr-tools v$(VERSION) Project Information$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)📦 Package Information:$(RESET)"
 	@echo "  Name: $(PACKAGE)"
 	@echo "  Version: $(VERSION)"
-	@echo "  Location: $(pwd)"
-	@echo ""
-	@echo "$(YELLOW)🐍 Python Environment:$(RESET)"
-	@echo "  Python: $($(PYTHON) --version 2>&1)"
-	@echo "  Pip: $($(PYTHON) -m pip --version 2>&1)"
-	@echo "  Virtual Environment: ${VIRTUAL_ENV:-'Not activated'}"
+	@echo "  Python: $(shell $(PYTHON) --version 2>&1)"
 	@echo ""
 	@echo "$(YELLOW)📊 Git Information:$(RESET)"
-	@echo "  Branch: $(git branch --show-current 2>/dev/null || echo 'Not a git repository')"
-	@echo "  Last commit: $(git log -1 --oneline 2>/dev/null || echo 'No commits found')"
-	@echo "  Status: $(git status --porcelain 2>/dev/null | wc -l || echo 'N/A') files changed"
+	@echo "  Branch: $(shell git branch --show-current 2>/dev/null || echo 'Not a git repository')"
+	@echo "  Last commit: $(shell git log -1 --oneline 2>/dev/null || echo 'No commits found')"
 	@echo ""
 	@echo "$(YELLOW)🔧 Development Tools:$(RESET)"
-	@command -v ruff >/dev/null && echo "  Ruff: $(ruff --version)" || echo "  Ruff: Not installed"
-	@command -v mypy >/dev/null && echo "  MyPy: $(mypy --version)" || echo "  MyPy: Not installed"
-	@command -v pytest >/dev/null && echo "  Pytest: $(pytest --version | head -1)" || echo "  Pytest: Not installed"
-
-validate-env:
-	@echo "$(BLUE)🔍 Validating development environment...$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@$(PYTHON) -c "import sys; print(f'✅ Python {sys.version.split()[0]} detected')"
-	@echo ""
-	@echo "$(YELLOW)Checking package installation...$(RESET)"
-	@$(PYTHON) -c "import $(PACKAGE); print(f'✅ $(PACKAGE) v{$(PACKAGE).__version__} installed')" 2>/dev/null || echo "❌ $(PACKAGE) not installed - run 'make install-dev'"
-	@echo ""
-	@echo "$(YELLOW)Checking development tools...$(RESET)"
-	@command -v ruff >/dev/null && echo "✅ Ruff: $(ruff --version)" || echo "❌ Ruff not available"
-	@command -v mypy >/dev/null && echo "✅ MyPy: $(mypy --version)" || echo "❌ MyPy not available"
-	@command -v pytest >/dev/null && echo "✅ Pytest: Available" || echo "❌ Pytest not available"
-	@command -v pre-commit >/dev/null && echo "✅ Pre-commit: Available" || echo "⚠️ Pre-commit not available"
-	@echo ""
-	@echo "$(YELLOW)Checking core dependencies...$(RESET)"
-	@$(PYTHON) -c "import aiohttp; print('✅ aiohttp: Available')" 2>/dev/null || echo "❌ aiohttp not available"
-	@$(PYTHON) -c "import secp256k1; print('✅ secp256k1: Available')" 2>/dev/null || echo "❌ secp256k1 not available"
-	@$(PYTHON) -c "import bech32; print('✅ bech32: Available')" 2>/dev/null || echo "❌ bech32 not available"
-	@echo ""
-	@echo "$(GREEN)✅ Environment validation completed$(RESET)"
-
-# =====================================================
-# File Watching and Development Automation
-# =====================================================
-
-watch-test:
-	@echo "$(BLUE)👀 Watching for changes to run unit tests...$(RESET)"
-	@echo "$(YELLOW)ℹ️ Requires 'entr' - install with: brew install entr (macOS) or apt install entr (Ubuntu)$(RESET)"
-	@command -v entr >/dev/null 2>&1 || (echo "$(RED)❌ 'entr' not found$(RESET)" && exit 1)
-	@echo "$(YELLOW)👀 Watching $(SRC_DIRS) - press Ctrl+C to stop$(RESET)"
-	find $(SRC_DIRS) -name "*.py" | entr -c $(MAKE) test-unit
-
-watch-lint:
-	@echo "$(BLUE)👀 Watching for changes to run linting...$(RESET)"
-	@command -v entr >/dev/null 2>&1 || (echo "$(RED)❌ 'entr' not found$(RESET)" && exit 1)
-	@echo "$(YELLOW)👀 Watching $(SRC_DIRS) - press Ctrl+C to stop$(RESET)"
-	find $(SRC_DIRS) -name "*.py" | entr -c $(MAKE) lint
-
-# =====================================================
-# Debugging and Troubleshooting
-# =====================================================
-
-debug-info:
-	@echo "$(BLUE)$(BOLD)🐛 Debug Information$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)System Information:$(RESET)"
-	@uname -a 2>/dev/null || echo "  System info not available"
-	@echo ""
-	@echo "$(YELLOW)Python Details:$(RESET)"
-	@$(PYTHON) -c "import sys, platform; print(f'  Version: {sys.version}'); print(f'  Platform: {platform.platform()}'); print(f'  Executable: {sys.executable}')"
-	@echo ""
-	@echo "$(YELLOW)Package Dependencies:$(RESET)"
-	@$(PYTHON) -m pip list | grep -E "(aiohttp|secp256k1|bech32|pytest|ruff|mypy)" || echo "  No core dependencies found"
-	@echo ""
-	@echo "$(YELLOW)Environment Variables:$(RESET)"
-	@env | grep -E "(PYTHON|PIP|VIRTUAL_ENV|PATH)" | head -5 || echo "  No relevant environment variables"
-
-troubleshoot:
-	@echo "$(BLUE)$(BOLD)🔧 Common Troubleshooting$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)Issue: Tests failing$(RESET)"
-	@echo "  • Run 'make clean' then 'make install-dev'"
-	@echo "  • Check Python version: 'python --version' (need 3.9+)"
-	@echo "  • Run 'make validate-env' to check setup"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)Issue: Import errors$(RESET)"
-	@echo "  • Ensure virtual environment is activated"
-	@echo "  • Run 'make install-dev' to install dependencies"
-	@echo "  • Check PYTHONPATH includes current directory"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)Issue: Pre-commit hooks failing$(RESET)"
-	@echo "  • Run 'make format' to fix formatting issues"
-	@echo "  • Run 'make lint-fix' to auto-fix linting issues"
-	@echo "  • Run 'make pre-commit' to reinstall hooks"
-	@echo ""
-	@echo "$(YELLOW)$(BOLD)Issue: Build/packaging problems$(RESET)"
-	@echo "  • Run 'make clean' to remove old build artifacts"
-	@echo "  • Update build tools: 'pip install --upgrade build twine'"
-	@echo "  • Check pyproject.toml syntax"
-
-# =====================================================
-# Performance and Benchmarking
-# =====================================================
-
-benchmark:
-	@echo "$(BLUE)🏃 Running performance benchmarks...$(RESET)"
-	@echo "$(YELLOW)This will run comprehensive performance tests$(RESET)"
-	$(PYTHON) -m pytest tests/test_performance.py::TestBenchmarkComparison::test_comprehensive_benchmark -v -s
-	@echo "$(GREEN)✅ Benchmark completed$(RESET)"
-
-profile:
-	@echo "$(BLUE)📊 Running performance profiling...$(RESET)"
-	@echo "$(YELLOW)This will profile key operations and generate reports$(RESET)"
-	$(PYTHON) -c "
-import cProfile
-import pstats
-from nostr_tools import generate_keypair, generate_event, Event
-
-def profile_operations():
-    # Profile key generation
-    for _ in range(100):
-        private_key, public_key = generate_keypair()
-
-    # Profile event creation
-    for i in range(100):
-        event_data = generate_event(
-            private_key, public_key, 1, [], f'Profiling test {i}'
-        )
-        Event.from_dict(event_data)
-
-cProfile.run('profile_operations()', 'profile_stats')
-stats = pstats.Stats('profile_stats')
-stats.sort_stats('cumulative').print_stats(20)
-"
-	@echo "$(GREEN)✅ Profiling completed$(RESET)"
-
-# =====================================================
-# Documentation and Help
-# =====================================================
-
-docs:
-	@echo "$(BLUE)📚 Building documentation...$(RESET)"
-	@echo "$(YELLOW)⚠️ Documentation build not implemented yet$(RESET)"
-	@echo "$(YELLOW)💡 See README.md for current documentation$(RESET)"
-
-docs-serve:
-	@echo "$(BLUE)🌐 Serving documentation locally...$(RESET)"
-	@echo "$(YELLOW)⚠️ Documentation server not implemented yet$(RESET)"
-	@echo "$(YELLOW)💡 See README.md for current documentation$(RESET)"
-
-# =====================================================
-# Advanced Development Features
-# =====================================================
-
-test-coverage-html:
-	@echo "$(BLUE)📊 Generating detailed HTML coverage report...$(RESET)"
-	$(PYTHON) -m pytest --cov=$(PACKAGE) --cov-report=html --cov-branch
-	@echo "$(GREEN)✅ HTML coverage report generated$(RESET)"
-	@echo "$(YELLOW)🔗 Open htmlcov/index.html in your browser$(RESET)"
-
-test-with-output:
-	@echo "$(BLUE)🧪 Running tests with full output...$(RESET)"
-	$(PYTHON) -m pytest -v -s --tb=long
-
-test-failed-only:
-	@echo "$(BLUE)🧪 Running only previously failed tests...$(RESET)"
-	$(PYTHON) -m pytest --lf -v
-
-test-parallel:
-	@echo "$(BLUE)🧪 Running tests in parallel...$(RESET)"
-	@$(PYTHON) -m pip install pytest-xdist 2>/dev/null || true
-	$(PYTHON) -m pytest -n auto
-
-# =====================================================
-# Git and Version Control Helpers
-# =====================================================
-
-git-hooks-install:
-	@echo "$(BLUE)🔗 Installing git hooks...$(RESET)"
-	@if [ -d .git ]; then \
-		echo "#!/bin/sh\nmake pre-commit" > .git/hooks/pre-push; \
-		chmod +x .git/hooks/pre-push; \
-		echo "$(GREEN)✅ Git hooks installed$(RESET)"; \
-	else \
-		echo "$(YELLOW)⚠️ Not a git repository$(RESET)"; \
-	fi
-
-version-bump-patch:
-	@echo "$(BLUE)🔢 Bumping patch version...$(RESET)"
-	@$(PYTHON) -c "
-import re
-with open('pyproject.toml', 'r') as f: content = f.read()
-version_match = re.search(r'version = \"([^\"]+)\"', content)
-if version_match:
-    current = version_match.group(1)
-    major, minor, patch = map(int, current.split('.'))
-    new_version = f'{major}.{minor}.{patch + 1}'
-    new_content = re.sub(r'version = \"[^\"]+\"', f'version = \"{new_version}\"', content)
-    with open('pyproject.toml', 'w') as f: f.write(new_content)
-    print(f'Version bumped: {current} -> {new_version}')
-else:
-    print('Could not find version in pyproject.toml')
-"
-	@echo "$(GREEN)✅ Version bumped$(RESET)"
-
-version-bump-minor:
-	@echo "$(BLUE)🔢 Bumping minor version...$(RESET)"
-	@$(PYTHON) -c "
-import re
-with open('pyproject.toml', 'r') as f: content = f.read()
-version_match = re.search(r'version = \"([^\"]+)\"', content)
-if version_match:
-    current = version_match.group(1)
-    major, minor, patch = map(int, current.split('.'))
-    new_version = f'{major}.{minor + 1}.0'
-    new_content = re.sub(r'version = \"[^\"]+\"', f'version = \"{new_version}\"', content)
-    with open('pyproject.toml', 'w') as f: f.write(new_content)
-    print(f'Version bumped: {current} -> {new_version}')
-else:
-    print('Could not find version in pyproject.toml')
-"
-	@echo "$(GREEN)✅ Version bumped$(RESET)"
-
-# =====================================================
-# Special Utility Targets
-# =====================================================
-
-lines-of-code:
-	@echo "$(BLUE)📏 Counting lines of code...$(RESET)"
-	@echo "$(YELLOW)Source code ($(PACKAGE)):$(RESET)"
-	@find $(PACKAGE) -name "*.py" -exec wc -l {} + | tail -1
-	@echo "$(YELLOW)Test code:$(RESET)"
-	@find tests -name "*.py" -exec wc -l {} + | tail -1 2>/dev/null || echo "  0 (no tests directory)"
-	@echo "$(YELLOW)Example code:$(RESET)"
-	@find examples -name "*.py" -exec wc -l {} + | tail -1 2>/dev/null || echo "  0 (no examples directory)"
-	@echo "$(YELLOW)Total Python code:$(RESET)"
-	@find $(SRC_DIRS) -name "*.py" -exec wc -l {} + | tail -1
-
-dependency-tree:
-	@echo "$(BLUE)🌳 Displaying dependency tree...$(RESET)"
-	@$(PYTHON) -m pip install pipdeptree 2>/dev/null || true
-	@pipdeptree --packages $(PACKAGE) 2>/dev/null || echo "$(YELLOW)⚠️ pipdeptree not available$(RESET)"
-
-check-outdated:
-	@echo "$(BLUE)📅 Checking for outdated dependencies...$(RESET)"
-	$(PYTHON) -m pip list --outdated --format=columns || echo "$(GREEN)✅ All dependencies up to date$(RESET)"
-
-# =====================================================
-# Error Handling and Validation
-# =====================================================
-
-_check_python:
-	@$(PYTHON) --version >/dev/null 2>&1 || (echo "$(RED)❌ Python not found$(RESET)" && exit 1)
-
-_check_git:
-	@git --version >/dev/null 2>&1 || (echo "$(RED)❌ Git not found$(RESET)" && exit 1)
-
-_check_network:
-	@ping -c 1 google.com >/dev/null 2>&1 || (echo "$(YELLOW)⚠️ Network connectivity issues detected$(RESET)")
-
-# Ensure critical targets depend on basic checks
-install-dev: _check_python
-test-integration: _check_network
-upload: _check_git
-upload-test: _check_git
+	@command -v ruff >/dev/null && echo "  Ruff: $(shell ruff --version)" || echo "  Ruff: Not installed"
+	@command -v mypy >/dev/null && echo "  MyPy: $(shell mypy --version)" || echo "  MyPy: Not installed"
+	@command -v pytest >/dev/null && echo "  Pytest: Available" || echo "  Pytest: Not available"
