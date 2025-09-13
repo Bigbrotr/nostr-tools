@@ -1,5 +1,5 @@
-Welcome to nostr-tools documentation!
-=====================================
+nostr-tools Documentation
+=========================
 
 .. image:: https://img.shields.io/pypi/v/nostr-tools.svg
    :target: https://pypi.org/project/nostr-tools/
@@ -13,19 +13,7 @@ Welcome to nostr-tools documentation!
    :target: https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE
    :alt: License
 
-A comprehensive Python library for interacting with the Nostr protocol. This library provides high-level and low-level APIs for connecting to Nostr relays, publishing and subscribing to events, and managing cryptographic operations.
-
-Features
---------
-
-- **Complete Nostr Protocol Support**: Full implementation of NIP-01, NIP-11, NIP-13, and partial NIP-42
-- **Async/Await API**: Modern Python async support for high-performance applications
-- **Advanced Relay Management**: Connect to relays with comprehensive metadata analysis
-- **Event Handling**: Create, sign, verify, and filter Nostr events with full validation
-- **Cryptographic Operations**: Built-in key generation, Schnorr signatures, and proof-of-work mining
-- **Tor Support**: Connect to .onion relays through SOCKS5 proxies
-- **Type Safety**: Complete type hints and runtime validation
-- **Performance Optimized**: Efficient cryptographic operations and connection management
+A comprehensive Python library for interacting with the Nostr protocol.
 
 Quick Start
 -----------
@@ -61,37 +49,73 @@ Installation
 
    pip install nostr-tools
 
-Table of Contents
+API Reference
+=============
+
+.. currentmodule:: nostr_tools
+
+Core Classes
+------------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   Event
+   Relay
+   Client
+   Filter
+   RelayMetadata
+
+High-Level Functions
+--------------------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   fetch_events
+   stream_events
+   compute_relay_metadata
+   check_connectivity
+   check_readability
+   check_writability
+   fetch_nip11
+   fetch_connection
+
+Cryptographic Functions
+-----------------------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   generate_keypair
+   validate_keypair
+   generate_event
+   calc_event_id
+   sig_event_id
+   verify_sig
+
+Utility Functions
 -----------------
 
-.. toctree::
-   :maxdepth: 2
-   :caption: User Guide
+.. autosummary::
+   :toctree: _autosummary
 
-   installation
-   quickstart
-   tutorials/index
-   examples/index
+   to_bech32
+   to_hex
+   find_websocket_relay_urls
+   sanitize
+   parse_nip11_response
+   parse_connection_response
 
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
+Exceptions
+----------
 
-   api/index
-   api/core
-   api/actions
-   api/utils
-   api/exceptions
+.. autosummary::
+   :toctree: _autosummary
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Development
+   RelayConnectionError
 
-   contributing
-   security
-   changelog
-
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`
