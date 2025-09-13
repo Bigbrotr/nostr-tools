@@ -55,8 +55,8 @@ repos:
       - id: bandit
         args: [
           -r, nostr_tools,
-          --severity-level, high,
-          --confidence-level, low,
+          --severity-level, low,
+          --confidence-level, medium,
           -x, "tests examples"
         ]
         pass_filenames: false
