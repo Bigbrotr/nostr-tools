@@ -16,6 +16,7 @@ include LICENSE
 # Project configuration files
 include pyproject.toml
 include Makefile
+include setup.py
 
 # =====================================================
 # Package Source Code
