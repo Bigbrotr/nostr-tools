@@ -6,7 +6,7 @@ manipulating Nostr events according to the NIP-01 specification.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from ..utils import calc_event_id, verify_sig
 
@@ -35,7 +35,7 @@ class Event:
         pubkey: str,
         created_at: int,
         kind: int,
-        tags: List[List[str]],
+        tags: list[list[str]],
         content: str,
         sig: str,
     ) -> None:
@@ -174,7 +174,7 @@ class Event:
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Event":
+    def from_dict(cls, data: dict[str, Any]) -> "Event":
         """
         Create an Event object from a dictionary.
 
@@ -242,7 +242,7 @@ class Event:
             )
         return event
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the Event object to a dictionary.
 
@@ -259,7 +259,7 @@ class Event:
             "sig": self.sig,
         }
 
-    def get_tag_values(self, tag_name: str) -> List[str]:
+    def get_tag_values(self, tag_name: str) -> list[str]:
         """
         Get all values for a specific tag name.
 

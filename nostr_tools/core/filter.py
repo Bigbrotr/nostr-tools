@@ -5,7 +5,7 @@ This module provides the Filter class for creating event filters according
 to NIP-01 specification for querying Nostr relays.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class Filter:
@@ -22,13 +22,13 @@ class Filter:
 
     def __init__(
         self,
-        ids: Optional[List[str]] = None,
-        authors: Optional[List[str]] = None,
-        kinds: Optional[List[int]] = None,
+        ids: Optional[list[str]] = None,
+        authors: Optional[list[str]] = None,
+        kinds: Optional[list[int]] = None,
         since: Optional[int] = None,
         until: Optional[int] = None,
         limit: Optional[int] = None,
-        **tags: List[str],
+        **tags: list[str],
     ):
         """
         Create a Nostr filter with specified criteria.
@@ -102,7 +102,7 @@ class Filter:
             )
 
         # Build filter dictionary
-        self.filter_dict: Dict[str, Any] = {}
+        self.filter_dict: dict[str, Any] = {}
 
         if ids is not None:
             self.filter_dict["ids"] = ids
@@ -166,7 +166,7 @@ class Filter:
         return hash(frozenset(self.filter_dict.items()))
 
     @classmethod
-    def from_dict(cls, filter_dict: Dict[str, Any]) -> "Filter":
+    def from_dict(cls, filter_dict: dict[str, Any]) -> "Filter":
         """
         Create a Filter instance from a dictionary.
 
@@ -178,7 +178,7 @@ class Filter:
         """
         return cls(**filter_dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Return filter as dictionary that can be used with from_dict().
 

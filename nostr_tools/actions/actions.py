@@ -47,8 +47,9 @@ Example:
     ...         print(f"New event: {event.content}")
 """
 
+from collections.abc import AsyncGenerator
 import time
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from ..core.client import Client
 from ..core.event import Event
@@ -61,7 +62,7 @@ from ..utils import generate_event, parse_connection_response, parse_nip11_respo
 async def fetch_events(
     client: Client,
     filter: Filter,
-) -> List[Event]:
+) -> list[Event]:
     """
     Fetch events matching the filter using an existing client connection.
 
@@ -134,7 +135,7 @@ async def stream_events(
     await client.unsubscribe(subscription_id)
 
 
-async def fetch_nip11(client: Client) -> Optional[Dict[str, Any]]:
+async def fetch_nip11(client: Client) -> Optional[dict[str, Any]]:
     """
     Fetch NIP-11 metadata from the relay.
 
@@ -154,9 +155,12 @@ async def fetch_nip11(client: Client) -> Optional[Dict[str, Any]]:
     # Try both HTTPS and HTTP protocols
     for schema in ["https://", "http://"]:
         try:
-            async with client.session() as session, session.get(
-                schema + relay_id, headers=headers, timeout=client.timeout
-            ) as response:
+            async with (
+                client.session() as session,
+                session.get(
+                    schema + relay_id, headers=headers, timeout=client.timeout
+                ) as response,
+            ):
                 if response.status == 200:
                     result = await response.json()
                     return dict(result) if isinstance(result, dict) else result
@@ -166,7 +170,7 @@ async def fetch_nip11(client: Client) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def check_connectivity(client: Client) -> Tuple[Optional[int], bool]:
+async def check_connectivity(client: Client) -> tuple[Optional[int], bool]:
     """
     Check if the relay is connectable and measure connection time.
 
@@ -200,7 +204,7 @@ async def check_connectivity(client: Client) -> Tuple[Optional[int], bool]:
     return rtt_open, openable
 
 
-async def check_readability(client: Client) -> Tuple[Optional[int], bool]:
+async def check_readability(client: Client) -> tuple[Optional[int], bool]:
     """
     Check if the relay allows reading events and measure read response time.
 
@@ -257,7 +261,7 @@ async def check_writability(
     pub: str,
     target_difficulty: Optional[int] = None,
     event_creation_timeout: Optional[int] = None,
-) -> Tuple[Optional[int], bool]:
+) -> tuple[Optional[int], bool]:
     """
     Check if the relay allows writing events and measure write response time.
 
@@ -319,7 +323,7 @@ async def fetch_connection(
     pub: str,
     target_difficulty: Optional[int] = None,
     event_creation_timeout: Optional[int] = None,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """
     Fetch comprehensive connection metrics from the relay.
 

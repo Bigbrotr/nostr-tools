@@ -6,7 +6,7 @@ including events, relays, WebSocket clients, and cryptographic utilities.
 """
 
 import sys
-from typing import Any, Dict
+from typing import Any
 
 __version__ = "0.1.0"
 __author__ = "Bigbrotr"
@@ -60,7 +60,7 @@ _LAZY_IMPORTS = {
 }
 
 # Cache for loaded modules
-_module_cache: Dict[str, Any] = {}
+_module_cache: dict[str, Any] = {}
 
 
 class _LazyLoader:

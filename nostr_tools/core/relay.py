@@ -6,7 +6,7 @@ Nostr relay configurations, including URL validation and network type
 detection.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from ..utils import find_websocket_relay_urls
 
@@ -100,7 +100,7 @@ class Relay:
         return hash((self.url, self.network))
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Relay":
+    def from_dict(cls, data: dict[str, Any]) -> "Relay":
         """
         Create a Relay object from a dictionary.
 
@@ -122,7 +122,7 @@ class Relay:
 
         return cls(data["url"])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Return the Relay object as a dictionary.
 

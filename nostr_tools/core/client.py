@@ -7,8 +7,9 @@ relay communications.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 import json
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 import uuid
 
 from aiohttp import (
@@ -83,7 +84,7 @@ class Client:
         self.socks5_proxy_url = socks5_proxy_url
         self._session: Optional[ClientSession] = None
         self._ws: Optional[ClientWebSocketResponse] = None
-        self._subscriptions: Dict[str, Dict[str, Any]] = {}
+        self._subscriptions: dict[str, dict[str, Any]] = {}
 
     async def __aenter__(self):
         """
@@ -200,7 +201,7 @@ class Client:
 
         self._subscriptions.clear()
 
-    async def send_message(self, message: List[Any]) -> None:
+    async def send_message(self, message: list[Any]) -> None:
         """
         Send a message to the relay.
 
@@ -309,7 +310,7 @@ class Client:
 
         return False
 
-    async def listen(self) -> AsyncGenerator[List[Any], None]:
+    async def listen(self) -> AsyncGenerator[list[Any], None]:
         """
         Listen for messages from the relay.
 
@@ -355,7 +356,7 @@ class Client:
     async def listen_events(
         self,
         subscription_id: str,
-    ) -> AsyncGenerator[List[Any], None]:
+    ) -> AsyncGenerator[list[Any], None]:
         """
         Listen for events from a specific subscription.
 
@@ -389,7 +390,7 @@ class Client:
         return self._ws is not None and not self._ws.closed
 
     @property
-    def active_subscriptions(self) -> List[str]:
+    def active_subscriptions(self) -> list[str]:
         """
         Get list of active subscription IDs.
 

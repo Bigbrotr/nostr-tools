@@ -7,7 +7,7 @@ NIP-11 information document data, and operational capabilities.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from .relay import Relay
 
@@ -64,13 +64,13 @@ class RelayMetadata:
         icon: Optional[str] = None,
         pubkey: Optional[str] = None,
         contact: Optional[str] = None,
-        supported_nips: Optional[List[int]] = None,
+        supported_nips: Optional[list[int]] = None,
         software: Optional[str] = None,
         version: Optional[str] = None,
         privacy_policy: Optional[str] = None,
         terms_of_service: Optional[str] = None,
-        limitation: Optional[Dict[str, Any]] = None,
-        extra_fields: Optional[Dict[str, Any]] = None,
+        limitation: Optional[dict[str, Any]] = None,
+        extra_fields: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Initialize a RelayMetadata object with comprehensive validation.
@@ -304,7 +304,7 @@ class RelayMetadata:
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "RelayMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "RelayMetadata":
         """
         Create RelayMetadata from dictionary.
 
@@ -351,7 +351,7 @@ class RelayMetadata:
             extra_fields=data.get("extra_fields"),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert RelayMetadata to dictionary.
 

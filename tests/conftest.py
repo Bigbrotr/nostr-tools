@@ -7,7 +7,7 @@ that are used across multiple test files.
 
 import json
 import time
-from typing import Optional, Tuple
+from typing import Optional
 from unittest.mock import AsyncMock
 
 import pytest
@@ -56,7 +56,7 @@ skip_integration = pytest.mark.skipif(
 
 
 @pytest.fixture
-def sample_keypair() -> Tuple[str, str]:
+def sample_keypair() -> tuple[str, str]:
     """Generate a sample key pair for testing."""
     return generate_keypair()
 
@@ -222,7 +222,7 @@ def performance_timer():
 
 
 # Test data generators
-def generate_test_events(count: int, keypair: Optional[Tuple[str, str]] = None) -> list:
+def generate_test_events(count: int, keypair: Optional[tuple[str, str]] = None) -> list:
     """Generate multiple test events."""
     if keypair is None:
         keypair = generate_keypair()

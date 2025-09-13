@@ -66,7 +66,7 @@ import json
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from urllib import request
 
 import bech32
@@ -74,7 +74,7 @@ import secp256k1
 
 
 # https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-def _load_tlds() -> List[str]:
+def _load_tlds() -> list[str]:
     """
     Load TLD list from IANA registry.
 
@@ -197,7 +197,7 @@ URI_GENERIC_REGEX = r"""
 """
 
 
-def find_websocket_relay_urls(text: str) -> List[str]:
+def find_websocket_relay_urls(text: str) -> list[str]:
     """
     Find all WebSocket relay URLs in the given text.
 
@@ -281,7 +281,7 @@ def sanitize(value: Any) -> Any:
 
 
 def calc_event_id(
-    pubkey: str, created_at: int, kind: int, tags: List[List[str]], content: str
+    pubkey: str, created_at: int, kind: int, tags: list[list[str]], content: str
 ) -> str:
     """
     Calculate the event ID for a Nostr event according to NIP-01.
@@ -354,12 +354,12 @@ def generate_event(
     private_key: str,
     public_key: str,
     kind: int,
-    tags: List[List[str]],
+    tags: list[list[str]],
     content: str,
     created_at: Optional[int] = None,
     target_difficulty: Optional[int] = None,
     timeout: int = 20,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate a signed Nostr event with optional proof-of-work.
 
@@ -514,7 +514,7 @@ def to_hex(bech32_str: str) -> str:
     return str(bytes(byte_data).hex())
 
 
-def generate_keypair() -> Tuple[str, str]:
+def generate_keypair() -> tuple[str, str]:
     """
     Generate a new private/public key pair for Nostr.
 
