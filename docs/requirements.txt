@@ -1,0 +1,16 @@
+# Documentation requirements for ReadTheDocs
+# These are the minimum requirements needed to build the documentation
+
+# Sphinx and theme
+sphinx>=8.0.0,<9.0.0
+sphinx-rtd-theme>=3.0.0,<4.0.0
+
+# Markdown support
+myst-parser>=4.0.0,<5.0.0
+
+# Auto-documentation enhancements
+sphinx-autodoc-typehints>=2.0.0,<3.0.0
+sphinx-copybutton>=0.5.2,<1.0.0
+
+# Optional: For better API documentation
+sphinxext-opengraph>=0.9.0,<1.0.0

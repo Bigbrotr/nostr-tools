@@ -1,77 +1,149 @@
-name: Publish to PyPI
+name: Build & Publish to PyPI
 
 on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
   release:
     types: [published]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    name: Build distribution
+    name: Build Distribution 📦
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Python
+      with:
+        # Fetch full history for setuptools-scm version detection
+        fetch-depth: 0
+    
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool
-
+    
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install --upgrade build wheel setuptools
-
-    - name: Build package
-      run: python -m build
-
-    - name: Store the distribution packages
+        python -m pip install build
+    
+    - name: Build distributions
+      run: |
+        python -m build
+    
+    - name: Check distributions
+      run: |
+        python -m pip install twine
+        python -m twine check dist/*
+    
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
 
-  publish-testpypi:
-    name: Publish to TestPyPI
-    needs: build
+  publish-to-testpypi:
+    name: Publish to TestPyPI 🧪
     runs-on: ubuntu-latest
-    environment: release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/nostr-tools
+    
     permissions:
-      id-token: write
-
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    
     steps:
-    - name: Download all the dists
+    - name: Download distributions
       uses: actions/download-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
-
-    - name: Publish to Test PyPI
+    
+    - name: Publish to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
+        verbose: true
 
-  publish-pypi:
-    name: Publish to PyPI
-    needs: [build, publish-testpypi]
-    runs-on: ubuntu-latest
-    environment: release
+  publish-to-pypi:
+    name: Publish to PyPI 🚀
+    runs-on: ubuntu-latest  
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    
+    environment:
+      name: pypi
+      url: https://pypi.org/p/nostr-tools
+    
     permissions:
-      id-token: write
-
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    
     steps:
-    - name: Download all the dists
+    - name: Download distributions  
       uses: actions/download-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
-
+    
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
+
+  github-release:
+    name: Create GitHub Release 📋
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      contents: write  # IMPORTANT: mandatory for creating releases
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download distributions
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    
+    - name: Extract release notes
+      id: extract-release-notes
+      run: |
+        # Extract version from tag
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        
+        # Try to extract release notes from CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Extract section between version headers
+          awk "/## \[$VERSION\]/,/## \[/{if(/## \[/ && !/## \[$VERSION\]/)exit}; if(/## \[$VERSION\]/)f=1; if(f && !/## \[$VERSION\]/)print" CHANGELOG.md > release_notes.txt
+          # Remove empty lines at start
+          sed -i '/./,$!d' release_notes.txt
+          # If empty, use default
+          if [ ! -s release_notes.txt ]; then
+            echo "See [CHANGELOG.md](CHANGELOG.md) for details." > release_notes.txt
+          fi
+        else
+          echo "See commits for details." > release_notes.txt
+        fi
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Release v${{ steps.extract-release-notes.outputs.VERSION }}
+        body_path: release_notes.txt
+        files: dist/*
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        generate_release_notes: true
