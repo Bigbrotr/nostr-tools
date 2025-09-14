@@ -1,0 +1,53 @@
+/* Custom styling for nostr-tools documentation */
+
+/* Better code highlighting */
+.highlight {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin: 1em 0;
+}
+
+/* Improve table appearance */
+.rst-content table.docutils {
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.rst-content table.docutils th,
+.rst-content table.docutils td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+}
+
+/* Better API documentation styling */
+.rst-content dl.class>dt,
+.rst-content dl.function>dt,
+.rst-content dl.method>dt {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007acc;
+    padding: 8px 12px;
+    font-weight: bold;
+}
+
+/* Improve parameter lists */
+.rst-content dl.field-list {
+    margin-bottom: 1em;
+}
+
+.rst-content dl.field-list>dt {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+/* Make autosummary tables more readable */
+.rst-content table.longtable {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.rst-content table.longtable td,
+.rst-content table.longtable th {
+    border: 1px solid #e1e4e5;
+    padding: 8px;
+}

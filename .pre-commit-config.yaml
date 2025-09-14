@@ -79,7 +79,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
-        exclude: \.git/|\.pytest_cache/|\.mypy_cache/|\.ruff_cache/
+        exclude: \.git/|\.pytest_cache/|\.mypy_cache/|\.ruff_cache/|docs/_build/
 
 # Configuration
 default_stages: [pre-commit]
