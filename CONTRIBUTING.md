@@ -178,7 +178,7 @@ Makefile                  # Development task automation
 .pre-commit-config.yaml   # Pre-commit hook configuration
 .gitignore               # Git ignore patterns
 LICENSE                   # MIT license
-README.md                 # Main documentation
+README.md                 # Project README
 CHANGELOG.md              # Version history and changes
 CONTRIBUTING.md           # This file
 SECURITY.md               # Security policy and reporting

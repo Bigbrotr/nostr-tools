@@ -276,7 +276,7 @@ For the complete changelog and detailed information about each release, visit ou
 
 ## 🔗 Links & Resources
 
-- **Documentation**: [GitHub README](https://github.com/bigbrotr/nostr-tools#readme)
+- **Documentation**: [nostr-tools Documentation](https://bigbrotr.github.io/nostr-tools)
 - **Source Code**: [GitHub Repository](https://github.com/bigbrotr/nostr-tools)
 - **Issue Tracking**: [GitHub Issues](https://github.com/bigbrotr/nostr-tools/issues)
 - **PyPI Package**: [nostr-tools on PyPI](https://pypi.org/project/nostr-tools/)

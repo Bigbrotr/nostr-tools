@@ -96,7 +96,7 @@ setup(
     ],
     project_urls={
         "Homepage": "https://github.com/bigbrotr/nostr-tools",
-        "Documentation": "https://github.com/bigbrotr/nostr-tools#readme",
+        "Documentation": "https://bigbrotr.github.io/nostr-tools",
         "Repository": "https://github.com/bigbrotr/nostr-tools.git",
         "Bug Reports": "https://github.com/bigbrotr/nostr-tools/issues",
         "Source Code": "https://github.com/bigbrotr/nostr-tools",

@@ -7,7 +7,7 @@ A comprehensive Python library for interacting with the Nostr protocol. This lib
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI Status](https://github.com/bigbrotr/nostr-tools/workflows/CI/badge.svg)](https://github.com/bigbrotr/nostr-tools/actions)
 [![Coverage](https://codecov.io/gh/bigbrotr/nostr-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/bigbrotr/nostr-tools)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://github.com/bigbrotr/nostr-tools#readme)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://bigbrotr.github.io/nostr-tools)
 
 ## 🚀 Features
 
