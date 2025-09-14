@@ -12,9 +12,21 @@ from typing import Any
 # Core exports that are always available
 from .exceptions.errors import RelayConnectionError
 
-__version__ = "0.1.0"
 __author__ = "Bigbrotr"
 __email__ = "hello@bigbrotr.com"
+
+# Version handling with setuptools-scm fallback
+try:
+    # Try to get version from setuptools-scm generated file
+    from ._version import version as __version__
+except ImportError:
+    try:
+        # Fallback to setuptools-scm directly
+        from setuptools_scm import get_version
+        __version__ = get_version(root='..', relative_to=__file__)
+    except (ImportError, LookupError):
+        # Final fallback
+        __version__ = "0.1.0-dev"
 
 # Detect if we're in a documentation build environment
 _BUILDING_DOCS = (
@@ -59,7 +71,7 @@ if _BUILDING_DOCS:
     )
 
 else:
-    # Lazy loading for runtime - your existing implementation
+    # Lazy loading for runtime - optimizes import performance
     _LAZY_IMPORTS = {
         # Core classes
         "Event": ("nostr_tools.core.event", "Event"),
@@ -139,7 +151,6 @@ else:
 
         This function is called when an attribute is not found in the module.
         It checks if the attribute is in the lazy imports and returns a lazy loader.
-        This should rarely be called since lazy loaders are pre-populated.
         """
         if name in _LAZY_IMPORTS:
             module_path, attr_name = _LAZY_IMPORTS[name]
@@ -148,39 +159,48 @@ else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-# Backwards compatibility - these can be imported directly
+# Public API - these are the symbols available when importing the package
 __all__ = [
-    "TLDS",
-    "URI_GENERIC_REGEX",
+    # Version and metadata
+    "__version__",
+    "__author__", 
+    "__email__",
+    # Core classes
     "Client",
-    "Event",
+    "Event", 
     "Filter",
     "Relay",
-    "RelayConnectionError",
     "RelayMetadata",
-    "__author__",
-    "__email__",
-    "__version__",
+    # Exceptions
+    "RelayConnectionError",
+    # Cryptographic utilities
     "calc_event_id",
+    "generate_event",
+    "generate_keypair",
+    "sig_event_id", 
+    "validate_keypair",
+    "verify_sig",
+    # Encoding utilities
+    "to_bech32",
+    "to_hex",
+    # Network utilities
+    "find_websocket_relay_urls",
+    "sanitize",
+    # Constants
+    "TLDS",
+    "URI_GENERIC_REGEX", 
+    # Response parsing
+    "parse_connection_response",
+    "parse_nip11_response",
+    # High-level actions
     "check_connectivity",
-    "check_readability",
+    "check_readability", 
     "check_writability",
     "compute_relay_metadata",
     "fetch_connection",
     "fetch_events",
-    "fetch_nip11",
-    "find_websocket_relay_urls",
-    "generate_event",
-    "generate_keypair",
-    "parse_connection_response",
-    "parse_nip11_response",
-    "sanitize",
-    "sig_event_id",
+    "fetch_nip11", 
     "stream_events",
-    "to_bech32",
-    "to_hex",
-    "validate_keypair",
-    "verify_sig",
 ]
 
 
@@ -189,6 +209,6 @@ def __dir__():
     Return list of available attributes for tab completion.
 
     Returns:
-        list: List of available attributes
+        list: List of available attributes in alphabetical order
     """
     return sorted(__all__)
