@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=7.0"]
+requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -25,7 +25,8 @@ keywords = [
     "bitcoin", 
     "schnorr", 
     "secp256k1", 
-    "relay"
+    "relay",
+    "lightning-network"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -47,84 +48,120 @@ classifiers = [
 ]
 
 dependencies = [
-    # Cryptographic dependencies
+    # Core cryptographic dependencies
     "secp256k1>=0.14.0,<1.0.0",
     "bech32>=1.2.0,<2.0.0",
-    # Network and WebSocket dependencies
+    # Async HTTP and WebSocket support
     "aiohttp>=3.8.0,<4.0.0",
     "aiohttp-socks>=0.8.0,<1.0.0",
-    # Python version compatibility
+    # Python compatibility
     "typing-extensions>=4.0.0; python_version<'3.10'",
 ]
 
 [project.optional-dependencies]
-# Development dependencies
+# Complete development environment
 dev = [
+    # Testing framework
     "pytest>=8.0.0,<9.0.0",
     "pytest-asyncio>=0.24.0,<1.0.0",
     "pytest-cov>=5.0.0,<6.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
+    "pytest-timeout>=2.3.0,<3.0.0",
+    "pytest-xdist>=3.6.0,<4.0.0",           # Parallel test execution
+    
+    # Code quality and linting
     "ruff>=0.8.0,<1.0.0",
     "mypy>=1.14.0,<2.0.0",
     "pre-commit>=4.0.0,<5.0.0",
-    "build>=1.0.0",
-    "twine>=6.0.0",
+    
+    # Build and packaging
+    "build>=1.2.0,<2.0.0",
+    "twine>=6.0.0,<7.0.0",
+    "setuptools-scm>=8.0.0,<9.0.0",
+    
+    # Security scanning
+    "bandit[toml]>=1.8.0,<2.0.0",
+    "safety>=3.0.0,<4.0.0",
+    "pip-audit>=2.7.0,<3.0.0",
+    
+    # Documentation
+    "sphinx>=8.0.0,<9.0.0",
+    "sphinx-rtd-theme>=3.0.0,<4.0.0",
+    "myst-parser>=4.0.0,<5.0.0",
+    
+    # Performance and profiling
+    "pytest-benchmark>=5.0.0,<6.0.0",
+    "memory-profiler>=0.61.0,<1.0.0",
 ]
 
-# Testing dependencies (minimal for CI)
+# Minimal testing dependencies
 test = [
     "pytest>=8.0.0,<9.0.0",
     "pytest-asyncio>=0.24.0,<1.0.0",
     "pytest-cov>=5.0.0,<6.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
+    "pytest-timeout>=2.3.0,<3.0.0",
 ]
 
-# Security scanning
+# Security scanning only
 security = [
     "bandit[toml]>=1.8.0,<2.0.0",
     "safety>=3.0.0,<4.0.0",
     "pip-audit>=2.7.0,<3.0.0",
 ]
 
-# Documentation generation
+# Documentation building
 docs = [
     "sphinx>=8.0.0,<9.0.0",
     "sphinx-rtd-theme>=3.0.0,<4.0.0",
     "myst-parser>=4.0.0,<5.0.0",
+    "sphinx-autodoc-typehints>=2.4.0,<3.0.0",
 ]
 
 # Performance profiling
 perf = [
     "pytest-benchmark>=5.0.0,<6.0.0",
     "memory-profiler>=0.61.0,<1.0.0",
+    "py-spy>=0.4.0,<1.0.0",
 ]
 
-# All development dependencies
+# All optional dependencies
 all = ["nostr-tools[dev,test,security,docs,perf]"]
 
 [project.urls]
 Homepage = "https://github.com/bigbrotr/nostr-tools"
-Documentation = "https://bigbrotr.github.io/nostr-tools"
+Documentation = "https://nostr-tools.readthedocs.io/"
 Repository = "https://github.com/bigbrotr/nostr-tools.git"
 "Bug Reports" = "https://github.com/bigbrotr/nostr-tools/issues"
 "Source Code" = "https://github.com/bigbrotr/nostr-tools"
 Changelog = "https://github.com/bigbrotr/nostr-tools/blob/main/CHANGELOG.md"
+"Funding" = "https://github.com/sponsors/bigbrotr"
 
-# Package discovery (for src layout)
+# Configure setuptools for src layout (when you migrate)
+[tool.setuptools]
+zip-safe = false
+
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src"]  # Use this after moving to src layout
 include = ["nostr_tools*"]
-exclude = ["tests*", "docs*", "examples*"]
+exclude = ["tests*", "docs*", "examples*", "*test*"]
+
+# For current flat layout (remove after migration)
+# [tool.setuptools.packages.find]  
+# where = ["."]
+# include = ["nostr_tools*"]
+# exclude = ["tests*", "docs*", "examples*", "*test*"]
 
 [tool.setuptools.package-data]
 nostr_tools = ["py.typed"]
 
-# Setuptools-scm for version management
+# Dynamic version from git tags using setuptools-scm
 [tool.setuptools_scm]
-write_to = "src/nostr_tools/_version.py"
-fallback_version = "0.1.0"
+write_to = "src/nostr_tools/_version.py"  # Use this after migration
+# write_to = "nostr_tools/_version.py"    # Use this before migration
+fallback_version = "0.1.0-dev"
 
-# Ruff configuration (linting and formatting)
+# Ruff configuration - Modern Python linting and formatting
 [tool.ruff]
 target-version = "py39"
 line-length = 88
@@ -135,39 +172,72 @@ extend-exclude = [
     "__pycache__",
     ".venv",
     ".git",
+    "docs/_build",
 ]
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings  
-    "F",    # pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "UP",   # pyupgrade
-    "SIM",  # flake8-simplify
-    "TCH",  # flake8-type-checking
-    "PTH",  # flake8-use-pathlib
-    "RUF",  # ruff-specific rules
-    "N",    # pep8-naming
-    "S",    # flake8-bandit
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E", "W",
+    # isort
+    "I",
+    # pep8-naming
+    "N",
+    # flake8-bugbear
+    "B",
+    # flake8-comprehensions
+    "C4",
+    # pyupgrade
+    "UP",
+    # flake8-simplify
+    "SIM",
+    # flake8-type-checking
+    "TCH",
+    # flake8-use-pathlib
+    "PTH",
+    # ruff-specific
+    "RUF",
+    # flake8-bandit (security)
+    "S",
+    # flake8-async
+    "ASYNC",
+    # flake8-logging
+    "LOG",
 ]
+
 ignore = [
     "E501",   # line too long (handled by formatter)
     "S101",   # assert statements (OK in tests)
     "S311",   # pseudo-random generators (OK for non-crypto use)
+    "N999",   # invalid module name (for __main__)
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403"]  # imported but unused
-"tests/*" = ["F401", "F811", "S101", "S106"]  # test-specific ignores
-"examples/*" = ["T201", "S106"]  # print statements OK in examples
+"__init__.py" = [
+    "F401",  # imported but unused
+    "F403",  # star imports
+]
+"tests/*" = [
+    "F401",  # imported but unused in tests
+    "F811",  # redefined while unused  
+    "S101",  # assert statements
+    "S106",  # hardcoded passwords (OK in tests)
+]
+"examples/*" = [
+    "T201",  # print statements
+    "S106",  # hardcoded values in examples
+    "E402",  # module imports not at top (for examples)
+]
+"conftest.py" = ["F401", "F403"]
+"*test*.py" = ["S101", "S106"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["nostr_tools"]
 force-sort-within-sections = true
 split-on-trailing-comma = true
+combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "double"
@@ -175,7 +245,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-# MyPy configuration
+# MyPy static type checking configuration
 [tool.mypy]
 python_version = "3.9"
 warn_return_any = true
@@ -188,7 +258,13 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 strict_equality = true
 show_error_codes = true
+show_error_context = true
 
+# Support namespace packages and incremental mode
+namespace_packages = true
+incremental = true
+
+# Type checking for external modules
 [[tool.mypy.overrides]]
 module = [
     "secp256k1.*",
@@ -197,49 +273,86 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Pytest configuration
+# Pytest configuration  
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = [
     "-v",
     "--strict-markers",
+    "--strict-config",
+    "--tb=short",
     "--disable-warnings",
-    "--tb=short"
 ]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
+python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
-    "integration: Integration tests (may require network)",
-    "slow: Slow tests (proof-of-work, network operations)",
+    "integration: Integration tests (may require network access)",
+    "slow: Slow running tests (>1s)",
     "security: Security-focused tests",
+    "crypto: Cryptographic operation tests",
+    "network: Tests requiring network access",
 ]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+# Async test configuration
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# Test timeouts
+timeout = 300  # 5 minutes for entire test suite
+timeout_method = "thread"
 
 # Coverage configuration
 [tool.coverage.run]
-source = ["src/nostr_tools"]
+source = ["nostr_tools"]  # Update to ["src/nostr_tools"] after migration
 branch = true
 parallel = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/*test*.py",
+    "*/conftest.py",
+    "*/__main__.py",
+    "*/setup.py",
+    "*/_version.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "if self\\.debug:",
+    "if __name__ == .__main__.:",
     "raise AssertionError",
     "raise NotImplementedError",
-    "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
 ]
 show_missing = true
 precision = 2
+skip_covered = false
+skip_empty = false
 
 [tool.coverage.html]
 directory = "htmlcov"
 
-# Bandit security configuration
+[tool.coverage.xml]
+output = "coverage.xml"
+
+# Security scanning with Bandit
 [tool.bandit]
-exclude_dirs = ["tests", "examples"]
-skips = ["B101", "B601"]  # Skip assert and shell usage warnings
+exclude_dirs = ["tests", "examples", "docs"]
+skips = [
+    "B101",  # Skip assert_used test (we use asserts appropriately)
+    "B601",  # Skip shell_injection_process_var test (not applicable)
+]
+
+[tool.bandit.assert_used]
+skips = ["*test*.py", "tests/*"]

@@ -78,13 +78,9 @@ ipython_config.py
 .python-version
 
 # pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+Pipfile.lock
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+# PEP 582
 __pypackages__/
 
 # Celery stuff
@@ -165,6 +161,8 @@ secrets.json
 *.temp
 *.bak
 *.backup
+*.orig
+*.rej
 
 # Logs
 logs/
@@ -192,7 +190,134 @@ node_modules/
 *.sqlite
 *.sqlite3
 
-# Backup files
+# Backup files from migration
+backup_*/
+*.backup
+pyproject.toml.backup
+setup.py.backup
+setup.cfg.backup
+
+# Security scan results
+bandit-report.json
+safety-report.json
+
+# Performance profiling
+*.prof
+*.profile
+gmon.out
+
+# Documentation builds
+docs/_build/
+docs/build/
+.doctrees/
+
+# Coverage reports
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# Requirements freeze files
+requirements-frozen.txt
+
+# Local configuration overrides
+local_settings.py
+local_config.py
+
+# Development database
+db.sqlite3
+*.db
+
+# Temporary development files
+scratch/
+tmp/
+temp/
+
+# Editor backup files
 *~
 *.orig
-*.rej
+*.swp
+*.swo
+.#*
+#*#
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Vim
+*.swp
+*.swo
+*.un~
+Session.vim
+.netrwhist
+tags
+
+# Emacs
+*~
+\#*\#
+.\#*
+.dir-locals.el
+TAGS
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+__pycache__/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Profiling
+*.prof
+*.lprof
+
+# Development containers
+.devcontainer/
+
+# Docker
+Dockerfile.dev
+docker-compose.override.yml
+.dockerignore
+
+# Kubernetes
+*.yaml.local
+*.yml.local

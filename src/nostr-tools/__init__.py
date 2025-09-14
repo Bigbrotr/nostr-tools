@@ -1,13 +1,21 @@
 """
-nostr-tools: A Python library for Nostr protocol interactions.
+nostr-tools: A comprehensive Python library for Nostr protocol interactions.
 
 This library provides core components for working with the Nostr protocol,
 including events, relays, WebSocket clients, and cryptographic utilities.
+
+Features:
+- Event creation, validation, and signing
+- Relay communication and management
+- WebSocket client for real-time interactions
+- Cryptographic utilities (secp256k1, bech32)
+- Async/await support throughout
+- Type hints for better development experience
 """
 
 import os
 import sys
-from typing import Any
+from typing import Any, Dict
 
 # Core exports that are always available
 from .exceptions.errors import RelayConnectionError
@@ -15,29 +23,40 @@ from .exceptions.errors import RelayConnectionError
 __author__ = "Bigbrotr"
 __email__ = "hello@bigbrotr.com"
 
-# Version handling with setuptools-scm fallback
+# Version handling with setuptools-scm
 try:
     # Try to get version from setuptools-scm generated file
     from ._version import version as __version__
 except ImportError:
     try:
         # Fallback to setuptools-scm directly
-        from setuptools_scm import get_version
-        __version__ = get_version(root='..', relative_to=__file__)
-    except (ImportError, LookupError):
-        # Final fallback
-        __version__ = "0.1.0-dev"
+        from importlib.metadata import version
+        __version__ = version("nostr-tools")
+    except ImportError:
+        try:
+            # Python < 3.8 fallback
+            from importlib_metadata import version
+            __version__ = version("nostr-tools")
+        except ImportError:
+            try:
+                # Direct setuptools-scm fallback
+                from setuptools_scm import get_version
+                __version__ = get_version()
+            except (ImportError, LookupError):
+                # Final fallback
+                __version__ = "0.1.0-dev"
 
-# Detect if we're in a documentation build environment
+# Detect documentation build environment
 _BUILDING_DOCS = (
     "sphinx" in sys.modules
-    or "sphinx.ext.autodoc" in sys.modules
+    or "sphinx.ext.autodoc" in sys.modules  
     or os.environ.get("SPHINX_BUILD") == "1"
     or "sphinx-build" in " ".join(sys.argv)
+    or "build_sphinx" in sys.argv
 )
 
 if _BUILDING_DOCS:
-    # Direct imports for documentation - Sphinx can access real objects
+    # Direct imports for documentation - Sphinx needs real objects
     from .actions.actions import (
         check_connectivity,
         check_readability,
@@ -71,40 +90,38 @@ if _BUILDING_DOCS:
     )
 
 else:
-    # Lazy loading for runtime - optimizes import performance
-    _LAZY_IMPORTS = {
+    # Lazy loading for runtime - improves import performance
+    _LAZY_IMPORTS: Dict[str, tuple[str, str]] = {
         # Core classes
         "Event": ("nostr_tools.core.event", "Event"),
         "Relay": ("nostr_tools.core.relay", "Relay"),
         "RelayMetadata": ("nostr_tools.core.relay_metadata", "RelayMetadata"),
         "Client": ("nostr_tools.core.client", "Client"),
         "Filter": ("nostr_tools.core.filter", "Filter"),
-        # Utility functions - cryptographic
+        
+        # Cryptographic utilities
         "generate_keypair": ("nostr_tools.utils.utils", "generate_keypair"),
         "generate_event": ("nostr_tools.utils.utils", "generate_event"),
         "calc_event_id": ("nostr_tools.utils.utils", "calc_event_id"),
         "verify_sig": ("nostr_tools.utils.utils", "verify_sig"),
         "sig_event_id": ("nostr_tools.utils.utils", "sig_event_id"),
         "validate_keypair": ("nostr_tools.utils.utils", "validate_keypair"),
-        # Utility functions - encoding
+        
+        # Encoding utilities
         "to_bech32": ("nostr_tools.utils.utils", "to_bech32"),
         "to_hex": ("nostr_tools.utils.utils", "to_hex"),
-        # Utility functions - other
-        "find_websocket_relay_urls": (
-            "nostr_tools.utils.utils",
-            "find_websocket_relay_urls",
-        ),
+        
+        # Network and parsing utilities
+        "find_websocket_relay_urls": ("nostr_tools.utils.utils", "find_websocket_relay_urls"),
         "sanitize": ("nostr_tools.utils.utils", "sanitize"),
+        "parse_nip11_response": ("nostr_tools.utils.utils", "parse_nip11_response"),
+        "parse_connection_response": ("nostr_tools.utils.utils", "parse_connection_response"),
+        
         # Constants
         "TLDS": ("nostr_tools.utils.utils", "TLDS"),
         "URI_GENERIC_REGEX": ("nostr_tools.utils.utils", "URI_GENERIC_REGEX"),
-        # Response parsing
-        "parse_nip11_response": ("nostr_tools.utils.utils", "parse_nip11_response"),
-        "parse_connection_response": (
-            "nostr_tools.utils.utils",
-            "parse_connection_response",
-        ),
-        # Action functions
+        
+        # High-level actions
         "fetch_events": ("nostr_tools.actions.actions", "fetch_events"),
         "stream_events": ("nostr_tools.actions.actions", "stream_events"),
         "fetch_nip11": ("nostr_tools.actions.actions", "fetch_nip11"),
@@ -112,24 +129,21 @@ else:
         "check_readability": ("nostr_tools.actions.actions", "check_readability"),
         "check_writability": ("nostr_tools.actions.actions", "check_writability"),
         "fetch_connection": ("nostr_tools.actions.actions", "fetch_connection"),
-        "compute_relay_metadata": (
-            "nostr_tools.actions.actions",
-            "compute_relay_metadata",
-        ),
+        "compute_relay_metadata": ("nostr_tools.actions.actions", "compute_relay_metadata"),
     }
 
-    # Cache for loaded modules
-    _module_cache: dict[str, Any] = {}
+    # Cache for loaded modules to avoid repeated imports
+    _module_cache: Dict[str, Any] = {}
 
     class _LazyLoader:
-        """A lazy loader that imports modules only when accessed."""
+        """Lazy loader that imports modules only when accessed."""
 
         def __init__(self, module_path: str, attr_name: str) -> None:
             self.module_path = module_path
             self.attr_name = attr_name
 
         def _get_attr(self) -> Any:
-            """Get the actual attribute by importing the module."""
+            """Import the module and get the attribute."""
             cache_key = f"{self.module_path}.{self.attr_name}"
 
             if cache_key in _module_cache:
@@ -146,12 +160,7 @@ else:
                 ) from e
 
     def __getattr__(name: str) -> Any:
-        """
-        Provide lazy loading for module attributes.
-
-        This function is called when an attribute is not found in the module.
-        It checks if the attribute is in the lazy imports and returns a lazy loader.
-        """
+        """Provide lazy loading for module attributes."""
         if name in _LAZY_IMPORTS:
             module_path, attr_name = _LAZY_IMPORTS[name]
             return _LazyLoader(module_path, attr_name)._get_attr()
@@ -159,56 +168,73 @@ else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-# Public API - these are the symbols available when importing the package
+# Public API - symbols available when importing the package
 __all__ = [
-    # Version and metadata
+    # Metadata
     "__version__",
-    "__author__", 
+    "__author__",
     "__email__",
+    
     # Core classes
     "Client",
-    "Event", 
-    "Filter",
+    "Event",
+    "Filter", 
     "Relay",
     "RelayMetadata",
+    
     # Exceptions
     "RelayConnectionError",
-    # Cryptographic utilities
+    
+    # Cryptographic functions
     "calc_event_id",
     "generate_event",
     "generate_keypair",
-    "sig_event_id", 
-    "validate_keypair",
+    "sig_event_id",
+    "validate_keypair", 
     "verify_sig",
-    # Encoding utilities
+    
+    # Encoding functions
     "to_bech32",
     "to_hex",
-    # Network utilities
+    
+    # Utility functions
     "find_websocket_relay_urls",
     "sanitize",
-    # Constants
-    "TLDS",
-    "URI_GENERIC_REGEX", 
-    # Response parsing
     "parse_connection_response",
     "parse_nip11_response",
+    
+    # Constants
+    "TLDS",
+    "URI_GENERIC_REGEX",
+    
     # High-level actions
     "check_connectivity",
-    "check_readability", 
+    "check_readability",
     "check_writability",
     "compute_relay_metadata",
     "fetch_connection",
     "fetch_events",
-    "fetch_nip11", 
+    "fetch_nip11",
     "stream_events",
 ]
 
 
 def __dir__():
-    """
-    Return list of available attributes for tab completion.
-
-    Returns:
-        list: List of available attributes in alphabetical order
-    """
+    """Return available attributes for tab completion and introspection."""
     return sorted(__all__)
+
+
+def get_version() -> str:
+    """Get the current version of nostr-tools."""
+    return __version__
+
+
+def get_info() -> Dict[str, str]:
+    """Get package information."""
+    return {
+        "name": "nostr-tools",
+        "version": __version__,
+        "author": __author__,
+        "email": __email__,
+        "description": "A comprehensive Python library for Nostr protocol interactions",
+    }
