@@ -1,13 +1,19 @@
+# Modern Python packaging configuration for nostr-tools
+# This file defines build system, project metadata, and development dependencies
+
 [build-system]
-requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=8.0"]
+# Build backend configuration - uses setuptools with dynamic versioning
+requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=7.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "nostr-tools"
+# Version is dynamically determined from git tags using setuptools-scm
 dynamic = ["version"]
 description = "A comprehensive Python library for Nostr protocol interactions"
 readme = "README.md"
-requires-python = ">3.9"
+# Support Python 3.9+ for broader compatibility while maintaining modern features
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "Bigbrotr", email = "hello@bigbrotr.com"}
@@ -15,6 +21,8 @@ authors = [
 maintainers = [
     {name = "Bigbrotr", email = "hello@bigbrotr.com"}
 ]
+
+# Keywords for PyPI discoverability - focus on main use cases and technologies
 keywords = [
     "nostr", 
     "decentralized", 
@@ -28,6 +36,8 @@ keywords = [
     "relay",
     "lightning-network"
 ]
+
+# PyPI classifiers for proper categorization and filtering
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -47,87 +57,97 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+# Core runtime dependencies - minimal set required for basic functionality
 dependencies = [
-    # Core cryptographic dependencies
+    # Cryptographic operations - secp256k1 for key generation and signing
     "secp256k1>=0.14.0,<1.0.0",
+    # Bitcoin-style address encoding - bech32 for npub/nsec formats
     "bech32>=1.2.0,<2.0.0",
-    # Async HTTP and WebSocket support
+    # Async HTTP client for relay communication
     "aiohttp>=3.8.0,<4.0.0",
+    # SOCKS proxy support for enhanced privacy
     "aiohttp-socks>=0.8.0,<1.0.0",
-    # Python compatibility
+    # Backport typing features for Python 3.8 compatibility (if needed)
     "typing-extensions>=4.0.0; python_version<'3.9'",
 ]
 
 [project.optional-dependencies]
-# Complete development environment
+# Development environment - includes all tools needed for contributing
+# Version constraints are set for Python 3.9 compatibility while ensuring stability
 dev = [
-    # Testing framework
-    "pytest>=8.0.0,<9.0.0",
-    "pytest-asyncio>=0.24.0,<1.0.0",
-    "pytest-cov>=5.0.0,<6.0.0",
-    "pytest-mock>=3.14.0,<4.0.0",
-    "pytest-timeout>=2.3.0,<3.0.0",
-    "pytest-xdist>=3.6.0,<4.0.0",           # Parallel test execution
+    # Testing framework and plugins
+    "pytest>=7.4.0,<8.0.0",                 # Main testing framework (7.x for Python 3.9)
+    "pytest-asyncio>=0.23.0,<0.24.0",       # Async test support
+    "pytest-cov>=4.0.0,<5.0.0",             # Coverage reporting
+    "pytest-mock>=3.12.0,<4.0.0",           # Mock object utilities
+    "pytest-timeout>=2.1.0,<3.0.0",         # Test timeout handling
+    "pytest-xdist>=3.3.0,<4.0.0",           # Parallel test execution
     
-    # Code quality and linting
-    "ruff>=0.8.0,<1.0.0",
-    "mypy>=1.14.0,<2.0.0",
-    "pre-commit>=4.0.0,<5.0.0",
+    # Code quality and static analysis
+    "ruff>=0.4.0,<1.0.0",                   # Fast linter and formatter
+    "mypy>=1.8.0,<2.0.0",                   # Static type checking
+    "pre-commit>=3.5.0,<4.0.0",             # Git hooks for code quality
     
-    # Build and packaging
-    "build>=1.2.0,<2.0.0",
-    "twine>=6.0.0,<7.0.0",
-    "setuptools-scm>=8.0.0,<9.0.0",
+    # Build and packaging tools
+    "build>=0.10.0,<2.0.0",                 # PEP 517 build tool
+    "twine>=4.0.0,<6.0.0",                  # PyPI upload tool
+    "setuptools-scm>=7.0.0,<9.0.0",         # Git-based versioning
     
-    # Security scanning
-    "bandit[toml]>=1.8.0,<2.0.0",
-    "safety>=3.0.0,<4.0.0",
-    "pip-audit>=2.7.0,<3.0.0",
+    # Security scanning tools
+    "bandit[toml]>=1.7.0,<2.0.0",           # Security vulnerability scanner
+    "safety>=2.3.0,<4.0.0",                 # Known vulnerability checker
+    "pip-audit>=2.6.0,<3.0.0",              # Dependency vulnerability scanner
     
-    # Documentation
-    "sphinx>=8.0.0,<9.0.0",
-    "sphinx-rtd-theme>=3.0.0,<4.0.0",
-    "myst-parser>=4.0.0,<5.0.0",
+    # Documentation generation
+    "sphinx>=7.2.0,<8.0.0",                 # Documentation generator (7.x for Python 3.9)
+    "sphinx-rtd-theme>=1.3.0,<4.0.0",       # Read the Docs theme
+    "myst-parser>=0.19.0,<4.0.0",           # Markdown parser for Sphinx
+    "sphinx-autodoc-typehints>=1.24.0,<3.0.0",
+    "sphinxext-opengraph>=0.8.0,<1.0.0",
+    "sphinx-design>=0.4.0,<1.0.0",
     
-    # Performance and profiling
-    "pytest-benchmark>=5.0.0,<6.0.0",
-    "memory-profiler>=0.61.0,<1.0.0",
+    # Performance profiling tools
+    "pytest-benchmark>=4.0.0,<6.0.0",       # Performance benchmarking
+    "memory-profiler>=0.60.0,<1.0.0",       # Memory usage profiling
 ]
 
-# Minimal testing dependencies
+# Minimal testing dependencies - for CI environments and quick testing
 test = [
-    "pytest>=8.0.0,<9.0.0",
-    "pytest-asyncio>=0.24.0,<1.0.0",
-    "pytest-cov>=5.0.0,<6.0.0",
-    "pytest-mock>=3.14.0,<4.0.0",
-    "pytest-timeout>=2.3.0,<3.0.0",
+    "pytest>=7.4.0,<8.0.0",
+    "pytest-asyncio>=0.23.0,<0.24.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-mock>=3.12.0,<4.0.0",
+    "pytest-timeout>=2.1.0,<3.0.0",
 ]
 
-# Security scanning only
+# Security-focused dependency group - for security-specific CI jobs
 security = [
-    "bandit[toml]>=1.8.0,<2.0.0",
-    "safety>=3.0.0,<4.0.0",
-    "pip-audit>=2.7.0,<3.0.0",
+    "bandit[toml]>=1.7.0,<2.0.0",
+    "safety>=2.3.0,<4.0.0",
+    "pip-audit>=2.6.0,<3.0.0",
 ]
 
-# Documentation building
+# Documentation building dependencies - for docs-only environments
 docs = [
-    "sphinx>=8.0.0,<9.0.0",
-    "sphinx-rtd-theme>=3.0.0,<4.0.0",
-    "myst-parser>=4.0.0,<5.0.0",
-    "sphinx-autodoc-typehints>=2.4.0,<3.0.0",
+    "sphinx>=7.2.0,<8.0.0",
+    "sphinx-rtd-theme>=1.3.0,<4.0.0",
+    "myst-parser>=0.19.0,<4.0.0",
+    "sphinx-autodoc-typehints>=1.24.0,<3.0.0",
+    "sphinxext-opengraph>=0.8.0,<1.0.0",
+    "sphinx-design>=0.4.0,<1.0.0",
 ]
 
-# Performance profiling
+# Performance profiling dependencies - for benchmarking and optimization
 perf = [
-    "pytest-benchmark>=5.0.0,<6.0.0",
-    "memory-profiler>=0.61.0,<1.0.0",
-    "py-spy>=0.4.0,<1.0.0",
+    "pytest-benchmark>=4.0.0,<6.0.0",
+    "memory-profiler>=0.60.0,<1.0.0",
+    "py-spy>=0.3.0,<1.0.0",                 # Sampling profiler
 ]
 
-# All optional dependencies
+# Meta-group including all optional dependencies - for complete development setup
 all = ["nostr-tools[dev,test,security,docs,perf]"]
 
+# Project URLs for PyPI and documentation discovery
 [project.urls]
 Homepage = "https://github.com/bigbrotr/nostr-tools"
 Documentation = "https://nostr-tools.readthedocs.io/"
@@ -137,222 +157,155 @@ Repository = "https://github.com/bigbrotr/nostr-tools.git"
 Changelog = "https://github.com/bigbrotr/nostr-tools/blob/main/CHANGELOG.md"
 "Funding" = "https://github.com/sponsors/bigbrotr"
 
-# Configure setuptools for src layout (when you migrate)
+# Setuptools configuration for package discovery and building
 [tool.setuptools]
 zip-safe = false
 
+# Package discovery configuration for src layout
 [tool.setuptools.packages.find]
-where = ["src"]  # Use this after moving to src layout
+where = ["src"]
 include = ["nostr_tools*"]
 exclude = ["tests*", "docs*", "examples*", "*test*"]
 
-# For current flat layout (remove after migration)
-# [tool.setuptools.packages.find]  
-# where = ["."]
-# include = ["nostr_tools*"]
-# exclude = ["tests*", "docs*", "examples*", "*test*"]
-
-[tool.setuptools.package-data]
-nostr_tools = ["py.typed"]
-
-# Dynamic version from git tags using setuptools-scm
+# Dynamic versioning configuration using git tags
 [tool.setuptools_scm]
-write_to = "src/nostr_tools/_version.py"  # Use this after migration
-# write_to = "nostr_tools/_version.py"    # Use this before migration
-fallback_version = "0.1.0-dev"
+# Version will be derived from git tags, with local version for dirty working trees
+write_to = "src/nostr_tools/_version.py"
+version_scheme = "guess-next-dev"
+local_scheme = "dirty-tag"
 
-# Ruff configuration - Modern Python linting and formatting
+# Ruff configuration - modern Python linter and formatter
 [tool.ruff]
+# Target Python 3.9+ syntax and features
 target-version = "py39"
-line-length = 88
-extend-exclude = [
-    "build",
-    "dist", 
-    "*.egg-info",
-    "__pycache__",
-    ".venv",
-    ".git",
-    "docs/_build",
-]
-
-[tool.ruff.lint]
+line-length = 100
 select = [
-    # Pyflakes
-    "F",
-    # Pycodestyle
-    "E", "W",
-    # isort
-    "I",
-    # pep8-naming
-    "N",
-    # flake8-bugbear
-    "B",
-    # flake8-comprehensions
-    "C4",
-    # pyupgrade
-    "UP",
-    # flake8-simplify
-    "SIM",
-    # flake8-type-checking
-    "TCH",
-    # flake8-use-pathlib
-    "PTH",
-    # ruff-specific
-    "RUF",
-    # flake8-bandit (security)
-    "S",
-    # flake8-async
-    "ASYNC",
-    # flake8-logging
-    "LOG",
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "N",    # pep8-naming
 ]
-
 ignore = [
-    "E501",   # line too long (handled by formatter)
-    "S101",   # assert statements (OK in tests)
-    "S311",   # pseudo-random generators (OK for non-crypto use)
-    "N999",   # invalid module name (for __main__)
+    "E501",  # Line too long (handled by formatter)
+    "B008",  # Do not perform function calls in argument defaults
+    "C901",  # Too complex (let developers decide)
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = [
-    "F401",  # imported but unused
-    "F403",  # star imports
+# Directories to exclude from linting
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
 ]
-"tests/*" = [
-    "F401",  # imported but unused in tests
-    "F811",  # redefined while unused  
-    "S101",  # assert statements
-    "S106",  # hardcoded passwords (OK in tests)
-]
-"examples/*" = [
-    "T201",  # print statements
-    "S106",  # hardcoded values in examples
-    "E402",  # module imports not at top (for examples)
-]
-"conftest.py" = ["F401", "F403"]
-"*test*.py" = ["S101", "S106"]
 
-[tool.ruff.lint.isort]
+# Import sorting configuration
+[tool.ruff.isort]
 known-first-party = ["nostr_tools"]
-force-sort-within-sections = true
-split-on-trailing-comma = true
-combine-as-imports = true
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
+force-single-line = true
 
 # MyPy static type checking configuration
 [tool.mypy]
+# Target Python 3.9+ for type checking
 python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
-disallow_incomplete_defs = true
-check_untyped_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-strict_equality = true
+# Strict type checking for high code quality
+strict = true
+# Show error codes for easier issue resolution
 show_error_codes = true
-show_error_context = true
+# Pretty print errors for better readability
+pretty = true
+# Warn about unused ignores to keep comments clean
+warn_unused_ignores = true
 
-# Support namespace packages and incremental mode
-namespace_packages = true
-incremental = true
-
-# Type checking for external modules
+# Module-specific type checking configuration
 [[tool.mypy.overrides]]
+# Third-party modules without type stubs
 module = [
     "secp256k1.*",
     "bech32.*",
-    "aiohttp_socks.*",
 ]
 ignore_missing_imports = true
 
-# Pytest configuration  
-[tool.pytest.ini_options]
-minversion = "8.0"
-addopts = [
-    "-v",
-    "--strict-markers",
-    "--strict-config",
-    "--tb=short",
-    "--disable-warnings",
-]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-markers = [
-    "unit: Unit tests (fast, no external dependencies)",
-    "integration: Integration tests (may require network access)",
-    "slow: Slow running tests (>1s)",
-    "security: Security-focused tests",
-    "crypto: Cryptographic operation tests",
-    "network: Tests requiring network access",
-]
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-]
-# Async test configuration
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
-
-# Test timeouts
-timeout = 300  # 5 minutes for entire test suite
-timeout_method = "thread"
-
-# Coverage configuration
+# Test coverage configuration
 [tool.coverage.run]
-source = ["nostr_tools"]  # Update to ["src/nostr_tools"] after migration
+source = ["src/nostr_tools"]
 branch = true
-parallel = true
+# Exclude test files from coverage measurement
 omit = [
+    "tests/*",
     "*/tests/*",
     "*/test_*.py",
-    "*/*test*.py",
-    "*/conftest.py",
-    "*/__main__.py",
-    "*/setup.py",
-    "*/_version.py",
+    "*/__init__.py",
 ]
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "if self\\.debug:",
-    "if __name__ == .__main__.:",
+    "if self.debug:",
+    "if settings.DEBUG",
     "raise AssertionError",
     "raise NotImplementedError",
-    "if TYPE_CHECKING:",
+    "if 0:",
+    "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-show_missing = true
-precision = 2
-skip_covered = false
-skip_empty = false
 
-[tool.coverage.html]
-directory = "htmlcov"
+# Pytest configuration
+[tool.pytest.ini_options]
+# Test discovery patterns
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
-[tool.coverage.xml]
-output = "coverage.xml"
-
-# Security scanning with Bandit
-[tool.bandit]
-exclude_dirs = ["tests", "examples", "docs"]
-skips = [
-    "B101",  # Skip assert_used test (we use asserts appropriately)
-    "B601",  # Skip shell_injection_process_var test (not applicable)
+# Useful command-line options by default
+addopts = [
+    "--strict-markers",     # Require all markers to be defined
+    "--strict-config",      # Require all config options to be valid
+    "--verbose",            # Verbose output for better debugging
+    "--tb=short",          # Shorter traceback format
+    "--cov=nostr_tools",   # Enable coverage for main package
+    "--cov-report=term-missing",  # Show missing lines in terminal
+    "--cov-report=html",   # Generate HTML coverage report
+    "--cov-fail-under=80", # Fail if coverage below 80%
 ]
 
-[tool.bandit.assert_used]
-skips = ["*test*.py", "tests/*"]
+# Test markers for categorization
+markers = [
+    "unit: Unit tests - fast, no external dependencies",
+    "integration: Integration tests - may require network access", 
+    "slow: Slow tests - long running or resource intensive",
+    "security: Security-related tests",
+    "benchmark: Performance benchmark tests",
+]
+
+# Async test configuration
+asyncio_mode = "auto"
+
+# Bandit security scanner configuration
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+# Skip tests that are too restrictive for our use case
+skips = ["B101", "B601"]

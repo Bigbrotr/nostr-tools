@@ -1,16 +1,35 @@
-# Documentation requirements for ReadTheDocs
-# These are the minimum requirements needed to build the documentation
+# Documentation build requirements for Read the Docs
+# These dependencies are specifically for building documentation in RTD environment
+# Versions are pinned for Python 3.9 compatibility and build reproducibility
 
-# Sphinx and theme
-sphinx>=8.0.0,<9.0.0
-sphinx-rtd-theme>=3.0.0,<4.0.0
+# Core Sphinx documentation generator
+# Version 7.x maintained for Python 3.9 compatibility (8.x requires Python 3.10+)
+sphinx>=7.2.6,<8.0.0
 
-# Markdown support
-myst-parser>=4.0.0,<5.0.0
+# Read the Docs theme - provides RTD's signature look and responsive design
+# Version 1.x ensures compatibility with Sphinx 7.x and Python 3.9
+sphinx-rtd-theme>=1.3.0,<2.0.0
 
-# Auto-documentation enhancements
-sphinx-autodoc-typehints>=2.0.0,<3.0.0
+# Markdown parsing support for Sphinx - enables .md files in documentation
+# Version 0.19+ provides stable MyST parsing, <4.0 for Python 3.9 compatibility
+myst-parser>=0.19.2,<4.0.0
+
+# Enhanced type hint documentation - automatically documents type annotations
+# Version 1.24+ provides good type hint formatting, <3.0 for stability
+sphinx-autodoc-typehints>=1.24.0,<3.0.0
+
+# Copy-to-clipboard button for code blocks - improves user experience
+# Stable version that works across different Sphinx versions
 sphinx-copybutton>=0.5.2,<1.0.0
 
-# Optional: For better API documentation
-sphinxext-opengraph>=0.9.0,<1.0.0
+# Optional: Open Graph meta tags for better social media sharing
+# Generates proper preview cards when documentation links are shared
+sphinxext-opengraph>=0.8.0,<1.0.0
+
+# Optional: Better API documentation formatting
+# Provides enhanced layouts for API references (uncomment if needed)
+sphinx-design>=0.4.0,<1.0.0
+
+# Optional: Tabs support for multi-language examples
+# Useful for showing code examples in different languages (uncomment if needed)
+# sphinx-inline-tabs>=2023.4.21,<2024.0.0
