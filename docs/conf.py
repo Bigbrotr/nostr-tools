@@ -160,16 +160,6 @@ def setup(app):
     app.connect("autodoc-skip-member", skip_member)
 
 
-# Suppress specific warnings for cleaner builds (optional)
-suppress_warnings = [
-    # Uncomment if you want to suppress these warning types:
-    # 'ref.any',          # Cross-reference warnings
-    # 'toc.not_readable', # Table of contents warnings
-]
-
-# Make sure we can import everything
-autodoc_mock_imports = []
-
 # Add type hints extension if available
 try:
     extensions.append("sphinx_autodoc_typehints")
