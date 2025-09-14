@@ -63,7 +63,7 @@ Violations of the Code of Conduct should be reported to hello@bigbrotr.com. All 
 
 ### Prerequisites
 
-- **Python 3.10+** (tested on 3.10, 3.11, 3.12)
+- **Python 3.9+** (tested on 3.9, 3.10, 3.11, 3.12, 3.13)
 - **Git** for version control
 - **Make** for build automation (optional but recommended)
 
