@@ -1,8 +1,7 @@
-# .pre-commit-config.yaml
 repos:
   # Code formatting and linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.8.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -12,7 +11,7 @@ repos:
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.14.0
     hooks:
       - id: mypy
         args: [--ignore-missing-imports, --show-error-codes, --no-error-summary]
@@ -20,7 +19,7 @@ repos:
 
   # Security scanning
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.8.0
     hooks:
       - id: bandit
         args: ["-c", "pyproject.toml", "-r", "nostr_tools"]
@@ -39,7 +38,7 @@ repos:
 
       - id: docs-link-check
         name: Validate Documentation Links
-        entry: bash -c 'if [ -d "docs/_build/html" ]; then pip install linkchecker >/dev/null 2>&1 && linkchecker docs/_build/html/ --check-extern || echo "Link validation completed with warnings"; fi'
+        entry: bash -c 'if [ -d "docs/_build/html" ]; then python3 -m pip install linkchecker >/dev/null 2>&1 && linkchecker docs/_build/html/ --check-extern || echo "Link validation completed with warnings"; fi'
         language: system
         files: '^docs/.*\.rst$'
         pass_filenames: false

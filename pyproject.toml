@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=72.0", "wheel", "setuptools_scm>=7.0"]
+requires = ["setuptools>=72.0", "wheel", "setuptools_scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -34,78 +34,76 @@ classifiers = [
     "Topic :: Communications",
     "Topic :: Security :: Cryptography",
     "Framework :: AsyncIO",
+    "Typing :: Typed",
 ]
 
 dependencies = [
     # Cryptographic dependencies
-    "secp256k1>=0.14.0,<1.0.0",           # Elliptic curve cryptography for Nostr signatures
-    "bech32>=1.2.0,<2.0.0",               # Bech32 encoding for Nostr keys (npub/nsec)
-
+    "secp256k1>=0.14.0,<1.0.0",
+    "bech32>=1.2.0,<2.0.0",
+    
     # Network and WebSocket dependencies
-    "aiohttp>=3.8.0,<4.0.0",              # Async HTTP client for WebSocket connections
-    "aiohttp-socks>=0.8.0,<1.0.0",        # SOCKS proxy support for Tor relays
-
+    "aiohttp>=3.8.0,<4.0.0",
+    "aiohttp-socks>=0.8.0,<1.0.0",
+    
     # Python version compatibility
-    "typing-extensions>=4.0.0; python_version<'3.10'",  # Extended type hints for older Python
+    "typing-extensions>=4.0.0; python_version<'3.10'",
 ]
 
 [project.optional-dependencies]
 # Development dependencies
 dev = [
-    # Testing framework
-    "pytest>=8.0.0,<9.0.0",
-    "pytest-asyncio>=0.24.0,<1.0.0",
-    "pytest-cov>=5.0.0,<6.0.0",
-    "pytest-mock>=3.14.0,<4.0.0",
-
     # Code quality and formatting
-    "ruff==0.8.6",                        # Linter and formatter
-    "mypy>=1.14.0,<2.0.0",                 # Static type checker
-    "pre-commit>=4.0.0,<5.0.0",            # Git hooks for code quality
-
-    # Build tools
-    "build>=1.0.0",                        # PEP 517 build frontend
-    "twine>=6.0.0",                        # Package uploading tool
+    "ruff==0.8.6",
+    "mypy>=1.14.0,<2.0.0",
+    "pre-commit>=4.0.0,<5.0.0",
+    
+    # Build and distribution tools
+    "build>=1.0.0,<2.0.0",
+    "twine>=6.0.0,<7.0.0",
+    "wheel>=0.44.0",
 ]
 
-# Testing dependencies (minimal set for CI)
+# Testing dependencies
 test = [
     "pytest>=8.0.0,<9.0.0",
     "pytest-asyncio>=0.24.0,<1.0.0",
     "pytest-cov>=5.0.0,<6.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
+    "pytest-xdist>=3.0.0,<4.0.0",
 ]
 
 # Security scanning dependencies
 security = [
-    "bandit[toml]>=1.8.0,<2.0.0",         # Security linter for Python
-    "safety>=3.0.0,<4.0.0",               # Dependency vulnerability scanner
-    "pip-audit>=2.7.0,<3.0.0",            # Audit packages for known vulnerabilities
+    "bandit[toml]>=1.8.0,<2.0.0",
+    "safety>=3.0.0,<4.0.0",
+    "pip-audit>=2.7.0,<3.0.0",
 ]
 
 # Documentation dependencies
 docs = [
-    "sphinx>=7.1.0,<8.0.0",               # Documentation generator
-    "sphinx-rtd-theme>=2.0.0,<3.0.0",     # Read the Docs theme
-    "myst-parser>=2.0.0,<3.0.0",          # Markdown support for Sphinx
-    "sphinx-autodoc-typehints>=1.24.0,<2.0.0",  # Better type hint rendering
+    "sphinx>=7.1.0,<8.0.0",
+    "sphinx-rtd-theme>=2.0.0,<3.0.0",
+    "myst-parser>=2.0.0,<3.0.0",
+    "sphinx-autodoc-typehints>=1.24.0,<2.0.0",
+    "linkchecker>=10.0.0",
 ]
 
 # Performance profiling dependencies
 perf = [
-    "pytest-benchmark>=5.0.0,<6.0.0",     # Performance benchmarking
-    "memory-profiler>=0.61.0,<1.0.0",     # Memory usage profiling
-    "py-spy>=0.4.0,<1.0.0",               # Sampling profiler
+    "pytest-benchmark>=5.0.0,<6.0.0",
+    "memory-profiler>=0.61.0,<1.0.0",
+    "py-spy>=0.4.0,<1.0.0",
 ]
 
-# All development dependencies combined
+# All dependencies combined
 all = [
     "nostr-tools[dev,test,security,docs,perf]"
 ]
 
 [project.urls]
 Homepage = "https://github.com/bigbrotr/nostr-tools"
-Documentation = "https://github.com/bigbrotr/nostr-tools#readme"
+Documentation = "https://bigbrotr.github.io/nostr-tools/"
 Repository = "https://github.com/bigbrotr/nostr-tools.git"
 "Bug Reports" = "https://github.com/bigbrotr/nostr-tools/issues"
 "Source Code" = "https://github.com/bigbrotr/nostr-tools"
@@ -114,7 +112,7 @@ Changelog = "https://github.com/bigbrotr/nostr-tools/blob/main/CHANGELOG.md"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["nostr_tools*"]
-exclude = ["tests*", "docs*", "examples*"]
+exclude = ["tests*", "docs*", "examples*", "build*", "dist*"]
 
 [tool.setuptools.package-data]
 nostr_tools = ["py.typed"]
@@ -186,38 +184,3 @@ minversion = "8.0"
 addopts = [
     "--strict-markers",
     "--strict-config",
-]
-testpaths = ["tests"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "security: marks tests as security-focused tests",
-]
-asyncio_mode = "auto"
-
-# Coverage configuration
-[tool.coverage.run]
-source = ["nostr_tools"]
-omit = [
-    "*/tests/*",
-    "*/test_*",
-    "setup.py",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if typing.TYPE_CHECKING:",
-]
-show_missing = true
-precision = 2
-
-# Bandit security configuration
-[tool.bandit]
-exclude_dirs = ["tests", "examples"]
-skips = ["B101", "B601"]
