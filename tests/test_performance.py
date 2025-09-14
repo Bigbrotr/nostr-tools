@@ -5,21 +5,19 @@ These tests measure performance characteristics and ensure the library
 meets performance requirements for key operations.
 """
 
-from concurrent.futures import ThreadPoolExecutor
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from nostr_tools import (
-    Event,
-    Filter,
-    calc_event_id,
-    generate_event,
-    generate_keypair,
-    to_bech32,
-    to_hex,
-    verify_sig,
-)
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import calc_event_id
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from nostr_tools import to_bech32
+from nostr_tools import to_hex
+from nostr_tools import verify_sig
 
 
 @pytest.mark.slow
@@ -38,9 +36,7 @@ class TestCryptographicPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should generate at least 10 keypairs per second
-        assert (
-            avg_time < 0.1
-        ), f"Keypair generation too slow: {avg_time:.4f}s per keypair"
+        assert avg_time < 0.1, f"Keypair generation too slow: {avg_time:.4f}s per keypair"
 
         print(f"Keypair generation: {1 / avg_time:.1f} pairs/second")
 
@@ -74,9 +70,7 @@ class TestCryptographicPerformance:
 
         print(f"Event signing: {1 / avg_time:.1f} events/second")
 
-    def test_signature_verification_performance(
-        self, sample_keypair, performance_timer
-    ):
+    def test_signature_verification_performance(self, sample_keypair, performance_timer):
         """Test signature verification performance."""
         private_key, public_key = sample_keypair
         iterations = 100
@@ -101,9 +95,7 @@ class TestCryptographicPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should verify at least 50 signatures per second
-        assert (
-            avg_time < 0.02
-        ), f"Signature verification too slow: {avg_time:.4f}s per verification"
+        assert avg_time < 0.02, f"Signature verification too slow: {avg_time:.4f}s per verification"
 
         print(f"Signature verification: {1 / avg_time:.1f} verifications/second")
 
@@ -139,9 +131,7 @@ class TestCryptographicPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should calculate at least 200 IDs per second
-        assert (
-            avg_time < 0.005
-        ), f"Event ID calculation too slow: {avg_time:.4f}s per ID"
+        assert avg_time < 0.005, f"Event ID calculation too slow: {avg_time:.4f}s per ID"
 
         print(f"Event ID calculation: {1 / avg_time:.1f} IDs/second")
 
@@ -163,9 +153,7 @@ class TestEncodingPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should encode at least 500 per second
-        assert (
-            avg_time < 0.002
-        ), f"Bech32 encoding too slow: {avg_time:.4f}s per encoding"
+        assert avg_time < 0.002, f"Bech32 encoding too slow: {avg_time:.4f}s per encoding"
 
         print(f"Bech32 encoding: {1 / avg_time:.1f} encodings/second")
 
@@ -182,9 +170,7 @@ class TestEncodingPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should decode at least 500 per second
-        assert (
-            avg_time < 0.002
-        ), f"Bech32 decoding too slow: {avg_time:.4f}s per decoding"
+        assert avg_time < 0.002, f"Bech32 decoding too slow: {avg_time:.4f}s per decoding"
 
         print(f"Bech32 decoding: {1 / avg_time:.1f} decodings/second")
 
@@ -247,9 +233,7 @@ class TestEventProcessingPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should serialize at least 500 events per second
-        assert (
-            avg_time < 0.002
-        ), f"Event serialization too slow: {avg_time:.4f}s per event"
+        assert avg_time < 0.002, f"Event serialization too slow: {avg_time:.4f}s per event"
 
         print(f"Event serialization: {1 / avg_time:.1f} events/second")
 
@@ -283,14 +267,10 @@ class TestEventProcessingPerformance:
             event.has_tag("nonexistent")
         performance_timer.stop()
 
-        avg_time = performance_timer.elapsed / (
-            iterations * 4
-        )  # 4 operations per iteration
+        avg_time = performance_timer.elapsed / (iterations * 4)  # 4 operations per iteration
 
         # Should perform at least 1000 tag operations per second
-        assert (
-            avg_time < 0.001
-        ), f"Tag operations too slow: {avg_time:.4f}s per operation"
+        assert avg_time < 0.001, f"Tag operations too slow: {avg_time:.4f}s per operation"
 
         print(f"Tag operations: {1 / avg_time:.1f} operations/second")
 
@@ -353,9 +333,7 @@ class TestFilterPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Should validate at least 200 complex filters per second
-        assert (
-            avg_time < 0.005
-        ), f"Filter validation too slow: {avg_time:.4f}s per filter"
+        assert avg_time < 0.005, f"Filter validation too slow: {avg_time:.4f}s per filter"
 
         print(f"Filter validation: {1 / avg_time:.1f} filters/second")
 
@@ -381,9 +359,7 @@ class TestProofOfWorkPerformance:
         performance_timer.stop()
 
         # Should complete within reasonable time
-        assert (
-            performance_timer.elapsed < 10
-        ), f"PoW too slow: {performance_timer.elapsed:.2f}s"
+        assert performance_timer.elapsed < 10, f"PoW too slow: {performance_timer.elapsed:.2f}s"
 
         # Verify the event has the nonce tag
         event = Event.from_dict(event_data)
@@ -409,9 +385,9 @@ class TestProofOfWorkPerformance:
         performance_timer.stop()
 
         # Should respect timeout
-        assert (
-            performance_timer.elapsed <= 3
-        ), f"PoW timeout not respected: {performance_timer.elapsed:.2f}s"
+        assert performance_timer.elapsed <= 3, (
+            f"PoW timeout not respected: {performance_timer.elapsed:.2f}s"
+        )
 
         # Event should still be valid (without PoW if timed out)
         event = Event.from_dict(event_data)
@@ -443,9 +419,9 @@ class TestConcurrencyPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Concurrent generation should still be reasonably fast
-        assert (
-            avg_time < 0.2
-        ), f"Concurrent keypair generation too slow: {avg_time:.4f}s per keypair"
+        assert avg_time < 0.2, (
+            f"Concurrent keypair generation too slow: {avg_time:.4f}s per keypair"
+        )
 
         print(f"Concurrent keypair generation: {1 / avg_time:.1f} pairs/second")
 
@@ -475,9 +451,7 @@ class TestConcurrencyPerformance:
         avg_time = performance_timer.elapsed / iterations
 
         # Concurrent event creation should be reasonably fast
-        assert (
-            avg_time < 0.1
-        ), f"Concurrent event creation too slow: {avg_time:.4f}s per event"
+        assert avg_time < 0.1, f"Concurrent event creation too slow: {avg_time:.4f}s per event"
 
         print(f"Concurrent event creation: {1 / avg_time:.1f} events/second")
 
@@ -489,7 +463,6 @@ class TestMemoryPerformance:
     def test_event_memory_usage(self, sample_keypair):
         """Test memory usage of event creation."""
         import gc
-        import sys
 
         private_key, public_key = sample_keypair
 
@@ -519,9 +492,7 @@ class TestMemoryPerformance:
 
         # Should not create excessive objects
         objects_per_event = objects_created / 1000
-        assert (
-            objects_per_event < 50
-        ), f"Too many objects created per event: {objects_per_event}"
+        assert objects_per_event < 50, f"Too many objects created per event: {objects_per_event}"
 
         print(f"Objects per event: {objects_per_event:.1f}")
 
@@ -549,9 +520,9 @@ class TestMemoryPerformance:
         performance_timer.stop()
 
         # Should handle large events reasonably fast
-        assert (
-            performance_timer.elapsed < 1.0
-        ), f"Large event processing too slow: {performance_timer.elapsed:.2f}s"
+        assert performance_timer.elapsed < 1.0, (
+            f"Large event processing too slow: {performance_timer.elapsed:.2f}s"
+        )
 
         # Verify data integrity
         assert len(serialized["content"]) == 10000
@@ -616,15 +587,11 @@ class TestBenchmarkComparison:
         print("\nBenchmark Results:")
         print(f"Keypair generation: {results['keypair_generation'] * 1000:.2f}ms")
         print(f"Event creation: {results['event_creation'] * 1000:.2f}ms")
-        print(
-            f"Signature verification: {results['signature_verification'] * 1000:.2f}ms"
-        )
+        print(f"Signature verification: {results['signature_verification'] * 1000:.2f}ms")
         print(f"Bech32 encoding: {results['bech32_encoding'] * 1000:.2f}ms")
 
         # Assert reasonable performance thresholds
         assert results["keypair_generation"] < 0.1, "Keypair generation too slow"
         assert results["event_creation"] < 0.05, "Event creation too slow"
-        assert (
-            results["signature_verification"] < 0.02
-        ), "Signature verification too slow"
+        assert results["signature_verification"] < 0.02, "Signature verification too slow"
         assert results["bech32_encoding"] < 0.001, "Bech32 encoding too slow"

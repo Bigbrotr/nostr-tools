@@ -47,16 +47,25 @@ Example:
     ...         print(f"New event: {event.content}")
 """
 
-from collections.abc import AsyncGenerator
+import logging
 import time
-from typing import Any, Optional
+from asyncio import TimeoutError
+from collections.abc import AsyncGenerator
+from typing import Any
+from typing import Optional
+
+from aiohttp import ClientError
 
 from ..core.client import Client
 from ..core.event import Event
 from ..core.filter import Filter
 from ..core.relay_metadata import RelayMetadata
 from ..exceptions.errors import RelayConnectionError
-from ..utils import generate_event, parse_connection_response, parse_nip11_response
+from ..utils import generate_event
+from ..utils import parse_connection_response
+from ..utils import parse_nip11_response
+
+logger = logging.getLogger(__name__)
 
 
 async def fetch_events(
@@ -91,8 +100,10 @@ async def fetch_events(
         try:
             event = Event.from_dict(event_message[2])
             events.append(event)
-        except Exception:
-            continue  # Skip invalid events
+        except (TypeError, KeyError, ValueError) as e:
+            logger.debug(f"Failed to parse event: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error parsing event: {e}")
 
     await client.unsubscribe(subscription_id)
     return events
@@ -129,8 +140,10 @@ async def stream_events(
         try:
             event = Event.from_dict(event_message[2])
             yield event
-        except Exception:
-            continue  # Skip invalid events
+        except (TypeError, KeyError, ValueError) as e:
+            logger.debug(f"Failed to parse event: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error parsing event: {e}")
 
     await client.unsubscribe(subscription_id)
 
@@ -157,15 +170,15 @@ async def fetch_nip11(client: Client) -> Optional[dict[str, Any]]:
         try:
             async with (
                 client.session() as session,
-                session.get(
-                    schema + relay_id, headers=headers, timeout=client.timeout
-                ) as response,
+                session.get(schema + relay_id, headers=headers, timeout=client.timeout) as response,
             ):
                 if response.status == 200:
                     result = await response.json()
                     return dict(result) if isinstance(result, dict) else result
-        except Exception:
-            pass
+        except (ClientError, TimeoutError) as e:
+            logger.debug(f"Failed to fetch NIP-11 from {schema + relay_id}: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error fetching NIP-11: {e}")
 
     return None
 
@@ -198,8 +211,10 @@ async def check_connectivity(client: Client) -> tuple[Optional[int], bool]:
             time_end = time.perf_counter()
             rtt_open = int((time_end - time_start) * 1000)
             openable = True
-    except Exception:
-        pass
+    except RelayConnectionError as e:
+        logger.debug(f"Relay connection error: {e}")
+    except Exception as e:
+        logger.exception(f"Unexpected error during connectivity check: {e}")
 
     return rtt_open, openable
 
@@ -249,8 +264,10 @@ async def check_readability(client: Client) -> tuple[Optional[int], bool]:
                 continue  # Ignore notices
 
         await client.unsubscribe(subscription_id)
-    except Exception:
-        pass
+    except RelayConnectionError as e:
+        logger.debug(f"Relay connection error: {e}")
+    except Exception as e:
+        logger.exception(f"Unexpected error during readability check: {e}")
 
     return rtt_read, readable
 
@@ -290,9 +307,7 @@ async def check_writability(
     try:
         # Generate test event with relay URL as identifier
         timeout = (
-            event_creation_timeout
-            if event_creation_timeout is not None
-            else (client.timeout or 10)
+            event_creation_timeout if event_creation_timeout is not None else (client.timeout or 10)
         )
 
         event_dict = generate_event(
@@ -311,8 +326,10 @@ async def check_writability(
         writable = await client.publish(event)
         time_end = time.perf_counter()
         rtt_write = int((time_end - time_start) * 1000)
-    except Exception:
-        pass
+    except RelayConnectionError as e:
+        logger.debug(f"Relay connection error: {e}")
+    except Exception as e:
+        logger.exception(f"Unexpected error during writability check: {e}")
 
     return rtt_write, writable
 
@@ -416,9 +433,7 @@ async def compute_relay_metadata(
         if not isinstance(target_difficulty, dict)
         else target_difficulty.get("min_pow_difficulty")
     )
-    target_difficulty = (
-        target_difficulty if isinstance(target_difficulty, int) else None
-    )
+    target_difficulty = target_difficulty if isinstance(target_difficulty, int) else None
 
     # Test connection capabilities with detected PoW requirement
     connection_response = await fetch_connection(

@@ -7,7 +7,8 @@ NIP-11 information document data, and operational capabilities.
 """
 
 import json
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 from .relay import Relay
 
@@ -134,9 +135,7 @@ class RelayMetadata:
             if optional and field_value is None:
                 continue
             if not isinstance(field_value, expected_type):
-                type_desc = f"{expected_type.__name__}" + (
-                    " or None" if optional else ""
-                )
+                type_desc = f"{expected_type.__name__}" + (" or None" if optional else "")
                 raise TypeError(
                     f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
                 )
@@ -147,9 +146,7 @@ class RelayMetadata:
         if supported_nips is not None:
             for nip in supported_nips:
                 if not isinstance(nip, (int, str)):
-                    raise TypeError(
-                        f"supported_nips items must be int or str, not {type(nip)}"
-                    )
+                    raise TypeError(f"supported_nips items must be int or str, not {type(nip)}")
 
         # Validate dictionary fields for JSON serializability
         dict_fields_to_validate = [
@@ -160,9 +157,7 @@ class RelayMetadata:
             if field_value is not None:
                 for key, val in field_value.items():
                     if not isinstance(key, str):
-                        raise TypeError(
-                            f"{field_name} keys must be strings, not {type(key)}"
-                        )
+                        raise TypeError(f"{field_name} keys must be strings, not {type(key)}")
                     try:
                         json.dumps(val)
                     except Exception as e:

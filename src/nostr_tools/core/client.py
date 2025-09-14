@@ -7,24 +7,28 @@ relay communications.
 """
 
 import asyncio
-from collections.abc import AsyncGenerator
 import json
-from typing import Any, Optional, Union
+import logging
 import uuid
+from collections.abc import AsyncGenerator
+from inspect import Traceback
+from typing import Any
+from typing import Optional
+from typing import Union
 
-from aiohttp import (
-    ClientSession,
-    ClientWebSocketResponse,
-    ClientWSTimeout,
-    TCPConnector,
-    WSMsgType,
-)
+from aiohttp import ClientSession
+from aiohttp import ClientWebSocketResponse
+from aiohttp import ClientWSTimeout
+from aiohttp import TCPConnector
+from aiohttp import WSMsgType
 from aiohttp_socks import ProxyConnector
 
 from ..exceptions import RelayConnectionError
 from .event import Event
 from .filter import Filter
 from .relay import Relay
+
+logger = logging.getLogger(__name__)
 
 
 class Client:
@@ -69,9 +73,7 @@ class Client:
             if optional and field_value is None:
                 continue
             if not isinstance(field_value, expected_type):
-                type_desc = f"{expected_type.__name__}" + (
-                    " or None" if optional else ""
-                )
+                type_desc = f"{expected_type.__name__}" + (" or None" if optional else "")
                 raise TypeError(
                     f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
                 )
@@ -86,7 +88,7 @@ class Client:
         self._ws: Optional[ClientWebSocketResponse] = None
         self._subscriptions: dict[str, dict[str, Any]] = {}
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Client":
         """
         Async context manager entry.
 
@@ -96,7 +98,7 @@ class Client:
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: type, exc_val: Exception, exc_tb: Traceback) -> None:
         """
         Async context manager exit.
 
@@ -170,8 +172,8 @@ class Client:
                     else:
                         self._ws = await self._session.ws_connect(schema + relay_id)
                     break
-                except Exception:
-                    continue
+                except Exception as e:
+                    logger.debug(f"Failed to connect via {schema}, trying next option: {e}")
 
             if not self._ws or self._ws.closed:
                 raise Exception("Failed to establish WebSocket connection")
@@ -180,9 +182,7 @@ class Client:
             if self._session:
                 await self._session.close()
                 self._session = None
-            raise RelayConnectionError(
-                f"Failed to connect to {self.relay.url}: {e}"
-            ) from e
+            raise RelayConnectionError(f"Failed to connect to {self.relay.url}: {e}") from e
 
     async def disconnect(self) -> None:
         """
@@ -219,9 +219,7 @@ class Client:
         except Exception as e:
             raise RelayConnectionError(f"Failed to send message: {e}") from e
 
-    async def subscribe(
-        self, filter: Filter, subscription_id: Optional[str] = None
-    ) -> str:
+    async def subscribe(self, filter: Filter, subscription_id: Optional[str] = None) -> str:
         """
         Subscribe to events matching the given filter.
 
@@ -329,9 +327,7 @@ class Client:
         try:
             while True:
                 if self.timeout is not None:
-                    msg = await asyncio.wait_for(
-                        self._ws.receive(), timeout=self.timeout
-                    )
+                    msg = await asyncio.wait_for(self._ws.receive(), timeout=self.timeout)
                 else:
                     msg = await self._ws.receive()
 
@@ -397,8 +393,4 @@ class Client:
         Returns:
             List[str]: List of subscription IDs that are currently active
         """
-        return [
-            sub_id
-            for sub_id, sub_data in self._subscriptions.items()
-            if sub_data["active"]
-        ]
+        return [sub_id for sub_id, sub_data in self._subscriptions.items() if sub_data["active"]]

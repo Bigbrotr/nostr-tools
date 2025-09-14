@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Comprehensive project restructure and modernization
 - Complete CI/CD pipeline with GitHub Actions
 - Automated documentation generation with Sphinx
@@ -20,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Pages documentation deployment
 
 ### Changed
+
 - Updated pyproject.toml to follow modern Python packaging standards
 - Restructured project to use src-layout
 - Enhanced package metadata and dependencies
 - Improved development workflow with Makefile commands
 
 ### Fixed
+
 - Package name consistency (nostr-tools → nostr_tools)
 - Import path corrections
 - Dependency version constraints
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-XX-XX
 
 ### Added
+
 - Initial release of nostr-tools
 - Core Nostr protocol implementation
 - WebSocket relay client with async/await support
@@ -45,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete type annotations
 
 ### Core Features
+
 - `Client` class for relay interactions
 - `Event` class for Nostr events
 - `Relay` class for connection management
@@ -53,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - High-level action functions for common operations
 
 ### Developer Experience
+
 - Comprehensive test suite
 - Type hints throughout codebase
 - Detailed docstrings
@@ -64,20 +70,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Release Process
 
 ### Version Numbering
+
 We follow [Semantic Versioning](https://semver.org/):
+
 - **MAJOR.MINOR.PATCH** (e.g., 1.2.3)
 - **MAJOR**: Breaking changes
 - **MINOR**: New features (backward compatible)
 - **PATCH**: Bug fixes (backward compatible)
 
 ### Release Types
+
 - **🚀 Major Release**: Breaking changes, new architecture
 - **✨ Minor Release**: New features, enhancements
 - **🐛 Patch Release**: Bug fixes, security updates
 - **🔧 Pre-release**: Alpha/Beta/RC versions
 
 ### Automatic Releases
+
 Releases are automatically created when:
+
 1. A tag matching `v*.*.*` is pushed
 2. GitHub Actions build and test the release
 3. Distributions are published to PyPI
@@ -85,6 +96,7 @@ Releases are automatically created when:
 5. Documentation is updated
 
 ### Manual Release Process
+
 ```bash
 # 1. Update version and changelog
 git add CHANGELOG.md

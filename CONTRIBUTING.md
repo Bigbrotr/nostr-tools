@@ -40,9 +40,11 @@ git push origin feature/your-feature-name
 By participating in this project, you agree to abide by our Code of Conduct:
 
 ### Our Pledge
+
 We are committed to providing a welcoming and inclusive experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 ### Our Standards
+
 - **Be Respectful**: Treat all community members with respect and kindness
 - **Be Inclusive**: Welcome newcomers and help them feel comfortable
 - **Be Constructive**: Provide helpful feedback and suggestions
@@ -50,6 +52,7 @@ We are committed to providing a welcoming and inclusive experience for everyone,
 - **Be Patient**: Remember that people have different levels of experience
 
 ### Unacceptable Behavior
+
 - Harassment, trolling, or discriminatory language
 - Personal attacks or insults
 - Spam or off-topic discussions
@@ -57,7 +60,8 @@ We are committed to providing a welcoming and inclusive experience for everyone,
 - Any behavior that would be inappropriate in a professional setting
 
 ### Enforcement
-Violations of the Code of Conduct should be reported to hello@bigbrotr.com. All reports will be handled confidentially and promptly.
+
+Violations of the Code of Conduct should be reported to <hello@bigbrotr.com>. All reports will be handled confidentially and promptly.
 
 ## 🛠️ Development Environment
 
@@ -70,12 +74,14 @@ Violations of the Code of Conduct should be reported to hello@bigbrotr.com. All 
 ### System Dependencies
 
 #### Linux (Ubuntu/Debian)
+
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential pkg-config libffi-dev autoconf automake libtool
 ```
 
 #### macOS
+
 ```bash
 # Install Xcode command line tools
 xcode-select --install
@@ -85,6 +91,7 @@ brew install autoconf automake libtool
 ```
 
 #### Windows
+
 ```bash
 # Using chocolatey
 choco install visualstudio2019buildtools
@@ -95,6 +102,7 @@ choco install visualstudio2019buildtools
 ### Setup Steps
 
 1. **Fork the Repository**
+
    ```bash
    # Fork on GitHub, then clone your fork
    git clone https://github.com/your-username/nostr-tools.git
@@ -102,12 +110,14 @@ choco install visualstudio2019buildtools
    ```
 
 2. **Create Virtual Environment**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install Development Dependencies**
+
    ```bash
    # Using make (recommended)
    make install-dev
@@ -117,12 +127,14 @@ choco install visualstudio2019buildtools
    ```
 
 4. **Set up Pre-commit Hooks**
+
    ```bash
    make pre-commit
    # This installs git hooks for automatic code quality checks
    ```
 
 5. **Verify Installation**
+
    ```bash
    make dev-check
    # This runs formatting, linting, and unit tests
@@ -199,6 +211,7 @@ MANIFEST.in               # Package distribution files
 ### Code Style and Standards
 
 #### Python Code Style
+
 We use **Ruff** for both linting and formatting, which provides a consistent and modern code style:
 
 ```bash
@@ -213,6 +226,7 @@ make lint-fix
 ```
 
 #### Key Style Guidelines
+
 - **Line Length**: 88 characters (black-compatible)
 - **Imports**: Organized using isort rules integrated into Ruff
 - **Strings**: Use double quotes for strings
@@ -220,6 +234,7 @@ make lint-fix
 - **Docstrings**: Google-style docstrings for all public APIs
 
 #### Example Code Style
+
 ```python
 """Module docstring explaining the purpose."""
 
@@ -288,6 +303,7 @@ class ExampleClass:
 ### Type Hints and Validation
 
 #### Required Type Annotations
+
 All public functions must have complete type annotations:
 
 ```python
@@ -309,6 +325,7 @@ def process_relay_metadata(relay_url, timeout=None):
 ```
 
 #### Runtime Validation
+
 For critical functions, implement runtime type validation:
 
 ```python
@@ -338,6 +355,7 @@ def validate_event_data(data: Dict[str, Any]) -> None:
 ### Error Handling Standards
 
 #### Use Specific Exceptions
+
 Create and use specific exception types for different error categories:
 
 ```python
@@ -361,6 +379,7 @@ async def connect_to_relay(url: str) -> None:
 ```
 
 #### Comprehensive Error Information
+
 Provide helpful error messages with context:
 
 ```python
@@ -387,6 +406,7 @@ def validate_private_key(private_key: str) -> None:
 ### Async Programming Guidelines
 
 #### Always Use Async/Await
+
 All I/O operations must use async/await patterns:
 
 ```python
@@ -407,6 +427,7 @@ def fetch_relay_info(client: Client) -> Optional[Dict[str, Any]]:
 ```
 
 #### Resource Management
+
 Use async context managers for proper resource cleanup:
 
 ```python
@@ -441,6 +462,7 @@ async def process_events_from_relay(relay_url: str) -> List[Event]:
 We maintain comprehensive test coverage across multiple categories:
 
 #### Unit Tests (`pytest -m unit`)
+
 - **Fast execution** (< 100ms per test)
 - **No network dependencies**
 - **Mock external services**
@@ -463,6 +485,7 @@ def test_event_creation(sample_keypair):
 ```
 
 #### Integration Tests (`pytest -m integration`)
+
 - **Network-dependent** (require real Nostr relays)
 - **Test component interactions**
 - **May be slower** (network I/O)
@@ -483,6 +506,7 @@ async def test_real_relay_connection(sample_client):
 ```
 
 #### Security Tests (`pytest -m security`)
+
 - **Cryptographic security validation**
 - **Attack vector testing**
 - **Input validation security**
@@ -507,6 +531,7 @@ def test_signature_security(sample_keypair):
 ```
 
 #### Performance Tests (`pytest -m slow`)
+
 - **Benchmark critical operations**
 - **Performance regression detection**
 - **Resource usage validation**
@@ -560,6 +585,7 @@ NOSTR_TEST_TIMEOUT=30 pytest -m integration
 ### Writing Good Tests
 
 #### Test Naming Convention
+
 - Use descriptive names that explain what is being tested
 - Follow the pattern `test_<component>_<behavior>_<expected_result>`
 
@@ -576,6 +602,7 @@ def test_error():
 ```
 
 #### Test Structure (Arrange, Act, Assert)
+
 ```python
 def test_event_tag_filtering():
     """Test that events can be filtered by tag content."""
@@ -596,6 +623,7 @@ def test_event_tag_filtering():
 ```
 
 #### Use Fixtures for Common Setup
+
 ```python
 # In conftest.py
 @pytest.fixture
@@ -692,6 +720,7 @@ def generate_event(
 ```
 
 #### Key Docstring Elements
+
 1. **Summary Line**: Brief one-line description
 2. **Detailed Description**: Comprehensive explanation of functionality
 3. **Args Section**: Complete parameter documentation with types
@@ -743,17 +772,20 @@ def count_leading_zero_bits(hex_str: str) -> int:
 ### Before Creating a Pull Request
 
 1. **Fork and Branch**: Create a feature branch from `main`
+
    ```bash
    git checkout -b feature/descriptive-name
    ```
 
 2. **Development**: Make your changes following our guidelines
+
    ```bash
    # Regular development workflow
    make dev-check  # Format, lint, and test
    ```
 
 3. **Comprehensive Testing**: Ensure all tests pass
+
    ```bash
    make test        # All tests
    make test-cov    # With coverage report
@@ -767,6 +799,7 @@ def count_leading_zero_bits(hex_str: str) -> int:
 ### Pull Request Guidelines
 
 #### PR Title Format
+
 Use conventional commit format for PR titles:
 
 ```
@@ -778,6 +811,7 @@ refactor(utils): improve error handling consistency
 ```
 
 #### PR Description Template
+
 ```markdown
 ## Description
 Brief description of the changes and their purpose.
@@ -839,12 +873,14 @@ Any additional information that reviewers should know.
 ### Common Review Comments
 
 #### Code Quality
+
 - **Simplification**: "This logic can be simplified using..."
 - **Error Handling**: "Consider adding error handling for..."
 - **Performance**: "This operation could be optimized by..."
 - **Testing**: "Please add tests for the error case where..."
 
 #### Documentation
+
 - **Missing Docstrings**: "Please add docstrings for public methods"
 - **Examples**: "Consider adding usage examples to the docstring"
 - **Type Hints**: "Missing type hint for return value"
@@ -878,9 +914,11 @@ Connection times out after 10 seconds with RelayConnectionError.
 
 **Error Messages/Traceback**
 ```
+
 Traceback (most recent call last):
   ...
 RelayConnectionError: Failed to connect to wss://example.com: Connection timeout
+
 ```
 
 **Additional Context**
@@ -920,6 +958,7 @@ Any other context, screenshots, or examples about the feature request.
 
 **Implementation Notes** (optional)
 If you have ideas about implementation approach.
+
 ```
 
 ### Issue Labels
@@ -1017,8 +1056,8 @@ def old_function():
 
 - **GitHub Issues**: Bug reports and feature requests
 - **GitHub Discussions**: General questions and community discussion
-- **Email**: hello@bigbrotr.com for general inquiries
-- **Security**: security@bigbrotr.com for security-related matters
+- **Email**: <hello@bigbrotr.com> for general inquiries
+- **Security**: <security@bigbrotr.com> for security-related matters
 
 ### Getting Help
 

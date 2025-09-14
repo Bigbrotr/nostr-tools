@@ -5,7 +5,8 @@ This module provides the Filter class for creating event filters according
 to NIP-01 specification for querying Nostr relays.
 """
 
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 
 class Filter:
@@ -69,17 +70,12 @@ class Filter:
         if not all(isinstance(tag_values, list) for tag_values in tags.values()):
             raise TypeError("All tag values must be lists")
         if not all(
-            isinstance(tag_value, str)
-            for tag_values in tags.values()
-            for tag_value in tag_values
+            isinstance(tag_value, str) for tag_values in tags.values() for tag_value in tag_values
         ):
             raise TypeError("All tag values must be strings")
 
         # Value validation
-        if not all(
-            len(id) == 64 and all(c in "0123456789abcdef" for c in id)
-            for id in ids or []
-        ):
+        if not all(len(id) == 64 and all(c in "0123456789abcdef" for c in id) for id in ids or []):
             raise ValueError("All ids must be 64-character hexadecimal strings")
         if not all(
             len(author) == 64 and all(c in "0123456789abcdef" for c in author)
@@ -97,9 +93,7 @@ class Filter:
         if since is not None and until is not None and since > until:
             raise ValueError("since must be less than or equal to until")
         if not all(tag_name.isalpha() and len(tag_name) == 1 for tag_name in tags):
-            raise ValueError(
-                "Tag names must be single alphabetic characters a-z or A-Z"
-            )
+            raise ValueError("Tag names must be single alphabetic characters a-z or A-Z")
 
         # Build filter dictionary
         self.filter_dict: dict[str, Any] = {}
@@ -156,7 +150,7 @@ class Filter:
         """
         return not self.__eq__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Return hash of the Filter.
 

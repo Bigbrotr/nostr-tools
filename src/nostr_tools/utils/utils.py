@@ -66,7 +66,8 @@ import json
 import os
 import re
 import time
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 import bech32
 import secp256k1
@@ -294,7 +295,7 @@ TLDS = [
     "CFD",
     "CG",
     "CH",
-    "CHANEL",
+    "CHANNEL",
     "CHANNEL",
     "CHARITY",
     "CHASE",
@@ -647,7 +648,7 @@ TLDS = [
     "IMAMAT",
     "IMDB",
     "IMMO",
-    "IMMOBILIEN",
+    "IMMOBILE",
     "IN",
     "INC",
     "INDUSTRIES",
@@ -802,7 +803,7 @@ TLDS = [
     "MARKETING",
     "MARKETS",
     "MARRIOTT",
-    "MARSHALLS",
+    "MARSHALS",
     "MATTEL",
     "MBA",
     "MC",
@@ -924,7 +925,7 @@ TLDS = [
     "OMEGA",
     "ONE",
     "ONG",
-    "ONL",
+    "ONLY",
     "ONLINE",
     "OOO",
     "OPEN",
@@ -978,7 +979,7 @@ TLDS = [
     "PLUMBING",
     "PLUS",
     "PM",
-    "PN",
+    "ON",
     "PNC",
     "POHL",
     "POKER",
@@ -1374,7 +1375,7 @@ TLDS = [
     "XN--9ET52U",
     "XN--9KRT00A",
     "XN--B4W605FERD",
-    "XN--BCK1B9A5DRE4C",
+    "XN--BACK1B9A5DRE4C",
     "XN--C1AVG",
     "XN--C2BR7G",
     "XN--CCK2B3B",
@@ -1455,7 +1456,7 @@ TLDS = [
     "XN--NYQY26A",
     "XN--O3CW4H",
     "XN--OGBPF8FL",
-    "XN--OTU796D",
+    "XN--OUT796D",
     "XN--P1ACF",
     "XN--P1AI",
     "XN--PGBS0DH",
@@ -1865,9 +1866,7 @@ def validate_keypair(private_key: str, public_key: str) -> bool:
     try:
         private_key_bytes = bytes.fromhex(private_key)
         private_key_obj = secp256k1.PrivateKey(private_key_bytes)
-        generated_public_key = private_key_obj.pubkey.serialize(compressed=True)[
-            1:
-        ].hex()
+        generated_public_key = private_key_obj.pubkey.serialize(compressed=True)[1:].hex()
         return bool(generated_public_key == public_key)
     except Exception:
         return False
@@ -1949,7 +1948,7 @@ def generate_keypair() -> tuple[str, str]:
     return private_key_hex, public_key_hex
 
 
-def parse_nip11_response(nip11_response):
+def parse_nip11_response(nip11_response: Any) -> dict[str, Any]:
     """
     Parse NIP-11 relay information document response.
 
@@ -2052,7 +2051,7 @@ def parse_nip11_response(nip11_response):
     return {"nip11_success": False}
 
 
-def parse_connection_response(connection_response):
+def parse_connection_response(connection_response: Any) -> dict[str, Any]:
     """
     Parse connection test response data.
 

@@ -9,19 +9,16 @@ from unittest.mock import patch
 
 import pytest
 
-from nostr_tools import (
-    Event,
-    Filter,
-    Relay,
-    find_websocket_relay_urls,
-    generate_event,
-    generate_keypair,
-    sanitize,
-    to_bech32,
-    to_hex,
-    validate_keypair,
-    verify_sig,
-)
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import find_websocket_relay_urls
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from nostr_tools import sanitize
+from nostr_tools import to_bech32
+from nostr_tools import to_hex
+from nostr_tools import verify_sig
 
 
 @pytest.mark.security
@@ -43,9 +40,7 @@ class TestCryptographicSecurity:
         for private_key in private_keys[:10]:
             # Count unique characters in hex string
             unique_chars = len(set(private_key))
-            assert (
-                unique_chars >= 10
-            ), f"Low entropy private key: {unique_chars} unique chars"
+            assert unique_chars >= 10, f"Low entropy private key: {unique_chars} unique chars"
 
     def test_signature_security(self, sample_keypair):
         """Test signature security properties."""
@@ -427,17 +422,15 @@ class TestRandomnessQuality:
         # Check that all hex characters appear
         hex_chars = "0123456789abcdef"
         for char in hex_chars:
-            assert (
-                char in char_counts
-            ), f"Character '{char}' not found in generated keys"
+            assert char in char_counts, f"Character '{char}' not found in generated keys"
 
         # Check distribution is roughly uniform (within 50% of expected)
         expected_freq = total_chars / 16  # 16 hex characters
         for char in hex_chars:
             freq = char_counts[char]
-            assert (
-                abs(freq - expected_freq) < expected_freq * 0.5
-            ), f"Character '{char}' frequency {freq} too far from expected {expected_freq}"
+            assert abs(freq - expected_freq) < expected_freq * 0.5, (
+                f"Character '{char}' frequency {freq} too far from expected {expected_freq}"
+            )
 
 
 @pytest.mark.security
@@ -478,9 +471,9 @@ class TestProofOfWorkSecurity:
                     break
 
             # Should meet or exceed target difficulty
-            assert (
-                leading_zeros >= target_difficulty
-            ), f"PoW difficulty {leading_zeros} less than target {target_difficulty}"
+            assert leading_zeros >= target_difficulty, (
+                f"PoW difficulty {leading_zeros} less than target {target_difficulty}"
+            )
 
     def test_pow_nonce_format(self, sample_keypair):
         """Test that PoW nonce format is correct."""
@@ -512,9 +505,7 @@ class TestProofOfWorkSecurity:
             assert nonce_tag[1].isdigit(), f"Nonce value not numeric: {nonce_tag[1]}"
 
             # Third element should be target difficulty
-            assert nonce_tag[
-                2
-            ].isdigit(), f"Target difficulty not numeric: {nonce_tag[2]}"
+            assert nonce_tag[2].isdigit(), f"Target difficulty not numeric: {nonce_tag[2]}"
             assert int(nonce_tag[2]) == 8, f"Target difficulty mismatch: {nonce_tag[2]}"
 
 
@@ -612,12 +603,12 @@ class TestConcurrencySafety:
         private_keys = [pair[0] for pair in all_keys]
         public_keys = [pair[1] for pair in all_keys]
 
-        assert len(set(private_keys)) == len(
-            private_keys
-        ), "Duplicate private keys in concurrent generation"
-        assert len(set(public_keys)) == len(
-            public_keys
-        ), "Duplicate public keys in concurrent generation"
+        assert len(set(private_keys)) == len(private_keys), (
+            "Duplicate private keys in concurrent generation"
+        )
+        assert len(set(public_keys)) == len(public_keys), (
+            "Duplicate public keys in concurrent generation"
+        )
 
     def test_concurrent_event_creation_safety(self, sample_keypair):
         """Test that concurrent event creation is safe."""
@@ -663,12 +654,10 @@ class TestConcurrencySafety:
         event_ids = [event["id"] for event in all_events]
         signatures = [event["sig"] for event in all_events]
 
-        assert len(set(event_ids)) == len(
-            event_ids
-        ), "Duplicate event IDs in concurrent creation"
-        assert len(set(signatures)) == len(
-            signatures
-        ), "Duplicate signatures in concurrent creation"
+        assert len(set(event_ids)) == len(event_ids), "Duplicate event IDs in concurrent creation"
+        assert len(set(signatures)) == len(signatures), (
+            "Duplicate signatures in concurrent creation"
+        )
 
         # Verify all events are valid
         for event_data in all_events:

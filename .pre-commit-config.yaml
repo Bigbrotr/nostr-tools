@@ -5,21 +5,21 @@
 repos:
   # Ruff for fast Python linting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.13.0
     hooks:
       # Linter
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         name: ruff-lint
         description: Run Ruff linter with auto-fixes
-      # Formatter  
+      # Formatter
       - id: ruff-format
         name: ruff-format
         description: Run Ruff formatter
 
   # MyPy for static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.0
+    rev: v1.18.1
     hooks:
       - id: mypy
         additional_dependencies: [
@@ -35,7 +35,7 @@ repos:
 
   # General code quality hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       # File and whitespace checks
       - id: trailing-whitespace
@@ -43,69 +43,69 @@ repos:
       - id: end-of-file-fixer
       - id: check-merge-conflict
       - id: check-case-conflict
-      
+
       # Syntax and format checks
       - id: check-yaml
         args: [--unsafe]  # Allow custom YAML tags
       - id: check-toml
       - id: check-json
-      
+
       # Python-specific checks
       - id: debug-statements
       - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
-      
+
       # Security checks
-      - id: check-private-key
+      # - id: check-private-key
       - id: detect-private-key
 
   # Security scanning with Bandit
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.0
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: [--config, pyproject.toml]
-        additional_dependencies: [bandit[toml]]
+        additional_dependencies: ["bandit[toml]"]
         exclude: ^(tests/|examples/)
         name: bandit
         description: Security linting with Bandit
 
   # Dependency security checking
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.3.2
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.9.0
     hooks:
-      - id: python-safety-dependencies-check
-        name: safety
-        description: Check dependencies for security vulnerabilities
+      - id: pip-audit
+        name: pip-audit
+        description: Audit Python packages for known vulnerabilities
 
   # Spell checking (optional but recommended)
-  - repo: https://github.com/crate-ci/typos
-    rev: v1.28.8
-    hooks:
-      - id: typos
-        name: typos
-        description: Check for common typos
-        exclude: |
-          (?x)^(
-              .*\.lock$|
-              .*\.min\.(js|css)$|
-              build/|
-              dist/|
-              \.git/|
-              node_modules/|
-              .*\.egg-info/
-          )$
+  # - repo: https://github.com/crate-ci/typos
+  #   rev: v1.36.2
+  #   hooks:
+  #     - id: typos
+  #       name: typos
+  #       description: Check for common typos
+  #       exclude: |
+  #         (?x)^(
+  #             .*\.lock$|
+  #             .*\.min\.(js|css)$|
+  #             build/|
+  #             dist/|
+  #             \.git/|
+  #             node_modules/|
+  #             .*\.egg-info/
+  #         )$
 
   # Markdown linting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.42.0
-    hooks:
-      - id: markdownlint-fix
-        name: markdownlint
-        description: Lint and fix Markdown files
-        args: [--fix]
-        exclude: ^(CHANGELOG\.md|\.github/)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.45.0
+  #   hooks:
+  #     - id: markdownlint-fix
+  #       name: markdownlint
+  #       description: Lint and fix Markdown files
+  #       args: [--fix]
+  #       # exclude: ^(CHANGELOG\.md|\.github/)
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]

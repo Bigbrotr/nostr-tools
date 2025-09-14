@@ -9,21 +9,19 @@ import time
 
 import pytest
 
-from nostr_tools import (
-    Client,
-    Event,
-    Filter,
-    Relay,
-    RelayConnectionError,
-    check_connectivity,
-    check_readability,
-    check_writability,
-    compute_relay_metadata,
-    fetch_events,
-    fetch_nip11,
-    generate_event,
-    stream_events,
-)
+from nostr_tools import Client
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import RelayConnectionError
+from nostr_tools import check_connectivity
+from nostr_tools import check_readability
+from nostr_tools import check_writability
+from nostr_tools import compute_relay_metadata
+from nostr_tools import fetch_events
+from nostr_tools import fetch_nip11
+from nostr_tools import generate_event
+from nostr_tools import stream_events
 from tests import TEST_RELAY_URL
 from tests.conftest import skip_integration
 
@@ -147,10 +145,7 @@ class TestEventOperations:
                     events_received.append(event)
 
                     # Stop after 3 events or timeout
-                    if (
-                        len(events_received) >= 3
-                        or (time.time() - start_time) > stream_timeout
-                    ):
+                    if len(events_received) >= 3 or (time.time() - start_time) > stream_timeout:
                         break
 
                 # Validate received events
@@ -189,9 +184,7 @@ class TestRelayMetadata:
                 ]
 
                 # At least some fields should be present
-                present_fields = [
-                    field for field in expected_fields if field in nip11_data
-                ]
+                present_fields = [field for field in expected_fields if field in nip11_data]
                 assert len(present_fields) > 0
 
         except Exception:
@@ -203,9 +196,7 @@ class TestRelayMetadata:
         private_key, public_key = sample_keypair
 
         try:
-            metadata = await compute_relay_metadata(
-                sample_client, private_key, public_key
-            )
+            metadata = await compute_relay_metadata(sample_client, private_key, public_key)
 
             # Validate metadata structure
             assert hasattr(metadata, "connection_success")

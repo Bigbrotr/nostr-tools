@@ -6,9 +6,11 @@ manipulating Nostr events according to the NIP-01 specification.
 """
 
 import json
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
-from ..utils import calc_event_id, verify_sig
+from ..utils import calc_event_id
+from ..utils import verify_sig
 
 
 class Event:
@@ -120,7 +122,7 @@ class Event:
             f"kind={self.kind}, tags={self.tags}, content={self.content}, sig={self.sig})"
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """
         Check equality of two Event objects.
 
@@ -142,7 +144,7 @@ class Event:
             and self.sig == other.sig
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         """
         Check inequality of two Event objects.
 
@@ -154,7 +156,7 @@ class Event:
         """
         return not self.__eq__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Return hash of the Event object.
 

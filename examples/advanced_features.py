@@ -14,20 +14,18 @@ import asyncio
 import json
 import time
 
-from nostr_tools import (
-    Client,
-    Event,
-    Filter,
-    Relay,
-    RelayConnectionError,
-    check_connectivity,
-    compute_relay_metadata,
-    fetch_events,
-    fetch_nip11,
-    generate_event,
-    generate_keypair,
-    stream_events,
-)
+from nostr_tools import Client
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import RelayConnectionError
+from nostr_tools import check_connectivity
+from nostr_tools import compute_relay_metadata
+from nostr_tools import fetch_events
+from nostr_tools import fetch_nip11
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from nostr_tools import stream_events
 
 
 async def relay_testing_example():
@@ -68,17 +66,11 @@ async def relay_testing_example():
 
             if metadata.nip11_success:
                 print(f"    Name: {metadata.name or 'N/A'}")
-                print(
-                    f"    Software: {metadata.software or 'N/A'} {metadata.version or ''}"
-                )
+                print(f"    Software: {metadata.software or 'N/A'} {metadata.version or ''}")
                 if metadata.supported_nips:
-                    print(
-                        f"    NIPs: {metadata.supported_nips[:10]}..."
-                    )  # First 10 NIPs
+                    print(f"    NIPs: {metadata.supported_nips[:10]}...")  # First 10 NIPs
                 if metadata.limitation:
-                    print(
-                        f"    Limitations: {json.dumps(metadata.limitation, indent=6)}"
-                    )
+                    print(f"    Limitations: {json.dumps(metadata.limitation, indent=6)}")
 
         except Exception as e:
             print(f"  ❌ Error testing relay: {e}")
@@ -158,9 +150,7 @@ async def streaming_example():
                 event_count += 1
                 elapsed = time.time() - start_time
 
-                print(
-                    f"  📨 Event {event_count} ({elapsed:.1f}s): {event.content[:60]}..."
-                )
+                print(f"  📨 Event {event_count} ({elapsed:.1f}s): {event.content[:60]}...")
 
                 # Show some event details
                 if event_count % 5 == 0:
@@ -239,9 +229,7 @@ async def high_level_actions_example():
                     from collections import Counter
 
                     popular_tags = Counter(all_hashtags).most_common(5)
-                    print(
-                        f"   Popular hashtags: {[tag for tag, count in popular_tags]}"
-                    )
+                    print(f"   Popular hashtags: {[tag for tag, count in popular_tags]}")
 
     except Exception as e:
         print(f"  ❌ Error: {e}")
@@ -335,9 +323,7 @@ async def nip11_exploration_example():
             if nip11_data:
                 print("  📄 NIP-11 Information:")
                 print(f"    Name: {nip11_data.get('name', 'N/A')}")
-                print(
-                    f"    Description: {nip11_data.get('description', 'N/A')[:100]}..."
-                )
+                print(f"    Description: {nip11_data.get('description', 'N/A')[:100]}...")
                 print(f"    Contact: {nip11_data.get('contact', 'N/A')}")
                 print(
                     f"    Software: {nip11_data.get('software', 'N/A')} {nip11_data.get('version', '')}"
@@ -345,9 +331,7 @@ async def nip11_exploration_example():
 
                 if "supported_nips" in nip11_data:
                     nips = nip11_data["supported_nips"]
-                    print(
-                        f"    Supported NIPs: {nips[:15]}{'...' if len(nips) > 15 else ''}"
-                    )
+                    print(f"    Supported NIPs: {nips[:15]}{'...' if len(nips) > 15 else ''}")
 
                 if "limitation" in nip11_data:
                     limitations = nip11_data["limitation"]

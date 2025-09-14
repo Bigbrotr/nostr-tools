@@ -15,7 +15,7 @@ Features:
 
 import os
 import sys
-from typing import Any, Dict
+from typing import Any
 
 # Core exports that are always available
 from .exceptions.errors import RelayConnectionError
@@ -31,25 +31,22 @@ except ImportError:
     try:
         # Fallback to setuptools-scm directly
         from importlib.metadata import version
+
         __version__ = version("nostr-tools")
     except ImportError:
         try:
-            # Python < 3.8 fallback
-            from importlib_metadata import version
-            __version__ = version("nostr-tools")
-        except ImportError:
-            try:
-                # Direct setuptools-scm fallback
-                from setuptools_scm import get_version
-                __version__ = get_version()
-            except (ImportError, LookupError):
-                # Final fallback
-                __version__ = "0.1.0-dev"
+            # Direct setuptools-scm fallback
+            from setuptools_scm import get_version
+
+            __version__ = get_version()
+        except (ImportError, LookupError):
+            # Final fallback
+            __version__ = "0.1.0-dev"
 
 # Detect documentation build environment
 _BUILDING_DOCS = (
     "sphinx" in sys.modules
-    or "sphinx.ext.autodoc" in sys.modules  
+    or "sphinx.ext.autodoc" in sys.modules
     or os.environ.get("SPHINX_BUILD") == "1"
     or "sphinx-build" in " ".join(sys.argv)
     or "build_sphinx" in sys.argv
@@ -57,48 +54,43 @@ _BUILDING_DOCS = (
 
 if _BUILDING_DOCS:
     # Direct imports for documentation - Sphinx needs real objects
-    from .actions.actions import (
-        check_connectivity,
-        check_readability,
-        check_writability,
-        compute_relay_metadata,
-        fetch_connection,
-        fetch_events,
-        fetch_nip11,
-        stream_events,
-    )
+    from .actions.actions import check_connectivity
+    from .actions.actions import check_readability
+    from .actions.actions import check_writability
+    from .actions.actions import compute_relay_metadata
+    from .actions.actions import fetch_connection
+    from .actions.actions import fetch_events
+    from .actions.actions import fetch_nip11
+    from .actions.actions import stream_events
     from .core.client import Client
     from .core.event import Event
     from .core.filter import Filter
     from .core.relay import Relay
     from .core.relay_metadata import RelayMetadata
-    from .utils.utils import (
-        TLDS,
-        URI_GENERIC_REGEX,
-        calc_event_id,
-        find_websocket_relay_urls,
-        generate_event,
-        generate_keypair,
-        parse_connection_response,
-        parse_nip11_response,
-        sanitize,
-        sig_event_id,
-        to_bech32,
-        to_hex,
-        validate_keypair,
-        verify_sig,
-    )
+    from .utils.utils import TLDS
+    from .utils.utils import URI_GENERIC_REGEX
+    from .utils.utils import calc_event_id
+    from .utils.utils import find_websocket_relay_urls
+    from .utils.utils import generate_event
+    from .utils.utils import generate_keypair
+    from .utils.utils import parse_connection_response
+    from .utils.utils import parse_nip11_response
+    from .utils.utils import sanitize
+    from .utils.utils import sig_event_id
+    from .utils.utils import to_bech32
+    from .utils.utils import to_hex
+    from .utils.utils import validate_keypair
+    from .utils.utils import verify_sig
 
 else:
     # Lazy loading for runtime - improves import performance
-    _LAZY_IMPORTS: Dict[str, tuple[str, str]] = {
+    _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         # Core classes
         "Event": ("nostr_tools.core.event", "Event"),
         "Relay": ("nostr_tools.core.relay", "Relay"),
         "RelayMetadata": ("nostr_tools.core.relay_metadata", "RelayMetadata"),
         "Client": ("nostr_tools.core.client", "Client"),
         "Filter": ("nostr_tools.core.filter", "Filter"),
-        
         # Cryptographic utilities
         "generate_keypair": ("nostr_tools.utils.utils", "generate_keypair"),
         "generate_event": ("nostr_tools.utils.utils", "generate_event"),
@@ -106,21 +98,17 @@ else:
         "verify_sig": ("nostr_tools.utils.utils", "verify_sig"),
         "sig_event_id": ("nostr_tools.utils.utils", "sig_event_id"),
         "validate_keypair": ("nostr_tools.utils.utils", "validate_keypair"),
-        
         # Encoding utilities
         "to_bech32": ("nostr_tools.utils.utils", "to_bech32"),
         "to_hex": ("nostr_tools.utils.utils", "to_hex"),
-        
         # Network and parsing utilities
         "find_websocket_relay_urls": ("nostr_tools.utils.utils", "find_websocket_relay_urls"),
         "sanitize": ("nostr_tools.utils.utils", "sanitize"),
         "parse_nip11_response": ("nostr_tools.utils.utils", "parse_nip11_response"),
         "parse_connection_response": ("nostr_tools.utils.utils", "parse_connection_response"),
-        
         # Constants
         "TLDS": ("nostr_tools.utils.utils", "TLDS"),
         "URI_GENERIC_REGEX": ("nostr_tools.utils.utils", "URI_GENERIC_REGEX"),
-        
         # High-level actions
         "fetch_events": ("nostr_tools.actions.actions", "fetch_events"),
         "stream_events": ("nostr_tools.actions.actions", "stream_events"),
@@ -133,7 +121,7 @@ else:
     }
 
     # Cache for loaded modules to avoid repeated imports
-    _module_cache: Dict[str, Any] = {}
+    _module_cache: dict[str, Any] = {}
 
     class _LazyLoader:
         """Lazy loader that imports modules only when accessed."""
@@ -174,39 +162,32 @@ __all__ = [
     "__version__",
     "__author__",
     "__email__",
-    
     # Core classes
     "Client",
     "Event",
-    "Filter", 
+    "Filter",
     "Relay",
     "RelayMetadata",
-    
     # Exceptions
     "RelayConnectionError",
-    
     # Cryptographic functions
     "calc_event_id",
     "generate_event",
     "generate_keypair",
     "sig_event_id",
-    "validate_keypair", 
+    "validate_keypair",
     "verify_sig",
-    
     # Encoding functions
     "to_bech32",
     "to_hex",
-    
     # Utility functions
     "find_websocket_relay_urls",
     "sanitize",
     "parse_connection_response",
     "parse_nip11_response",
-    
     # Constants
     "TLDS",
     "URI_GENERIC_REGEX",
-    
     # High-level actions
     "check_connectivity",
     "check_readability",
@@ -219,17 +200,12 @@ __all__ = [
 ]
 
 
-def __dir__():
+def __dir__() -> list[str]:
     """Return available attributes for tab completion and introspection."""
     return sorted(__all__)
 
 
-def get_version() -> str:
-    """Get the current version of nostr-tools."""
-    return __version__
-
-
-def get_info() -> Dict[str, str]:
+def get_info() -> dict[str, str]:
     """Get package information."""
     return {
         "name": "nostr-tools",

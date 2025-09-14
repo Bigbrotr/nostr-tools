@@ -42,29 +42,29 @@ from nostr_tools import Client, generate_keypair, Event
 async def main():
     # Generate a new keypair
     private_key, public_key = generate_keypair()
-    
+
     # Create a client
     client = Client()
-    
+
     # Connect to a relay
     await client.connect("wss://relay.damus.io")
-    
+
     # Create and publish an event
     event = Event(
         kind=1,
         content="Hello Nostr! 👋",
         public_key=public_key
     )
-    
+
     # Sign and publish the event
     signed_event = event.sign(private_key)
     await client.publish(signed_event)
-    
+
     # Subscribe to events
     filter_dict = {"kinds": [1], "limit": 10}
     async for event in client.subscribe(filter_dict):
         print(f"📧 {event.content}")
-        
+
     await client.disconnect()
 
 if __name__ == "__main__":
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 ```python
 from nostr_tools import (
-    Client, 
+    Client,
     Filter,
     fetch_events,
     check_connectivity,
@@ -86,7 +86,7 @@ async def advanced_example():
     # Check relay connectivity
     is_connected = await check_connectivity("wss://relay.damus.io")
     print(f"Relay connectivity: {is_connected}")
-    
+
     # Fetch events with complex filters
     events = await fetch_events(
         relay_urls=["wss://relay.damus.io", "wss://nos.lol"],
@@ -99,7 +99,7 @@ async def advanced_example():
             )
         ]
     )
-    
+
     for event in events:
         # Convert keys to bech32 format
         npub = to_bech32(event.public_key, "npub")
@@ -180,6 +180,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 5. **Submit a Pull Request**
 
 All contributions are automatically tested for:
+
 - ✅ Code quality (Ruff, MyPy)
 - ✅ Test coverage (pytest)
 - ✅ Security (Bandit, Safety)
@@ -207,9 +208,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **⚡ Built with ❤️ for the Nostr ecosystem**
 
-[Documentation](https://nostr-tools.readthedocs.io/) • 
-[PyPI](https://pypi.org/project/nostr-tools/) • 
-[GitHub](https://github.com/bigbrotr/nostr-tools) • 
+[Documentation](https://nostr-tools.readthedocs.io/) •
+[PyPI](https://pypi.org/project/nostr-tools/) •
+[GitHub](https://github.com/bigbrotr/nostr-tools) •
 [Issues](https://github.com/bigbrotr/nostr-tools/issues)
 
 </div>

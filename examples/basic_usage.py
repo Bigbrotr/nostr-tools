@@ -12,16 +12,14 @@ This example demonstrates:
 import asyncio
 import time
 
-from nostr_tools import (
-    Client,
-    Event,
-    Filter,
-    Relay,
-    generate_event,
-    generate_keypair,
-    to_bech32,
-    to_hex,
-)
+from nostr_tools import Client
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from nostr_tools import to_bech32
+from nostr_tools import to_hex
 
 
 async def basic_example():
@@ -89,9 +87,7 @@ async def basic_example():
                 try:
                     received_event = Event.from_dict(event_message[2])
                     events.append(received_event)
-                    print(
-                        f"   📨 Event {len(events)}: {received_event.content[:50]}..."
-                    )
+                    print(f"   📨 Event {len(events)}: {received_event.content[:50]}...")
 
                     if len(events) >= 5:
                         break
@@ -151,9 +147,7 @@ async def key_management_example():
     print(f"   Back to hex public: {hex_public}")
 
     # Verify conversion
-    print(
-        f"   Conversion correct: {private_key == hex_private and public_key == hex_public}"
-    )
+    print(f"   Conversion correct: {private_key == hex_private and public_key == hex_public}")
 
 
 async def filtering_example():

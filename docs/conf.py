@@ -19,6 +19,7 @@ author = "Bigbrotr"
 # The version info from setuptools-scm
 try:
     from nostr_tools import __version__
+
     version = __version__
     release = __version__
 except ImportError:
@@ -30,12 +31,11 @@ except ImportError:
 extensions = [
     # Sphinx built-in extensions
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary", 
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.githubpages",
-    
     # Third-party extensions
     "myst_parser",  # For Markdown support
 ]
@@ -104,7 +104,7 @@ autosummary_imported_members = False
 # MyST settings (Markdown parser)
 myst_enable_extensions = [
     "colon_fence",
-    "deflist", 
+    "deflist",
     "html_admonition",
     "html_image",
     "linkify",
@@ -142,9 +142,7 @@ latex_documents = [
 ]
 
 # -- Options for manual page output ------------------------------------------
-man_pages = [
-    ("index", "nostr-tools", f"{project} Documentation", [author], 1)
-]
+man_pages = [("index", "nostr-tools", f"{project} Documentation", [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 texinfo_documents = [
@@ -208,6 +206,7 @@ code.literal {
 """
     with open(custom_css_path, "w") as f:
         f.write(custom_css_content)
+
 
 def setup(app):
     """Custom Sphinx setup function."""

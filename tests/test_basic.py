@@ -9,18 +9,16 @@ import time
 
 import pytest
 
-from nostr_tools import (
-    Event,
-    Filter,
-    Relay,
-    calc_event_id,
-    generate_event,
-    generate_keypair,
-    to_bech32,
-    to_hex,
-    validate_keypair,
-    verify_sig,
-)
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import calc_event_id
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from nostr_tools import to_bech32
+from nostr_tools import to_hex
+from nostr_tools import validate_keypair
+from nostr_tools import verify_sig
 
 
 class TestKeyGeneration:
@@ -347,14 +345,9 @@ class TestRelay:
 
     def test_relay_creation_tor(self):
         """Test creating Tor relay."""
-        relay = Relay(
-            "wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"
-        )
+        relay = Relay("wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion")
 
-        assert (
-            relay.url
-            == "wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"
-        )
+        assert relay.url == "wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"
         assert relay.network == "tor"
 
     def test_relay_invalid_url(self):
@@ -439,35 +432,25 @@ class TestFilter:
 
     def test_filter_validation_invalid_ids(self):
         """Test filter validation with invalid IDs."""
-        with pytest.raises(
-            ValueError, match="All ids must be 64-character hexadecimal"
-        ):
+        with pytest.raises(ValueError, match="All ids must be 64-character hexadecimal"):
             Filter(ids=["invalid_id"])
 
     def test_filter_validation_invalid_authors(self):
         """Test filter validation with invalid authors."""
-        with pytest.raises(
-            ValueError, match="All authors must be 64-character hexadecimal"
-        ):
+        with pytest.raises(ValueError, match="All authors must be 64-character hexadecimal"):
             Filter(authors=["invalid_author"])
 
     def test_filter_validation_invalid_kinds(self):
         """Test filter validation with invalid kinds."""
-        with pytest.raises(
-            ValueError, match="All kinds must be integers between 0 and 65535"
-        ):
+        with pytest.raises(ValueError, match="All kinds must be integers between 0 and 65535"):
             Filter(kinds=[-1])
 
-        with pytest.raises(
-            ValueError, match="All kinds must be integers between 0 and 65535"
-        ):
+        with pytest.raises(ValueError, match="All kinds must be integers between 0 and 65535"):
             Filter(kinds=[65536])
 
     def test_filter_validation_invalid_time_range(self):
         """Test filter validation with invalid time range."""
-        with pytest.raises(
-            ValueError, match="since must be less than or equal to until"
-        ):
+        with pytest.raises(ValueError, match="since must be less than or equal to until"):
             Filter(since=2000, until=1000)
 
     def test_filter_equality(self):

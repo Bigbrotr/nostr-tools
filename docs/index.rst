@@ -28,7 +28,7 @@ Features
 🔒 **Robust Cryptography**
    Built-in support for secp256k1 signatures, key generation, and Bech32 encoding.
 
-🌐 **WebSocket Relay Management**  
+🌐 **WebSocket Relay Management**
    Efficient WebSocket client with connection pooling, automatic reconnection, and relay discovery.
 
 🔄 **Async/Await Support**
@@ -61,28 +61,28 @@ Basic Usage
    async def main():
        # Generate a new keypair
        private_key, public_key = generate_keypair()
-       
+
        # Create a client
        client = Client()
-       
+
        # Connect to a relay
        await client.connect("wss://relay.damus.io")
-       
+
        # Create and publish an event
        event = Event(
            kind=1,
            content="Hello Nostr!",
            public_key=public_key
        )
-       
+
        # Sign and publish the event
        signed_event = event.sign(private_key)
        await client.publish(signed_event)
-       
+
        # Subscribe to events
        async for event in client.subscribe({"kinds": [1], "limit": 10}):
            print(f"Received: {event.content}")
-           
+
        await client.disconnect()
 
    if __name__ == "__main__":
