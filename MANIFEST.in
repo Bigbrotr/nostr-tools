@@ -88,191 +88,65 @@ recursive-exclude .idea *
 prune .idea
 
 # =====================================================
-# Build and CI Configuration (EXCLUDED)
+# Build Artifacts (EXCLUDED)
 # =====================================================
 
-# GitHub Actions and CI configuration
-exclude .github
-recursive-exclude .github *
-prune .github
-
-# CI configuration files
-exclude .travis.yml
-exclude .appveyor.yml
-exclude azure-pipelines.yml
-exclude .circleci
-recursive-exclude .circleci *
-prune .circleci
-
-# Build configuration
-exclude setup.py
-exclude setup.cfg
-exclude requirements*.txt
-exclude dev-requirements.txt
-exclude test-requirements.txt
-
-# =====================================================
-# Temporary and Cache Files (EXCLUDED)
-# =====================================================
-
-# Python cache and temporary files
+# Python bytecode and caches
 global-exclude __pycache__
 global-exclude *.py[cod]
 global-exclude *$py.class
-global-exclude *.so
 
-# Build artifacts
-exclude build
-recursive-exclude build *
+# Build and distribution directories
 prune build
-
-exclude dist
-recursive-exclude dist *
 prune dist
-
-exclude *.egg-info
-recursive-exclude *.egg-info *
 prune *.egg-info
-
-# Coverage and testing artifacts
-exclude htmlcov
-recursive-exclude htmlcov *
+prune .tox
 prune htmlcov
-
-exclude .coverage
-exclude .coverage.*
-exclude coverage.xml
-exclude .pytest_cache
-recursive-exclude .pytest_cache *
+prune .mypy_cache
+prune .ruff_cache
 prune .pytest_cache
 
-# Linting and formatting cache
-exclude .ruff_cache
-recursive-exclude .ruff_cache *
-prune .ruff_cache
-
-exclude .mypy_cache
-recursive-exclude .mypy_cache *
-prune .mypy_cache
-
 # =====================================================
-# Version Control and Backup Files (EXCLUDED)
+# System and Temporary Files (EXCLUDED)  
 # =====================================================
 
-# Git repository files
-exclude .git
-recursive-exclude .git *
-prune .git
+# Operating system files
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude desktop.ini
 
-exclude .gitignore
-exclude .gitattributes
-exclude .gitmodules
-
-# Backup and temporary files
+# Editor temporary files
 global-exclude *~
 global-exclude *.swp
 global-exclude *.swo
-global-exclude .#*
-global-exclude #*#
-global-exclude *.orig
-global-exclude *.rej
+global-exclude .*.sw[po]
+
+# Backup files
 global-exclude *.bak
 global-exclude *.backup
-
-# Migration backup directories
-exclude backup_*
-recursive-exclude backup_* *
-prune backup_*
+global-exclude *.orig
 
 # =====================================================
-# Security and Sensitive Files (EXCLUDED)
+# Version Control (EXCLUDED)
 # =====================================================
 
-# Security sensitive files
-global-exclude *.pem
+# Git files
+exclude .gitignore
+exclude .gitattributes
+prune .git
+
+# GitHub specific
+prune .github
+
+# =====================================================
+# Security Files (EXCLUDED)
+# =====================================================
+
+# Never include private keys or secrets
 global-exclude *.key
+global-exclude *.pem
+global-exclude *.crt
 global-exclude *.p12
-global-exclude *.pfx
 global-exclude secrets.json
 global-exclude .env
 global-exclude .env.*
-
-# Security scan results
-exclude bandit-report.json
-exclude safety-report.json
-exclude pip-audit-report.json
-
-# =====================================================
-# OS and System Files (EXCLUDED)
-# =====================================================
-
-# macOS
-global-exclude .DS_Store
-global-exclude .AppleDouble
-global-exclude .LSOverride
-
-# Windows
-global-exclude Thumbs.db
-global-exclude Thumbs.db:encryptable
-global-exclude ehthumbs.db
-global-exclude ehthumbs_vista.db
-global-exclude [Dd]esktop.ini
-global-exclude $RECYCLE.BIN
-
-# Linux
-global-exclude .directory
-global-exclude .Trash-*
-
-# =====================================================
-# Development Tools Output (EXCLUDED)
-# =====================================================
-
-# Profiling output
-global-exclude *.prof
-global-exclude *.lprof
-global-exclude *.profile
-global-exclude gmon.out
-
-# Documentation build artifacts
-exclude docs/_build
-recursive-exclude docs/_build *
-prune docs/_build
-
-exclude docs/build
-recursive-exclude docs/build *
-prune docs/build
-
-# Jupyter notebooks (exclude from distribution)
-global-exclude *.ipynb
-exclude .ipynb_checkpoints
-recursive-exclude .ipynb_checkpoints *
-prune .ipynb_checkpoints
-
-# =====================================================
-# Special Inclusions (Override exclusions if needed)
-# =====================================================
-
-# Force include important configuration files that might be excluded
-include pyproject.toml
-include LICENSE
-include README.md
-
-# Include any data files that should be distributed
-# Uncomment and modify as needed:
-# recursive-include src/nostr_tools/data *.json
-# recursive-include src/nostr_tools/data *.txt
-# recursive-include src/nostr_tools/data *.csv
-
-# Include package metadata
-include src/nostr_tools/py.typed
-
-# =====================================================
-# Final Safety Exclusions
-# =====================================================
-
-# Ensure no sensitive development files are included
-global-exclude .local
-global-exclude local_*
-global-exclude *_local.*
-global-exclude private_*
-global-exclude *_private.*

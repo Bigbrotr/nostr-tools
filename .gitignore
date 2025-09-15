@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -28,6 +29,10 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -39,8 +44,10 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+*.py,cover
 .hypothesis/
 .pytest_cache/
+cover/
 
 # Translations
 *.mo
@@ -61,14 +68,14 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/build/
+docs/_autosummary/
 
 # PyBuilder
+.pybuilder/
 target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
 
 # IPython
 profile_default/
@@ -79,6 +86,13 @@ ipython_config.py
 
 # pipenv
 Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+pdm.lock
 
 # PEP 582
 __pypackages__/
@@ -120,128 +134,37 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# Cython debug symbols
+cython_debug/
+
 # Ruff
 .ruff_cache/
 
-# IDEs and editors
+# VS Code
 .vscode/
+*.code-workspace
+
+# PyCharm
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+.*.swp
+.*.swo
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project specific
-note.txt
-test.ipynb
-
-# Security sensitive files
-*.pem
-*.key
-*.p12
-*.pfx
-secrets.json
-
-# Local development files
-.env.local
-.env.development
-.env.test
-.env.production
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
-*.orig
-*.rej
-
-# Logs
-logs/
-*.log
-
-# Pre-commit
-.pre-commit-config.yaml.bak
-
-# Version control
-.git/
-.svn/
-.hg/
-
-# Build tools
-.tox/
-.nox/
-
-# Package managers
-node_modules/
-.yarn/
-.npm/
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Backup files from migration
-backup_*/
-*.backup
-pyproject.toml.backup
-setup.py.backup
-setup.cfg.backup
-
-# Security scan results
-bandit-report.json
-safety-report.json
-
-# Performance profiling
-*.prof
-*.profile
-gmon.out
-
-# Documentation builds
-docs/_build/
-docs/build/
-.doctrees/
-
-# Coverage reports
-.coverage.*
-htmlcov/
-coverage.xml
-
-# Pytest
-.pytest_cache/
-
-# Requirements freeze files
-requirements-frozen.txt
-
-# Local configuration overrides
-local_settings.py
-local_config.py
-
-# Development database
-db.sqlite3
-*.db
-
-# Temporary development files
-scratch/
-tmp/
-temp/
-
-# Editor backup files
+# Emacs
 *~
-*.orig
-*.swp
-*.swo
-.#*
-#*#
+\#*\#
+.\#*
 
 # macOS
 .DS_Store
@@ -253,71 +176,50 @@ Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
+Desktop.ini
 $RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
 
 # Linux
-*~
-.fuse_hidden*
 .directory
 .Trash-*
-.nfs*
 
-# Vim
-*.swp
-*.swo
-*.un~
-Session.vim
-.netrwhist
-tags
+# Project specific
+*.db
+*.sqlite
+*.sqlite3
+logs/
+temp/
+tmp/
+scratch/
 
-# Emacs
-*~
-\#*\#
-.\#*
-.dir-locals.el
-TAGS
+# Security - never commit these!
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.csr
+private_key.txt
+secret_key.txt
+secrets.json
+.secrets/
 
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
+# Local development
+.local/
+local_test.py
+test_local.py
+dev_notes.md
+TODO.md
 
-# PyCharm
-.idea/
-*.iws
-*.iml
-*.ipr
-__pycache__/
+# Documentation builds
+docs/build/
+docs/_build/
+docs/source/_autosummary/
 
-# Visual Studio Code
-.vscode/
-*.code-workspace
-
-# JetBrains
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Profiling
+# Performance profiling
 *.prof
 *.lprof
+profile_results/
 
-# Development containers
-.devcontainer/
-
-# Docker
-Dockerfile.dev
-docker-compose.override.yml
-.dockerignore
-
-# Kubernetes
-*.yaml.local
-*.yml.local
+# Version file (auto-generated)
+src/nostr_tools/_version.py
