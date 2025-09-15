@@ -62,7 +62,7 @@ jobs:
 
     - name: Run core tests
       run: |
-        python -m pytest tests/ -m "unit or not integration" --maxfail=5 -x
+        python -m pytest tests/ -x
 
   # Build distribution packages
   build:

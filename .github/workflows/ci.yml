@@ -178,13 +178,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        python -m pytest tests/ -m "unit or not integration" -v --tb=short --maxfail=10
-
-    - name: Run integration tests
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
-      run: |
-        python -m pytest tests/ -m integration -v --tb=short --maxfail=5
-      continue-on-error: true  # Network-dependent tests may fail
+        python -m pytest tests/ -v --tb=short
 
   # Test coverage report (separate job with all tests)
   coverage:
