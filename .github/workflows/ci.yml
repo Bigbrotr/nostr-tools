@@ -80,7 +80,7 @@ jobs:
     - name: Check Ruff formatting
       run: |
         echo "::group::Ruff Formatting"
-        python -m ruff format --check src/nostr_tools tests examples
+        python -m ruff format --check src/nostr_tools tests examples --exclude="src/nostr_tools/_version.py"
         echo "::endgroup::"
 
     - name: Run MyPy type checking

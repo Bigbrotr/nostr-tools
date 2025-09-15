@@ -85,19 +85,19 @@ install-ci:
 
 format:
 	@echo "$(BLUE)🎨 Formatting code with Ruff...$(RESET)"
-	$(PYTHON) -m ruff format $(SRC_DIRS)
+	$(PYTHON) -m ruff format $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 format-check:
 	@echo "$(BLUE)🎨 Checking code formatting...$(RESET)"
-	$(PYTHON) -m ruff format --check $(SRC_DIRS)
+	$(PYTHON) -m ruff format --check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 lint:
 	@echo "$(BLUE)🔍 Running linting checks...$(RESET)"
-	$(PYTHON) -m ruff check $(SRC_DIRS)
+	$(PYTHON) -m ruff check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 lint-fix:
 	@echo "$(BLUE)🔧 Running linting with fixes...$(RESET)"
-	$(PYTHON) -m ruff check --fix $(SRC_DIRS)
+	$(PYTHON) -m ruff check --fix $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 type-check:
 	@echo "$(BLUE)🏷️  Running type checks...$(RESET)"
