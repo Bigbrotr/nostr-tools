@@ -629,6 +629,7 @@ class TestConcurrencySafety:
                     kind=1,
                     tags=[],
                     content=f"Concurrent event {threading.current_thread().ident}-{i}",
+                    created_at=1640995200 + i,
                 )
                 thread_events.append(event_data)
             result_queue.put(thread_events)
