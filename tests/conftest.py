@@ -12,17 +12,22 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nostr_tools import Client, Event, Filter, Relay, generate_event, generate_keypair
-from tests import SKIP_INTEGRATION, TEST_RELAY_URL, TEST_TIMEOUT
+from nostr_tools import Client
+from nostr_tools import Event
+from nostr_tools import Filter
+from nostr_tools import Relay
+from nostr_tools import generate_event
+from nostr_tools import generate_keypair
+from tests import SKIP_INTEGRATION
+from tests import TEST_RELAY_URL
+from tests import TEST_TIMEOUT
 
 
 # Pytest configuration
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line("markers", "unit: Fast unit tests")
-    config.addinivalue_line(
-        "markers", "integration: Integration tests requiring network"
-    )
+    config.addinivalue_line("markers", "integration: Integration tests requiring network")
     config.addinivalue_line("markers", "slow: Slow tests that take time to complete")
     config.addinivalue_line("markers", "security: Security-focused tests")
 
@@ -42,10 +47,7 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.slow)
 
         # Add security marker to cryptographic tests
-        if any(
-            keyword in item.name.lower()
-            for keyword in ["key", "sign", "verify", "crypto"]
-        ):
+        if any(keyword in item.name.lower() for keyword in ["key", "sign", "verify", "crypto"]):
             item.add_marker(pytest.mark.security)
 
 

@@ -26,7 +26,7 @@ We provide security updates for the following versions of nostr-tools:
 
 ### Reporting Process
 
-1. **Email**: Send detailed vulnerability reports to **security@bigbrotr.com**
+1. **Email**: Send detailed vulnerability reports to **<security@bigbrotr.com>**
 2. **Response Time**: We will acknowledge receipt within 48 hours
 3. **Confidentiality**: Please keep vulnerability details confidential until we release a fix
 
@@ -86,12 +86,14 @@ Credit:
 nostr-tools implements industry-standard cryptographic practices:
 
 #### **Elliptic Curve Cryptography**
+
 - **Library**: `secp256k1` (Bitcoin's elliptic curve)
 - **Key Generation**: Secure random number generation using `os.urandom()`
 - **Signature Scheme**: Schnorr signatures as specified in NIP-01
 - **Key Validation**: Comprehensive validation of all cryptographic inputs
 
 #### **Random Number Generation**
+
 ```python
 # Secure entropy source
 import os
@@ -99,6 +101,7 @@ private_key_bytes = os.urandom(32)  # 256 bits of entropy
 ```
 
 #### **Memory Safety**
+
 - Automatic cleanup of sensitive data structures
 - No persistence of private keys in memory longer than necessary
 - Protection against memory dumps containing sensitive data
@@ -106,11 +109,13 @@ private_key_bytes = os.urandom(32)  # 256 bits of entropy
 ### Network Security
 
 #### **Transport Layer Security**
+
 - **Default Protocol**: WSS (WebSocket Secure) preferred over WS
 - **TLS Validation**: Proper certificate validation for secure connections
 - **Tor Support**: Native .onion relay support with SOCKS5 proxy
 
 #### **Connection Security**
+
 ```python
 # ✅ Secure connection (recommended)
 relay = Relay("wss://relay.example.com")
@@ -122,12 +127,14 @@ relay = Relay("ws://relay.example.com")
 ### Input Validation Security
 
 #### **Comprehensive Validation**
+
 - All inputs validated for type, format, and range
 - Protection against null-byte injection attacks
 - Validation of event structure according to NIP-01
 - Sanitization of untrusted data from network sources
 
 #### **Example Validation**
+
 ```python
 def validate_event_data(data: Dict[str, Any]) -> None:
     """Comprehensive event validation with security checks."""
@@ -155,6 +162,7 @@ def validate_event_data(data: Dict[str, Any]) -> None:
 ### For Library Users
 
 #### **Private Key Management**
+
 ```python
 import os
 from nostr_tools import generate_keypair
@@ -177,6 +185,7 @@ private_key, public_key = generate_keypair()  # Uses os.urandom()
 ```
 
 #### **Network Security**
+
 ```python
 from nostr_tools import Relay, Client
 
@@ -198,6 +207,7 @@ tor_client = Client(
 ```
 
 #### **Input Validation**
+
 ```python
 from nostr_tools import Event, sanitize
 
@@ -220,6 +230,7 @@ clean_data = sanitize(untrusted_data)  # Removes null bytes
 ```
 
 #### **Error Handling**
+
 ```python
 from nostr_tools import RelayConnectionError
 import logging
@@ -247,6 +258,7 @@ async def secure_relay_connection():
 ### For Library Contributors
 
 #### **Secure Development Practices**
+
 ```python
 # ✅ DO: Validate all inputs comprehensively
 def process_relay_metadata(data: Any) -> Optional[Dict[str, Any]]:
@@ -281,6 +293,7 @@ def validate_signature(event_id: str, pubkey: str, signature: str) -> bool:
 ```
 
 #### **Testing Security**
+
 ```python
 # Security-focused test example
 @pytest.mark.security
@@ -306,6 +319,7 @@ def test_private_key_not_exposed_in_error():
 We use multiple layers of automated security testing:
 
 #### **Static Security Analysis**
+
 ```bash
 # Bandit - Security vulnerability scanner
 bandit -r nostr_tools -f json
@@ -318,6 +332,7 @@ semgrep --config=p/security-audit nostr_tools/
 ```
 
 #### **Dependency Security**
+
 ```bash
 # Check for known vulnerabilities in dependencies
 pip-audit --format=json --output=security-report.json
@@ -329,6 +344,7 @@ pip list --outdated
 ### Manual Security Review Checklist
 
 #### **Code Review Security Checklist**
+
 - [ ] **Input Validation**: All inputs validated and sanitized
 - [ ] **Cryptographic Operations**: Proper use of cryptographic libraries
 - [ ] **Error Handling**: No sensitive data leaked in error messages
@@ -339,6 +355,7 @@ pip list --outdated
 - [ ] **Logging**: No sensitive data logged
 
 #### **Cryptographic Review**
+
 - [ ] **Random Number Generation**: Uses cryptographically secure randomness
 - [ ] **Key Management**: Proper key generation, storage, and disposal
 - [ ] **Signature Validation**: Comprehensive signature verification
@@ -350,24 +367,28 @@ pip list --outdated
 ### Security Incident Classification
 
 #### **Critical (P0)**
+
 - Remote code execution vulnerabilities
 - Private key extraction or compromise
 - Authentication bypass allowing unauthorized access
 - Mass data exposure or privacy breaches
 
 #### **High (P1)**  
+
 - Local privilege escalation
 - Signature verification bypass
 - Denial of service affecting availability
 - Information disclosure of sensitive data
 
 #### **Medium (P2)**
+
 - Input validation issues
 - Minor information disclosure
 - Performance degradation attacks
 - Configuration security issues
 
 #### **Low (P3)**
+
 - Security improvements
 - Hardening opportunities
 - Documentation security issues
@@ -418,18 +439,21 @@ pip list --outdated
 ### Development Security Tools
 
 #### **Required Tools**
+
 - **Bandit**: Security issue identification in Python code
 - **Safety**: Known security vulnerabilities in dependencies  
 - **MyPy**: Static type checking to prevent type-related vulnerabilities
 - **Ruff**: Modern linter with security-focused rules
 
 #### **Recommended Tools**
+
 - **Semgrep**: Advanced static analysis for security patterns
 - **pip-audit**: Comprehensive dependency vulnerability scanning
 - **Detect-secrets**: Prevent accidental commit of secrets
 - **Pre-commit**: Automated security checks before commits
 
 #### **Security Testing Commands**
+
 ```bash
 # Run comprehensive security scan
 make security-scan
@@ -447,16 +471,19 @@ bandit -r nostr_tools && safety check && pytest -m security
 ### Security Resources
 
 #### **Nostr Protocol Security**
+
 - [NIP-01 Specification](https://github.com/nostr-protocol/nips/blob/master/01.md)
 - [Nostr Security Considerations](https://github.com/nostr-protocol/nips)
 - [Schnorr Signature Security](https://bip340.org/)
 
 #### **Cryptographic Resources**
+
 - [secp256k1 Documentation](https://github.com/bitcoin-core/secp256k1)
 - [Python Cryptography Best Practices](https://cryptography.io/)
 - [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)
 
 #### **Python Security**
+
 - [Python Security Documentation](https://docs.python.org/3/library/security.html)
 - [OWASP Python Security](https://owasp.org/www-project-python-security/)
 - [Bandit Security Linter](https://bandit.readthedocs.io/)
@@ -466,6 +493,7 @@ bandit -r nostr_tools && safety check && pytest -m security
 ### Common Security Pitfalls
 
 #### **Cryptographic Mistakes**
+
 ```python
 # ❌ DON'T: Use weak random number generation
 import random
@@ -477,6 +505,7 @@ secure_key = os.urandom(32)  # Cryptographically secure
 ```
 
 #### **Key Management Errors**
+
 ```python
 # ❌ DON'T: Log private keys
 logging.info(f"Generated key: {private_key}")  # Sensitive data!
@@ -486,6 +515,7 @@ logging.info("Keypair generated successfully")
 ```
 
 #### **Input Validation Bypass**
+
 ```python
 # ❌ DON'T: Trust external data
 def process_event(data):
@@ -529,17 +559,21 @@ We maintain a security hall of fame to recognize researchers who have helped imp
 ## 📞 Contact Information
 
 ### Security Team
-- **Email**: security@bigbrotr.com
+
+- **Email**: <security@bigbrotr.com>
 - **Response Time**: Within 48 hours
 - **Languages**: English
 
 ### General Security Questions
-- **Email**: hello@bigbrotr.com
+
+- **Email**: <hello@bigbrotr.com>
 - **Discussion**: [GitHub Discussions](https://github.com/bigbrotr/nostr-tools/discussions)
 
 ### Emergency Contact
+
 For critical security issues requiring immediate attention:
-- **Email**: security@bigbrotr.com (mark as URGENT in subject)
+
+- **Email**: <security@bigbrotr.com> (mark as URGENT in subject)
 - **Response**: Within 2 hours during business hours
 
 ---
@@ -547,6 +581,7 @@ For critical security issues requiring immediate attention:
 ## 📋 Security Policy Updates
 
 This security policy is reviewed and updated regularly to reflect:
+
 - Changes in the threat landscape
 - New security features and improvements
 - Lessons learned from security incidents

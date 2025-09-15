@@ -1,5 +1,5 @@
-nostr-tools Documentation
-=========================
+Nostr-Tools Documentation
+==========================
 
 .. image:: https://img.shields.io/pypi/v/nostr-tools.svg
    :target: https://pypi.org/project/nostr-tools/
@@ -9,114 +9,159 @@ nostr-tools Documentation
    :target: https://pypi.org/project/nostr-tools/
    :alt: Python Versions
 
-.. image:: https://img.shields.io/badge/license-MIT-blue.svg
+.. image:: https://img.shields.io/github/license/bigbrotr/nostr-tools.svg
    :target: https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE
    :alt: License
 
-A comprehensive Python library for interacting with the Nostr protocol.
+.. image:: https://github.com/bigbrotr/nostr-tools/workflows/Test/badge.svg
+   :target: https://github.com/bigbrotr/nostr-tools/actions
+   :alt: Test Status
+
+A comprehensive Python library for Nostr protocol interactions.
+
+Features
+--------
+
+✨ **Complete Nostr Implementation**
+   Full support for the Nostr protocol specification with modern Python async/await patterns.
+
+🔒 **Robust Cryptography**
+   Built-in support for secp256k1 signatures, key generation, and Bech32 encoding.
+
+🌐 **WebSocket Relay Management**
+   Efficient WebSocket client with connection pooling, automatic reconnection, and relay discovery.
+
+🔄 **Async/Await Support**
+   Fully asynchronous API designed for high-performance applications.
+
+📘 **Complete Type Hints**
+   Full type annotation coverage for excellent IDE support and development experience.
+
+🧪 **Comprehensive Testing**
+   Extensive test suite with unit tests, integration tests, and security checks.
 
 Quick Start
 -----------
 
-.. code-block:: python
-
-   import asyncio
-   from nostr_tools import Client, Relay, generate_keypair, generate_event, Event
-
-   async def main():
-       # Generate a new key pair
-       private_key, public_key = generate_keypair()
-
-       # Create a relay connection
-       relay = Relay("wss://relay.damus.io")
-       client = Client(relay)
-
-       async with client:
-           # Create and publish an event
-           event_data = generate_event(
-               private_key, public_key, 1, [], "Hello Nostr!"
-           )
-           event = Event.from_dict(event_data)
-           success = await client.publish(event)
-           print(f"Published: {success}")
-
-   asyncio.run(main())
-
 Installation
-------------
+~~~~~~~~~~~~
 
 .. code-block:: bash
 
    pip install nostr-tools
 
-API Reference
-=============
+Basic Usage
+~~~~~~~~~~~
 
-.. currentmodule:: nostr_tools
+.. code-block:: python
 
-Core Classes
-------------
+   import asyncio
+   from nostr_tools import Client, generate_keypair, Event
 
-.. autosummary::
-   :toctree: _autosummary
+   async def main():
+       # Generate a new keypair
+       private_key, public_key = generate_keypair()
 
-   Event
-   Relay
-   Client
-   Filter
-   RelayMetadata
+       # Create a client
+       client = Client()
 
-High-Level Functions
---------------------
+       # Connect to a relay
+       await client.connect("wss://relay.damus.io")
 
-.. autosummary::
-   :toctree: _autosummary
+       # Create and publish an event
+       event = Event(
+           kind=1,
+           content="Hello Nostr!",
+           public_key=public_key
+       )
 
-   fetch_events
-   stream_events
-   compute_relay_metadata
-   check_connectivity
-   check_readability
-   check_writability
-   fetch_nip11
-   fetch_connection
+       # Sign and publish the event
+       signed_event = event.sign(private_key)
+       await client.publish(signed_event)
 
-Cryptographic Functions
------------------------
+       # Subscribe to events
+       async for event in client.subscribe({"kinds": [1], "limit": 10}):
+           print(f"Received: {event.content}")
 
-.. autosummary::
-   :toctree: _autosummary
+       await client.disconnect()
 
-   generate_keypair
-   validate_keypair
-   generate_event
-   calc_event_id
-   sig_event_id
-   verify_sig
+   if __name__ == "__main__":
+       asyncio.run(main())
 
-Utility Functions
+Table of Contents
 -----------------
 
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+
+   installation
+   quickstart
+   examples
+   best_practices
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
+   api/client
+   api/event
+   api/relay
+   api/utils
+   api/exceptions
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+
+   contributing
+   testing
+   changelog
+
+API Documentation
+-----------------
+
+Core Classes
+~~~~~~~~~~~~
+
 .. autosummary::
    :toctree: _autosummary
+   :caption: Core Classes
 
-   to_bech32
-   to_hex
-   find_websocket_relay_urls
-   sanitize
-   parse_nip11_response
-   parse_connection_response
+   nostr_tools.Client
+   nostr_tools.Event
+   nostr_tools.Relay
+   nostr_tools.Filter
+   nostr_tools.RelayMetadata
 
-Exceptions
-----------
+Utilities
+~~~~~~~~~
 
 .. autosummary::
    :toctree: _autosummary
+   :caption: Utilities
 
-   RelayConnectionError
+   nostr_tools.generate_keypair
+   nostr_tools.generate_event
+   nostr_tools.calc_event_id
+   nostr_tools.verify_sig
+   nostr_tools.to_bech32
+   nostr_tools.to_hex
+
+Actions
+~~~~~~~
+
+.. autosummary::
+   :toctree: _autosummary
+   :caption: High-level Actions
+
+   nostr_tools.fetch_events
+   nostr_tools.stream_events
+   nostr_tools.check_connectivity
+   nostr_tools.fetch_nip11
 
 Indices and Tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

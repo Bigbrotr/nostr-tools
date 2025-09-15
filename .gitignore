@@ -26,14 +26,8 @@ wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -56,6 +50,7 @@ coverage.xml
 *.log
 local_settings.py
 db.sqlite3
+db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -65,7 +60,8 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/html/.doctrees/environment.pickle
+docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -81,8 +77,15 @@ ipython_config.py
 # pyenv
 .python-version
 
-# celery beat schedule file
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
 celerybeat-schedule
+celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
@@ -114,7 +117,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# IDEs
+# pytype static type analyzer
+.pytype/
+
+# Ruff
+.ruff_cache/
+
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
@@ -141,7 +150,7 @@ test.ipynb
 *.pfx
 secrets.json
 
-# Local development
+# Local development files
 .env.local
 .env.development
 .env.test
@@ -152,13 +161,163 @@ secrets.json
 *.temp
 *.bak
 *.backup
+*.orig
+*.rej
 
 # Logs
-*.log
 logs/
-
-# GitHub Actions
-.github/workflows/secrets/
+*.log
 
 # Pre-commit
 .pre-commit-config.yaml.bak
+
+# Version control
+.git/
+.svn/
+.hg/
+
+# Build tools
+.tox/
+.nox/
+
+# Package managers
+node_modules/
+.yarn/
+.npm/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files from migration
+backup_*/
+*.backup
+pyproject.toml.backup
+setup.py.backup
+setup.cfg.backup
+
+# Security scan results
+bandit-report.json
+safety-report.json
+
+# Performance profiling
+*.prof
+*.profile
+gmon.out
+
+# Documentation builds
+docs/_build/
+docs/build/
+.doctrees/
+
+# Coverage reports
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# Requirements freeze files
+requirements-frozen.txt
+
+# Local configuration overrides
+local_settings.py
+local_config.py
+
+# Development database
+db.sqlite3
+*.db
+
+# Temporary development files
+scratch/
+tmp/
+temp/
+
+# Editor backup files
+*~
+*.orig
+*.swp
+*.swo
+.#*
+#*#
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Vim
+*.swp
+*.swo
+*.un~
+Session.vim
+.netrwhist
+tags
+
+# Emacs
+*~
+\#*\#
+.\#*
+.dir-locals.el
+TAGS
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+__pycache__/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Profiling
+*.prof
+*.lprof
+
+# Development containers
+.devcontainer/
+
+# Docker
+Dockerfile.dev
+docker-compose.override.yml
+.dockerignore
+
+# Kubernetes
+*.yaml.local
+*.yml.local

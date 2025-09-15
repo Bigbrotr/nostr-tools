@@ -1,171 +1,213 @@
-#!/usr/bin/env python3
-"""
-Configuration file for the Sphinx documentation builder.
-Optimized for automatic documentation generation with zero warnings.
-"""
+# Configuration file for the Sphinx documentation builder.
+# For the full list of built-in configuration values, see:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
-# Tell the package we're building docs
-os.environ["SPHINX_BUILD"] = "1"
-
-# -- Path setup --------------------------------------------------------------
-# Import the package to get version info
-import nostr_tools
-
-# Add project root to Python path for imports
+# Add project source to Python path
 project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "src"))
 
 # -- Project information -----------------------------------------------------
+
 project = "nostr-tools"
-copyright = "2025, Bigbrotr"
+copyright = "2024, Bigbrotr"
 author = "Bigbrotr"
-version = nostr_tools.__version__
-release = nostr_tools.__version__
+
+# The version info from setuptools-scm
+try:
+    from nostr_tools import __version__
+
+    version = __version__
+    release = __version__
+except ImportError:
+    version = "development"
+    release = "development"
 
 # -- General configuration ---------------------------------------------------
+
 extensions = [
-    "sphinx.ext.autodoc",  # Automatic documentation from docstrings
-    "sphinx.ext.autosummary",  # Automatic summary generation
-    "sphinx.ext.napoleon",  # Google/NumPy docstring support
-    "sphinx.ext.viewcode",  # Add source code links
-    "sphinx.ext.intersphinx",  # Link to other projects' docs
-    "sphinx.ext.githubpages",  # GitHub Pages support
-    "myst_parser",  # Markdown support
-    "sphinx_rtd_theme",  # Read the Docs theme
+    # Sphinx built-in extensions
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.githubpages",
+    # Third-party extensions
+    "myst_parser",  # For Markdown support
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-master_doc = "index"
 
-# -- Autodoc Configuration (AUTOMATIC DISCOVERY) ---------------------------
-autodoc_default_options = {
-    "members": True,  # Include all members
-    "member-order": "bysource",  # Order by source code order
-    "special-members": "__init__",  # Include __init__ methods
-    "undoc-members": False,  # Don't include undocumented members
-    "exclude-members": "__weakref__",  # Exclude technical attributes
-    "inherited-members": True,  # Include inherited methods
-    "show-inheritance": True,  # Show class inheritance
-}
+# -- Options for HTML output -------------------------------------------------
 
-# Enhanced autodoc settings for better docstring handling
-autodoc_class_signature = "mixed"
-autodoc_member_order = "bysource"
-autodoc_typehints = "description"
-autodoc_typehints_description_target = "documented"
-autodoc_typehints_format = "short"
-
-# Include class docstrings only to avoid __init__ duplication
-autoclass_content = "class"
-
-# -- Autosummary Configuration (ZERO WARNINGS) -----------------------------
-autosummary_generate = True  # Generate stub files automatically
-autosummary_generate_overwrite = True  # Overwrite existing files
-autosummary_imported_members = True  # Include imported members
-autosummary_ignore_module_all = False  # Respect __all__ lists
-
-# -- Napoleon Configuration (GOOGLE-STYLE DOCSTRINGS) ----------------------
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = False  # Avoid duplication
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = True
-napoleon_use_admonition_for_notes = True
-napoleon_use_admonition_for_references = True
-napoleon_use_ivar = True
-napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_preprocess_types = True
-napoleon_use_keyword = True
-napoleon_custom_sections = [("Returns", "params_style")]
-
-# -- Intersphinx Configuration (EXTERNAL LINKS) ----------------------------
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
-}
-
-# -- MyST Parser Configuration (MARKDOWN SUPPORT) --------------------------
-myst_enable_extensions = [
-    "colon_fence",  # ::: fenced blocks
-    "deflist",  # Definition lists
-    "dollarmath",  # $$ math blocks
-    "html_admonition",  # HTML-style admonitions
-    "html_image",  # HTML image tags
-    "linkify",  # Auto-detect links
-    "replacements",  # Text replacements
-    "smartquotes",  # Smart quotes
-    "substitution",  # Variable substitutions
-    "tasklist",  # Task lists
-]
-
-# -- HTML Output Configuration (APPEARANCE) --------------------------------
 html_theme = "sphinx_rtd_theme"
+html_title = f"{project} v{version}"
+html_short_title = project
+
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 
+# Theme options
 html_theme_options = {
-    "canonical_url": "",
+    "canonical_url": "https://bigbrotr.github.io/nostr-tools/",
     "logo_only": False,
     "display_version": True,
     "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
-    "style_nav_header_background": "#2980B9",
-    "collapse_navigation": False,  # Keep navigation expanded
+    "style_external_links": True,
+    "collapse_navigation": False,
     "sticky_navigation": True,
-    "navigation_depth": 4,  # Deep navigation
+    "navigation_depth": 4,
     "includehidden": True,
     "titles_only": False,
 }
 
-# Metadata
-html_title = f"{project} v{version}"
-html_short_title = project
-html_last_updated_fmt = "%b %d, %Y"
-html_use_smartypants = True
-html_domain_indices = True
-html_use_index = True
-html_split_index = False
-html_show_sourcelink = True
-html_show_sphinx = True
-html_show_copyright = True
+# -- Extension configuration -------------------------------------------------
 
-# -- Advanced Configuration for Zero Warnings ------------------------------
+# Napoleon settings (for Google/NumPy docstrings)
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
 
+# Autodoc settings
+autodoc_default_options = {
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
+    "show-inheritance": True,
+}
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
+autodoc_preserve_defaults = True
 
-def skip_member(app, what, name, obj, skip, options):
-    """
-    Custom function to control what gets documented.
-    This ensures we don't skip important members with docstrings.
-    """
-    # Never skip if there's a docstring
-    if hasattr(obj, "__doc__") and obj.__doc__:
-        return False
+# Autosummary settings
+autosummary_generate = True
+autosummary_imported_members = False
 
-    # Skip private members that don't have docstrings
-    if name.startswith("_") and not name.startswith("__"):
-        return True
+# MyST settings (Markdown parser)
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
+]
 
-    return skip
+# Intersphinx settings (links to other docs)
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
+    "websockets": ("https://websockets.readthedocs.io/en/stable/", None),
+}
+
+# -- Options for LaTeX output ------------------------------------------------
+latex_engine = "pdflatex"
+latex_elements = {
+    "papersize": "letterpaper",
+    "pointsize": "10pt",
+    "preamble": "",
+    "fncychap": "\\usepackage[Bjornstrup]{fncychap}",
+    "printindex": "\\footnotesize\\raggedright\\printindex",
+}
+
+latex_documents = [
+    (
+        "index",
+        "nostr-tools.tex",
+        f"{project} Documentation",
+        author,
+        "manual",
+    ),
+]
+
+# -- Options for manual page output ------------------------------------------
+man_pages = [("index", "nostr-tools", f"{project} Documentation", [author], 1)]
+
+# -- Options for Texinfo output ----------------------------------------------
+texinfo_documents = [
+    (
+        "index",
+        "nostr-tools",
+        f"{project} Documentation",
+        author,
+        "nostr-tools",
+        "A comprehensive Python library for Nostr protocol interactions",
+        "Miscellaneous",
+    ),
+]
+
+# -- Options for Epub output -------------------------------------------------
+epub_title = project
+epub_author = author
+epub_publisher = author
+epub_copyright = copyright
+
+# -- Custom configuration ----------------------------------------------------
+
+# Add any paths that contain custom static files (such as style sheets)
+if not os.path.exists("_static"):
+    os.makedirs("_static")
+
+# Create custom CSS if it doesn't exist
+custom_css_path = Path("_static/custom.css")
+if not custom_css_path.exists():
+    custom_css_content = """
+/* Custom CSS for nostr-tools documentation */
+
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Better code block styling */
+.highlight pre {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Improve table styling */
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+/* Better admonition styling */
+.admonition {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+}
+
+/* Code inline styling */
+code.literal {
+    background: #f8f8f8;
+    border: 1px solid #e1e4e5;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+"""
+    with open(custom_css_path, "w") as f:
+        f.write(custom_css_content)
 
 
 def setup(app):
-    """Custom setup for enhanced documentation generation."""
-    app.connect("autodoc-skip-member", skip_member)
-
-
-# Add type hints extension if available
-try:
-    extensions.append("sphinx_autodoc_typehints")
-    # Configure type hints extension
-    typehints_fully_qualified = False
-    always_document_param_types = True
-    typehints_document_rtype = True
-except ImportError:
-    pass
+    """Custom Sphinx setup function."""
+    app.add_css_file("custom.css")
