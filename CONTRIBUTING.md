@@ -144,14 +144,14 @@ def connect_to_relay(
     timeout: Optional[int] = None
 ) -> Client:
     """Connect to a Nostr relay.
-    
+
     Args:
         url: WebSocket URL of the relay
         timeout: Connection timeout in seconds
-        
+
     Returns:
         Connected Client instance
-        
+
     Raises:
         RelayConnectionError: If connection fails
     """
@@ -165,19 +165,19 @@ Use Google-style docstrings:
 ```python
 def process_event(event: Event) -> bool:
     """Process a Nostr event.
-    
+
     Validates and stores the event in the local database.
-    
+
     Args:
         event: The Event instance to process
-        
+
     Returns:
         True if processing succeeded, False otherwise
-        
+
     Raises:
         ValidationError: If event validation fails
         DatabaseError: If storage fails
-        
+
     Example:
         >>> event = Event(kind=1, content="Hello")
         >>> success = process_event(event)
@@ -199,19 +199,19 @@ from nostr_tools import YourFeature
 
 class TestYourFeature:
     """Test suite for YourFeature."""
-    
+
     def test_basic_functionality(self):
         """Test basic feature functionality."""
         feature = YourFeature()
         result = feature.do_something()
         assert result == expected_value
-    
+
     @pytest.mark.asyncio
     async def test_async_functionality(self):
         """Test async feature functionality."""
         feature = YourFeature()
         result = await feature.do_async()
         assert result == expected_value
-    
+
     def test_error_handling(self):
         """Test error

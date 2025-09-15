@@ -107,7 +107,7 @@ prune .ruff_cache
 prune .pytest_cache
 
 # =====================================================
-# System and Temporary Files (EXCLUDED)  
+# System and Temporary Files (EXCLUDED)
 # =====================================================
 
 # Operating system files

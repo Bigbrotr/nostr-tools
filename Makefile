@@ -218,7 +218,7 @@ docs-build:
 docs-serve: docs-build
 	@echo "$(BLUE)📚 Serving documentation...$(RESET)"
 	cd docs/_build/html && $(PYTHON) -m http.server
-	
+
 docs-clean:
 	@echo "$(BLUE)🧹 Cleaning documentation build...$(RESET)"
 	cd docs && $(MAKE) clean
@@ -320,7 +320,7 @@ migrate:
 	fi
 
 # =====================================================
-# Debugging and development helpers  
+# Debugging and development helpers
 # =====================================================
 
 debug-info:

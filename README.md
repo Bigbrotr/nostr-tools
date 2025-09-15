@@ -52,28 +52,28 @@ from nostr_tools import Client, Event, Relay, generate_keypair
 async def main():
     # Generate a new keypair
     private_key, public_key = generate_keypair()
-    
+
     # Create a relay instance
     relay = Relay("wss://relay.damus.io")
-    
+
     # Initialize the client
     client = Client(relay)
-    
+
     # Connect to the relay
     await client.connect()
-    
+
     # Create a text note event
     event = Event(
         kind=1,  # Text note
         content="Hello, Nostr! 👋",
         public_key=public_key
     )
-    
+
     # Sign and publish the event
     event.sign(private_key)
     success = await client.publish(event)
     print(f"Event published: {success}")
-    
+
     # Disconnect
     await client.disconnect()
 
@@ -90,23 +90,23 @@ from nostr_tools import Client, Filter, Relay
 async def handle_events():
     relay = Relay("wss://relay.damus.io")
     client = Client(relay)
-    
+
     await client.connect()
-    
+
     # Create a filter for text notes
     event_filter = Filter(
         kinds=[1],  # Text notes
         limit=10    # Last 10 events
     )
-    
+
     # Subscribe and process events
     subscription_id = await client.subscribe(event_filter)
-    
+
     async for event_message in client.listen_events(subscription_id):
         event = Event.from_dict(event_message[2])
         print(f"📝 {event.content}")
         print(f"   by {event.public_key[:8]}...")
-    
+
     await client.disconnect()
 
 asyncio.run(handle_events())
@@ -120,14 +120,14 @@ from nostr_tools import Client, Event, Relay, generate_keypair
 
 async def multi_relay_example():
     private_key, public_key = generate_keypair()
-    
+
     # Define multiple relays
     relays = [
         "wss://relay.damus.io",
         "wss://nos.lol",
         "wss://relay.nostr.band"
     ]
-    
+
     # Create event
     event = Event(
         kind=1,
@@ -135,13 +135,13 @@ async def multi_relay_example():
         public_key=public_key
     )
     event.sign(private_key)
-    
+
     # Publish to all relays
     results = []
     for relay_url in relays:
         relay = Relay(relay_url)
         client = Client(relay)
-        
+
         try:
             await client.connect()
             success = await client.publish(event)
@@ -150,7 +150,7 @@ async def multi_relay_example():
         except Exception as e:
             results.append((relay_url, False))
             print(f"Failed to publish to {relay_url}: {e}")
-    
+
     # Print results
     for relay_url, success in results:
         status = "✅" if success else "❌"
@@ -228,7 +228,7 @@ async with client:
     info = await fetch_nip11(client)
     print(f"Relay: {info.get('name')}")
     print(f"Software: {info.get('software')}")
-    
+
     # Compute full relay metadata
     metadata = await compute_relay_metadata(client, private_key, public_key)
     print(f"Readable: {metadata.readable}")

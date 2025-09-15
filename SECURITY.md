@@ -11,7 +11,7 @@ We provide security updates for the following versions:
 | Version | Supported          | Status              |
 | ------- | ------------------ | ------------------- |
 | 1.0.x   | ✅ Yes             | Active Support      |
-| < 1.0   | ❌ No              | End of Life         |
+| < 1.0.0 | ❌ No              | End of Life         |
 
 ## 🚨 Reporting a Vulnerability
 
@@ -163,7 +163,7 @@ try:
     event.sign(private_key)
 except Exception as e:
     logger.error("Failed to sign event")  # Don't log private_key!
-    
+
 # ❌ BAD: Never log sensitive information
 logger.error(f"Failed with key: {private_key}")  # NEVER DO THIS!
 ```
