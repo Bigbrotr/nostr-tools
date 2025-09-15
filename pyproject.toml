@@ -252,6 +252,7 @@ module = [
     "aiohttp_socks.*",
     "importlib_metadata.*",
     "setuptools_scm.*",
+    "nostr_tools._version",
 ]
 ignore_missing_imports = true
 
