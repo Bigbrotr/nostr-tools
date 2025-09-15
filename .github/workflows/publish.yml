@@ -1,4 +1,3 @@
-# .github/workflows/publish.yml
 name: Publish - Build & Release to PyPI
 
 on:
@@ -106,38 +105,34 @@ jobs:
     - name: Extract package metadata
       id: package-info
       run: |
-        # Use pkginfo - the professional standard for reading wheel metadata
+        # Use pkginfo to read wheel metadata
         WHEEL_FILE=$(ls dist/*.whl | head -1)
         TARBALL_FILE=$(ls dist/*.tar.gz | head -1)
 
         echo "📋 Extracting metadata from: $WHEEL_FILE"
 
-        # Extract comprehensive package information using pkginfo
-        PACKAGE_INFO=$(python -c "
+        # Extract package information using Python
+        python << 'EOF' > package_info.txt
+        import sys
         from pkginfo import Wheel
-        import json
 
-        wheel = Wheel('$WHEEL_FILE')
-        info = {
-            'name': wheel.name,
-            'version': wheel.version,
-            'summary': wheel.summary,
-            'author': wheel.author,
-            'author_email': wheel.author_email,
-            'license': wheel.license,
-            'home_page': wheel.home_page,
-            'requires_python': wheel.requires_python,
-        }
+        wheel_file = sys.argv[1] if len(sys.argv) > 1 else 'dist/nostr_tools-0.1.0-py3-none-any.whl'
 
-        # Output individual values for GitHub Actions
-        print(f'VERSION={wheel.version}')
-        print(f'NAME={wheel.name}')
-        print(f'SUMMARY={wheel.summary or \"Python library for Nostr protocol\"}')
-        ")
+        try:
+            wheel = Wheel(wheel_file)
+            print(f'VERSION={wheel.version}')
+            print(f'NAME={wheel.name}')
+            summary = wheel.summary or "Python library for Nostr protocol"
+            print(f'SUMMARY={summary}')
+        except Exception as e:
+            print(f"Error reading wheel: {e}", file=sys.stderr)
+            sys.exit(1)
+        EOF
 
-        # Parse the output and set GitHub Actions outputs
-        eval "$PACKAGE_INFO"
+        # Source the package info
+        source package_info.txt
 
+        # Set GitHub Actions outputs
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "NAME=$NAME" >> $GITHUB_OUTPUT
         echo "SUMMARY=$SUMMARY" >> $GITHUB_OUTPUT
