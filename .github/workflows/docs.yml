@@ -1,4 +1,3 @@
-# .github/workflows/docs.yml
 name: Documentation - Build & Deploy
 
 on:

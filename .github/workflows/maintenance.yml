@@ -1,4 +1,3 @@
-# .github/workflows/maintenance.yml
 name: Maintenance - Dependencies & Security
 
 on:
