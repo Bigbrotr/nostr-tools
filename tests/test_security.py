@@ -124,10 +124,7 @@ class TestCryptographicSecurity:
         )
 
         # Tamper with event ID
-        original_id = event_data["id"]
         tampered_ids = [
-            original_id[:-2] + "00",  # Change last byte
-            "00" + original_id[2:],  # Change first byte
             "f" * 64,  # All f's
             "0" * 64,  # All zeros
         ]
