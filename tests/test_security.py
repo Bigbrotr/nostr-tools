@@ -620,23 +620,24 @@ class TestConcurrencySafety:
         events_per_thread = 5
         result_queue = queue.Queue()
 
-        def create_events():
+        def create_events(process_id):
             thread_events = []
             for i in range(events_per_thread):
                 event_data = generate_event(
                     private_key=private_key,
                     public_key=public_key,
                     kind=1,
-                    tags=[],
+                    tags=[["thread", str(process_id)]],
                     content=f"Concurrent event {threading.current_thread().ident}-{i}",
+                    created_at=1640995200 + i,
                 )
                 thread_events.append(event_data)
             result_queue.put(thread_events)
 
         # Start threads
         threads = []
-        for _ in range(num_threads):
-            t = threading.Thread(target=create_events)
+        for process_id in range(num_threads):
+            t = threading.Thread(target=create_events, args=(process_id,))
             threads.append(t)
             t.start()
 

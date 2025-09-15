@@ -321,3 +321,5 @@ docker-compose.override.yml
 # Kubernetes
 *.yaml.local
 *.yml.local
+
+_version.py
