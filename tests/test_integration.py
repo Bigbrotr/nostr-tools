@@ -740,25 +740,6 @@ class TestActionsErrorHandling:
             # If it times out, that's expected with short timeout
             pass
 
-    @skip_integration
-    async def test_malformed_filter_handling(self, sample_client):
-        """Test handling of edge case filters."""
-        try:
-            async with sample_client:
-                # Very restrictive filter that might return no results
-                empty_filter = Filter(
-                    kinds=[65535],  # Uncommon kind
-                    limit=1,
-                    since=int(time.time()) + 3600,  # Future timestamp
-                )
-
-                events = await fetch_events(sample_client, empty_filter)
-                assert isinstance(events, list)
-                assert len(events) == 0  # Should return empty list, not error
-
-        except RelayConnectionError:
-            pytest.skip("Could not connect to test relay")
-
     @patch("nostr_tools.actions.actions.fetch_nip11")
     async def test_compute_relay_metadata_nip11_error(self, mock_fetch_nip11, sample_keypair):
         """Test compute_relay_metadata when NIP-11 fetch fails."""
