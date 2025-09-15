@@ -186,7 +186,7 @@ jobs:
         python -m pytest tests/ -m integration -v --tb=short --maxfail=5
       continue-on-error: true  # Network-dependent tests may fail
 
-  # Test coverage report
+  # Test coverage report (separate job with all tests)
   coverage:
     name: Test Coverage
     runs-on: ubuntu-latest
@@ -208,7 +208,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install -e .[test]
 
-    - name: Run tests with coverage
+    - name: Run all tests with coverage
       run: |
         python -m pytest \
           --cov=nostr_tools \
@@ -216,7 +216,8 @@ jobs:
           --cov-report=html \
           --cov-report=term-missing \
           --cov-fail-under=80 \
-          tests/
+          tests/ \
+          -v --tb=short
 
     - name: Upload coverage to artifacts
       uses: actions/upload-artifact@v4
@@ -227,13 +228,6 @@ jobs:
           coverage.xml
           htmlcov/
         retention-days: 30
-
-    # Optional: Upload to Codecov if you have it configured
-    # - name: Upload coverage to Codecov
-    #   uses: codecov/codecov-action@v4
-    #   with:
-    #     file: coverage.xml
-    #     fail_ci_if_error: false
 
   # Build package to ensure it works
   build:
