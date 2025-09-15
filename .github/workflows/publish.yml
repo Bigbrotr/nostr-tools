@@ -57,8 +57,8 @@ jobs:
     - name: Run quick quality checks
       run: |
         echo "🔍 Running code quality checks..."
-        python -m ruff check src/nostr_tools
-        python -m ruff format --check src/nostr_tools
+        python -m ruff check src/nostr_tools --exclude="src/nostr_tools/_version.py"
+        python -m ruff format --check src/nostr_tools --exclude="src/nostr_tools/_version.py"
         python -m mypy src/nostr_tools
 
     - name: Run core tests

@@ -249,8 +249,8 @@ ci-test:
 
 ci-check:
 	@echo "$(BLUE)🤖 Running CI quality checks...$(RESET)"
-	$(PYTHON) -m ruff check $(SRC_DIRS)
-	$(PYTHON) -m ruff format --check $(SRC_DIRS)
+	$(PYTHON) -m ruff check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
+	$(PYTHON) -m ruff format --check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 	$(PYTHON) -m mypy src/$(PACKAGE)
 
 # =====================================================
