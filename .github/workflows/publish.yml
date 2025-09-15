@@ -1,24 +1,79 @@
-name: Build & Publish to PyPI
+# .github/workflows/publish.yml
+name: Publish - Build & Release to PyPI
 
 on:
+  # Publish to TestPyPI on main branch pushes and to PyPI on version tags
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
+    tags: [ 'v*.*.*' ]
+  # Manual releases
   release:
     types: [published]
+  # Manual trigger
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Publish target'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false  # Don't cancel ongoing releases
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
 
 jobs:
-  build:
-    name: Build Distribution 📦
+  # Run tests before publishing
+  pre-publish-tests:
+    name: Pre-publish Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev,test]
+
+    - name: Run quick quality checks
+      run: |
+        python -m ruff check src/nostr_tools
+        python -m ruff format --check src/nostr_tools
+        python -m mypy src/nostr_tools
+
+    - name: Run core tests
+      run: |
+        python -m pytest tests/ -m "unit or not integration" --maxfail=5 -x
+
+  # Build distribution packages
+  build:
+    name: Build Distribution Packages
+    runs-on: ubuntu-latest
+    needs: pre-publish-tests
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         # Fetch full history for setuptools-scm version detection
         fetch-depth: 0
@@ -31,28 +86,67 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install build
+        python -m pip install build twine
 
-    - name: Build distributions
+    - name: Build source and wheel distributions
       run: |
+        echo "Building package..."
         python -m build
+        echo "Built packages:"
+        ls -la dist/
 
-    - name: Check distributions
+    - name: Verify distributions
       run: |
-        python -m pip install twine
+        echo "Checking package integrity..."
         python -m twine check dist/*
+        echo "✅ All distributions are valid"
+
+    - name: Extract package info
+      id: package-info
+      run: |
+        # Get version from built wheel
+        WHEEL_FILE=$(ls dist/*.whl | head -1)
+        VERSION=$(python -c "
+        import zipfile, email.parser
+        with zipfile.ZipFile('$WHEEL_FILE') as z:
+            metadata = z.read('nostr_tools-*.dist-info/METADATA').decode()
+            msg = email.parser.Parser().parsestr(metadata)
+            print(msg['Version'])
+        ")
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
+        echo "Package version: $VERSION"
+
+    - name: Test package installation
+      run: |
+        echo "Testing package installation..."
+        python -m pip install dist/*.whl
+        python -c "
+        import nostr_tools
+        print(f'✅ nostr_tools v{nostr_tools.__version__} imported successfully')
+        from nostr_tools import Event, Relay, Client
+        print('✅ Core classes imported successfully')
+        "
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
+        retention-days: 90
 
+    outputs:
+      version: ${{ steps.package-info.outputs.VERSION }}
+
+  # Publish to TestPyPI
   publish-to-testpypi:
     name: Publish to TestPyPI 🧪
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'testpypi')
+    timeout-minutes: 10
 
     environment:
       name: testpypi
@@ -73,12 +167,25 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
         verbose: true
+        print-hash: true
 
+    - name: Test TestPyPI installation
+      run: |
+        sleep 60  # Wait for package to be available
+        python -m pip install --index-url https://test.pypi.org/simple/ \
+          --extra-index-url https://pypi.org/simple/ \
+          nostr-tools==${{ needs.build.outputs.version }} || echo "Installation test failed, but continuing..."
+
+  # Publish to PyPI
   publish-to-pypi:
     name: Publish to PyPI 🚀
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'release' && github.event.action == 'published') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi')
+    timeout-minutes: 10
 
     environment:
       name: pypi
@@ -98,18 +205,31 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true
+        print-hash: true
 
+    - name: Test PyPI installation
+      run: |
+        sleep 60  # Wait for package to be available
+        python -m pip install nostr-tools==${{ needs.build.outputs.version }}
+        python -c "
+        import nostr_tools
+        print(f'✅ nostr_tools v{nostr_tools.__version__} installed from PyPI successfully')
+        "
+
+  # Create GitHub Release (for tag pushes)
   github-release:
     name: Create GitHub Release 📋
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, publish-to-pypi]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 10
 
     permissions:
       contents: write  # IMPORTANT: mandatory for creating releases
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Download distributions
       uses: actions/download-artifact@v4
@@ -126,17 +246,33 @@ jobs:
 
         # Try to extract release notes from CHANGELOG.md
         if [ -f CHANGELOG.md ]; then
+          echo "Extracting release notes from CHANGELOG.md..."
           # Extract section between version headers
-          awk "/## \[$VERSION\]/,/## \[/{if(/## \[/ && !/## \[$VERSION\]/)exit}; if(/## \[$VERSION\]/)f=1; if(f && !/## \[$VERSION\]/)print" CHANGELOG.md > release_notes.txt
-          # Remove empty lines at start
+          awk "
+          /## \[$VERSION\]/ { found=1; next }
+          /## \[/ && found { exit }
+          found && !/^## \[$VERSION\]/ { print }
+          " CHANGELOG.md > release_notes.txt
+
+          # Remove leading/trailing empty lines
           sed -i '/./,$!d' release_notes.txt
-          # If empty, use default
-          if [ ! -s release_notes.txt ]; then
-            echo "See [CHANGELOG.md](CHANGELOG.md) for details." > release_notes.txt
+          sed -i '${/^$/d}' release_notes.txt
+
+          # If empty or too short, use default
+          if [ ! -s release_notes.txt ] || [ $(wc -l < release_notes.txt) -lt 2 ]; then
+            echo "Release v$VERSION" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes." >> release_notes.txt
           fi
         else
-          echo "See commits for details." > release_notes.txt
+          echo "No CHANGELOG.md found, using default release notes..."
+          echo "Release v$VERSION" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "See commit history for changes in this release." >> release_notes.txt
         fi
+
+        echo "Release notes content:"
+        cat release_notes.txt
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -147,3 +283,19 @@ jobs:
         draft: false
         prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         generate_release_notes: true
+        make_latest: true
+
+  # Notify on success
+  notify-success:
+    name: Notify Release Success
+    runs-on: ubuntu-latest
+    needs: [build, publish-to-pypi, github-release]
+    if: always() && (needs.publish-to-pypi.result == 'success')
+    timeout-minutes: 5
+
+    steps:
+    - name: Success notification
+      run: |
+        echo "🎉 Successfully published nostr-tools v${{ needs.build.outputs.version }} to PyPI!"
+        echo "📦 Package: https://pypi.org/project/nostr-tools/${{ needs.build.outputs.version }}/"
+        echo "📋 Release: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"

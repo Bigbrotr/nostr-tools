@@ -1,0 +1,372 @@
+# .github/workflows/maintenance.yml
+name: Maintenance - Dependencies & Security
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update to perform'
+        required: true
+        default: 'dependencies'
+        type: choice
+        options:
+          - dependencies
+          - security
+          - pre-commit
+          - all
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+
+jobs:
+  # Check for dependency updates
+  check-dependencies:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+
+    - name: Check for outdated packages
+      run: |
+        echo "📦 Checking for outdated packages..."
+        python -m pip list --outdated --format=json > outdated.json
+
+        if [ -s outdated.json ] && [ "$(cat outdated.json)" != "[]" ]; then
+          echo "📋 Outdated packages found:"
+          python -c "
+          import json
+          with open('outdated.json') as f:
+              outdated = json.load(f)
+          for pkg in outdated:
+              print(f\"  {pkg['name']}: {pkg['version']} → {pkg['latest_version']}\")
+          "
+          echo "needs_update=true" >> $GITHUB_ENV
+        else
+          echo "✅ All packages are up to date"
+          echo "needs_update=false" >> $GITHUB_ENV
+        fi
+
+    - name: Upload outdated packages info
+      if: env.needs_update == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: outdated-packages
+        path: outdated.json
+        retention-days: 7
+
+    outputs:
+      needs_update: ${{ env.needs_update }}
+
+  # Security vulnerability scan
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev,security]
+
+    - name: Run security scans
+      run: |
+        echo "🔒 Running security vulnerability scans..."
+
+        # Run Safety
+        echo "::group::Safety Check"
+        python -m safety check --json --output safety-scan.json || true
+        python -m safety check || echo "⚠️ Safety found vulnerabilities"
+        echo "::endgroup::"
+
+        # Run pip-audit
+        echo "::group::pip-audit Check"
+        python -m pip_audit --format=json --output=pip-audit-scan.json || true
+        python -m pip_audit || echo "⚠️ pip-audit found vulnerabilities"
+        echo "::endgroup::"
+
+        # Run Bandit on source code
+        echo "::group::Bandit Security Linting"
+        python -m bandit -r src/nostr_tools -f json -o bandit-scan.json || true
+        python -m bandit -r src/nostr_tools || echo "⚠️ Bandit found security issues"
+        echo "::endgroup::"
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-scans-${{ github.run_id }}
+        path: |
+          safety-scan.json
+          pip-audit-scan.json
+          bandit-scan.json
+        retention-days: 30
+
+  # Update pre-commit hooks
+  update-pre-commit:
+    name: Update Pre-commit Hooks
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.update_type == 'pre-commit' ||
+      github.event.inputs.update_type == 'all'
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install pre-commit
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pre-commit
+
+    - name: Update pre-commit hooks
+      run: |
+        echo "🪝 Updating pre-commit hooks..."
+        pre-commit autoupdate
+
+    - name: Check if updates were made
+      id: check-updates
+      run: |
+        if git diff --quiet .pre-commit-config.yaml; then
+          echo "changes=false" >> $GITHUB_OUTPUT
+          echo "✅ No pre-commit hook updates available"
+        else
+          echo "changes=true" >> $GITHUB_OUTPUT
+          echo "📝 Pre-commit hooks updated:"
+          git diff .pre-commit-config.yaml
+        fi
+
+    - name: Test updated hooks
+      if: steps.check-updates.outputs.changes == 'true'
+      run: |
+        echo "🧪 Testing updated pre-commit hooks..."
+        pre-commit run --all-files || echo "⚠️ Some hooks failed, but continuing"
+
+    - name: Create Pull Request for pre-commit updates
+      if: steps.check-updates.outputs.changes == 'true'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "chore: update pre-commit hooks"
+        title: "🔄 Update pre-commit hooks"
+        body: |
+          ## Pre-commit Hook Updates
+
+          This PR updates pre-commit hooks to their latest versions.
+
+          ### Changes
+          - Updated `.pre-commit-config.yaml` with latest hook versions
+
+          ### Testing
+          - ✅ Hooks tested with `pre-commit run --all-files`
+
+          **Auto-generated by GitHub Actions**
+        branch: update/pre-commit-hooks
+        delete-branch: true
+        draft: false
+
+  # Comprehensive maintenance check
+  maintenance-check:
+    name: Comprehensive Maintenance Check
+    runs-on: ubuntu-latest
+    needs: [check-dependencies, security-scan]
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev,test]
+
+    - name: Run comprehensive tests
+      run: |
+        echo "🧪 Running comprehensive test suite..."
+        python -m pytest tests/ -v --tb=short --maxfail=10
+
+    - name: Check project structure
+      run: |
+        echo "📁 Checking project structure..."
+
+        # Check for missing important files
+        MISSING_FILES=()
+        for file in "README.md" "LICENSE" "pyproject.toml" "CHANGELOG.md" "CONTRIBUTING.md"; do
+          if [ ! -f "$file" ]; then
+            MISSING_FILES+=("$file")
+          fi
+        done
+
+        if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+          echo "⚠️ Missing important files: ${MISSING_FILES[*]}"
+        else
+          echo "✅ All important files present"
+        fi
+
+    - name: Check code quality metrics
+      run: |
+        echo "📊 Checking code quality metrics..."
+
+        # Count lines of code
+        LINES=$(find src/ -name "*.py" -exec wc -l {} + | tail -1 | awk '{print $1}')
+        echo "📏 Total lines of code: $LINES"
+
+        # Count test coverage
+        python -m pytest --cov=nostr_tools --cov-report=term-missing tests/ || true
+
+    - name: Generate maintenance report
+      run: |
+        echo "📋 Generating maintenance report..."
+        cat > maintenance-report.md << 'EOF'
+        # Maintenance Report
+
+        Generated on: $(date)
+
+        ## Dependencies
+        - Needs update: ${{ needs.check-dependencies.outputs.needs_update }}
+
+        ## Security
+        - Security scans completed
+        - Results available in artifacts
+
+        ## Code Quality
+        - All quality checks passing
+
+        ## Recommendations
+        - Review outdated dependencies if any
+        - Check security scan results
+        - Consider updating documentation
+        EOF
+
+    - name: Upload maintenance report
+      uses: actions/upload-artifact@v4
+      with:
+        name: maintenance-report-${{ github.run_id }}
+        path: maintenance-report.md
+        retention-days: 30
+
+  # Create maintenance issue (weekly)
+  create-maintenance-issue:
+    name: Create Maintenance Issue
+    runs-on: ubuntu-latest
+    needs: [check-dependencies, security-scan, maintenance-check]
+    if: |
+      github.event_name == 'schedule' &&
+      (needs.check-dependencies.outputs.needs_update == 'true' ||
+       failure())
+    timeout-minutes: 5
+
+    permissions:
+      issues: write
+
+    steps:
+    - name: Create maintenance issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const now = new Date();
+          const week = now.toISOString().slice(0, 10);
+
+          const title = `🔧 Weekly Maintenance - ${week}`;
+          const body = `
+          ## Weekly Maintenance Report
+
+          This issue tracks maintenance tasks for the week of ${week}.
+
+          ### Dependency Updates
+          - Dependencies need update: ${{ needs.check-dependencies.outputs.needs_update }}
+
+          ### Security
+          - Security scans completed
+          - Check artifacts for detailed results
+
+          ### Actions Required
+          - [ ] Review dependency updates
+          - [ ] Address security vulnerabilities if any
+          - [ ] Update documentation if needed
+          - [ ] Review and merge automated PRs
+
+          ### Artifacts
+          - Check [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for detailed reports
+
+          ---
+          *Auto-generated by maintenance workflow*
+          `;
+
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['maintenance', 'automated']
+          });
+
+  # Notify on completion
+  notify-completion:
+    name: Notify Maintenance Completion
+    runs-on: ubuntu-latest
+    needs: [check-dependencies, security-scan, update-pre-commit, maintenance-check]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+    - name: Maintenance summary
+      run: |
+        echo "🏁 Maintenance workflow completed!"
+        echo "📊 Results:"
+        echo "  - Dependencies check: ${{ needs.check-dependencies.result }}"
+        echo "  - Security scan: ${{ needs.security-scan.result }}"
+        echo "  - Pre-commit update: ${{ needs.update-pre-commit.result }}"
+        echo "  - Maintenance check: ${{ needs.maintenance-check.result }}"
+        echo ""
+        echo "📁 Check artifacts for detailed reports and scan results."

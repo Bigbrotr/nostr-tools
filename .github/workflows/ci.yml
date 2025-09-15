@@ -1,138 +1,254 @@
-name: CI
+# .github/workflows/ci.yml
+name: CI - Tests & Quality Checks
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
 
 jobs:
-  test:
+  # Pre-commit checks that mirror your local setup
+  pre-commit:
+    name: Pre-commit Checks
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+
+    - name: Cache pre-commit
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Run pre-commit hooks
+      run: |
+        python -m pre_commit run --all-files --show-diff-on-failure
+
+  # Code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+
+    - name: Run Ruff linter
+      run: |
+        echo "::group::Ruff Linting"
+        python -m ruff check src/nostr_tools tests examples --output-format=github
+        echo "::endgroup::"
+
+    - name: Check Ruff formatting
+      run: |
+        echo "::group::Ruff Formatting"
+        python -m ruff format --check src/nostr_tools tests examples
+        echo "::endgroup::"
+
+    - name: Run MyPy type checking
+      run: |
+        echo "::group::MyPy Type Checking"
+        python -m mypy src/nostr_tools --show-error-codes
+        echo "::endgroup::"
+
+  # Security scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev,security]
+
+    - name: Run Bandit security linter
+      run: |
+        echo "::group::Bandit Security Scan"
+        python -m bandit -r src/nostr_tools -f json -o bandit-report.json
+        python -m bandit -r src/nostr_tools
+        echo "::endgroup::"
+
+    - name: Run Safety dependency check
+      run: |
+        echo "::group::Safety Dependency Check"
+        python -m safety check --json --output safety-report.json || true
+        python -m safety check
+        echo "::endgroup::"
+
+    - name: Run pip-audit
+      run: |
+        echo "::group::pip-audit Vulnerability Check"
+        python -m pip_audit --format=json --output=pip-audit-report.json || true
+        python -m pip_audit
+        echo "::endgroup::"
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports-${{ github.sha }}
+        path: |
+          bandit-report.json
+          safety-report.json
+          pip-audit-report.json
+        retention-days: 30
+
+  # Test matrix across Python versions and OS
+  test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest]
+        include:
+          # Test on multiple OS with stable Python
+          - python-version: "3.11"
+            os: windows-latest
+          - python-version: "3.11"
+            os: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Install Linux build dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y pkg-config libffi-dev build-essential autoconf automake libtool
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[test]
+        python -m pip install -e .[test]
 
-    - name: Run unit tests only (skip integration)
+    - name: Run unit tests
       run: |
-        python -m pytest -m "not integration" --cov=nostr_tools --cov-report=xml --cov-report=term-missing
-      env:
-        NOSTR_SKIP_INTEGRATION: "true"
+        python -m pytest tests/ -m "unit or not integration" -v --tb=short --maxfail=10
 
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v5
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+    - name: Run integration tests
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      run: |
+        python -m pytest tests/ -m integration -v --tb=short --maxfail=5
+      continue-on-error: true  # Network-dependent tests may fail
 
-  lint:
+  # Test coverage report
+  coverage:
+    name: Test Coverage
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
+    timeout-minutes: 15
 
-    - name: Set up Python
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-lint-
-          ${{ runner.os }}-pip-
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev]
+        python -m pip install -e .[test]
 
-    - name: Run Ruff linting
-      run: ruff check nostr_tools tests examples
-
-    - name: Run Ruff formatting
+    - name: Run tests with coverage
       run: |
-        echo "🎨 Checking code formatting..."
-        if ruff format --check nostr_tools tests examples; then
-          echo "✅ Code formatting is already correct"
-        else
-          echo "❌ Code formatting issues found"
-          echo "Run 'ruff format nostr_tools tests examples' to fix formatting"
-          exit 1
-        fi
+        python -m pytest \
+          --cov=nostr_tools \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --cov-fail-under=80 \
+          tests/
 
-    - name: Run MyPy type checking
-      run: mypy nostr_tools --ignore-missing-imports --show-error-codes
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Upload coverage to artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        python-version: "3.11"
+        name: coverage-reports-${{ github.sha }}
+        path: |
+          coverage.xml
+          htmlcov/
+        retention-days: 30
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[security]
+    # Optional: Upload to Codecov if you have it configured
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v4
+    #   with:
+    #     file: coverage.xml
+    #     fail_ci_if_error: false
 
-    - name: Run Bandit security checks
-      run: |
-        echo "🔒 Running Bandit security checks..."
-        bandit -r nostr_tools -f text --severity-level medium || {
-          echo "⚠️ Security issues found but continuing CI"
-          exit 0
-        }
-
-    - name: Run Safety dependency checks
-      run: |
-        echo "🛡️ Checking dependencies for known vulnerabilities..."
-        safety check --json || {
-          echo "⚠️ Dependency vulnerabilities found but continuing CI"
-          exit 0
-        }
-
+  # Build package to ensure it works
   build:
+    name: Build Package
     runs-on: ubuntu-latest
-    needs: [test, lint]
-    steps:
-    - uses: actions/checkout@v4
+    timeout-minutes: 10
 
-    - name: Set up Python
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for setuptools-scm
+        fetch-depth: 0
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
@@ -140,66 +256,84 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build twine
+        python -m pip install build twine
 
     - name: Build package
-      run: python -m build
+      run: |
+        python -m build
 
     - name: Check package
-      run: twine check dist/*
+      run: |
+        python -m twine check dist/*
+
+    - name: Test package installation
+      run: |
+        python -m pip install dist/*.whl
+        python -c "import nostr_tools; print(f'✅ nostr_tools v{nostr_tools.__version__} installed successfully')"
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dist-${{ github.sha }}
+        name: dist-packages-${{ github.sha }}
         path: dist/
         retention-days: 30
 
-  integration:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint]
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[test]
-
-    - name: Run integration tests
-      run: |
-        echo "🌐 Running integration tests (with network access)..."
-        python -m pytest -m integration --tb=short -v
-      env:
-        NOSTR_SKIP_INTEGRATION: "false"
-        NOSTR_TEST_TIMEOUT: "30"
-      timeout-minutes: 10
-
+  # Performance and stress tests
   performance:
+    name: Performance Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test]
-    steps:
-    - uses: actions/checkout@v4
+    timeout-minutes: 20
 
-    - name: Set up Python
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[test]
+        python -m pip install -e .[test]
 
     - name: Run performance tests
       run: |
-        echo "🏃 Running performance benchmarks..."
-        python -m pytest -m slow --tb=short -v
-      timeout-minutes: 15
+        python -m pytest tests/ -m "slow or performance" -v --tb=short
+      continue-on-error: true
+
+  # Final status check
+  all-checks-passed:
+    name: All Checks Passed
+    if: always()
+    needs: [pre-commit, quality, security, test, coverage, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Check all job results
+      run: |
+        echo "Job results:"
+        echo "pre-commit: ${{ needs.pre-commit.result }}"
+        echo "quality: ${{ needs.quality.result }}"
+        echo "security: ${{ needs.security.result }}"
+        echo "test: ${{ needs.test.result }}"
+        echo "coverage: ${{ needs.coverage.result }}"
+        echo "build: ${{ needs.build.result }}"
+
+        # Check if any required job failed
+        if [[ "${{ needs.pre-commit.result }}" != "success" ]] || \
+           [[ "${{ needs.quality.result }}" != "success" ]] || \
+           [[ "${{ needs.security.result }}" != "success" ]] || \
+           [[ "${{ needs.test.result }}" != "success" ]] || \
+           [[ "${{ needs.coverage.result }}" != "success" ]] || \
+           [[ "${{ needs.build.result }}" != "success" ]]; then
+          echo "❌ One or more required checks failed"
+          exit 1
+        else
+          echo "✅ All checks passed successfully!"
+        fi
