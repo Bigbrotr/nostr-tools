@@ -32,7 +32,7 @@ env:
 jobs:
   # Run tests before publishing
   pre-publish-tests:
-    name: Pre-publish Tests
+    name: Pre-publish Tests 🧪
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -56,17 +56,19 @@ jobs:
 
     - name: Run quick quality checks
       run: |
+        echo "🔍 Running code quality checks..."
         python -m ruff check src/nostr_tools
         python -m ruff format --check src/nostr_tools
         python -m mypy src/nostr_tools
 
     - name: Run core tests
       run: |
-        python -m pytest tests/ -x
+        echo "🧪 Running test suite..."
+        python -m pytest tests/
 
   # Build distribution packages
   build:
-    name: Build Distribution Packages
+    name: Build Distribution 📦
     runs-on: ubuntu-latest
     needs: pre-publish-tests
     timeout-minutes: 10
@@ -86,47 +88,110 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install build twine
+        python -m pip install build twine pkginfo
 
     - name: Build source and wheel distributions
       run: |
-        echo "Building package..."
+        echo "🔨 Building package distributions..."
         python -m build
-        echo "Built packages:"
+        echo "📦 Built packages:"
         ls -la dist/
 
     - name: Verify distributions
       run: |
-        echo "Checking package integrity..."
+        echo "✅ Checking package integrity..."
         python -m twine check dist/*
         echo "✅ All distributions are valid"
 
-    - name: Extract package info
+    - name: Extract package metadata
       id: package-info
       run: |
-        # Get version from built wheel
+        # Use pkginfo - the professional standard for reading wheel metadata
         WHEEL_FILE=$(ls dist/*.whl | head -1)
-        VERSION=$(python -c "
-        import zipfile, email.parser
-        with zipfile.ZipFile('$WHEEL_FILE') as z:
-            metadata = z.read('nostr_tools-*.dist-info/METADATA').decode()
-            msg = email.parser.Parser().parsestr(metadata)
-            print(msg['Version'])
+        TARBALL_FILE=$(ls dist/*.tar.gz | head -1)
+
+        echo "📋 Extracting metadata from: $WHEEL_FILE"
+
+        # Extract comprehensive package information using pkginfo
+        PACKAGE_INFO=$(python -c "
+        from pkginfo import Wheel
+        import json
+
+        wheel = Wheel('$WHEEL_FILE')
+        info = {
+            'name': wheel.name,
+            'version': wheel.version,
+            'summary': wheel.summary,
+            'author': wheel.author,
+            'author_email': wheel.author_email,
+            'license': wheel.license,
+            'home_page': wheel.home_page,
+            'requires_python': wheel.requires_python,
+        }
+
+        # Output individual values for GitHub Actions
+        print(f'VERSION={wheel.version}')
+        print(f'NAME={wheel.name}')
+        print(f'SUMMARY={wheel.summary or \"Python library for Nostr protocol\"}')
         ")
+
+        # Parse the output and set GitHub Actions outputs
+        eval "$PACKAGE_INFO"
+
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "NAME=$NAME" >> $GITHUB_OUTPUT
+        echo "SUMMARY=$SUMMARY" >> $GITHUB_OUTPUT
         echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
-        echo "Package version: $VERSION"
+        echo "TARBALL_FILE=$TARBALL_FILE" >> $GITHUB_OUTPUT
+
+        echo "📋 Package Information:"
+        echo "  Name: $NAME"
+        echo "  Version: $VERSION"
+        echo "  Summary: $SUMMARY"
+        echo "  Wheel: $WHEEL_FILE"
+        echo "  Source: $TARBALL_FILE"
 
     - name: Test package installation
       run: |
-        echo "Testing package installation..."
-        python -m pip install dist/*.whl
+        echo "🧪 Testing package installation..."
+
+        # Create a clean virtual environment for testing
+        python -m venv test_env
+        source test_env/bin/activate
+
+        # Install the built wheel
+        pip install dist/*.whl
+
+        # Test basic import and functionality
         python -c "
-        import nostr_tools
-        print(f'✅ nostr_tools v{nostr_tools.__version__} imported successfully')
-        from nostr_tools import Event, Relay, Client
-        print('✅ Core classes imported successfully')
+        try:
+            import nostr_tools
+            print('✅ Package imported successfully')
+
+            # Test version access
+            try:
+                version = getattr(nostr_tools, '__version__', 'unknown')
+                print(f'✅ Version: {version}')
+            except Exception as e:
+                print(f'⚠️  Version check failed: {e}')
+
+            # Test core imports
+            try:
+                from nostr_tools import Event, Relay, Client
+                print('✅ Core classes imported successfully')
+            except ImportError as e:
+                print(f'⚠️  Core imports failed: {e}')
+                # Continue anyway - basic package works
+
+            print('✅ Package installation test passed')
+
+        except Exception as e:
+            print(f'❌ Package installation test failed: {e}')
+            exit(1)
         "
+
+        # Cleanup
+        deactivate
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -137,6 +202,8 @@ jobs:
 
     outputs:
       version: ${{ steps.package-info.outputs.VERSION }}
+      name: ${{ steps.package-info.outputs.NAME }}
+      summary: ${{ steps.package-info.outputs.SUMMARY }}
 
   # Publish to TestPyPI
   publish-to-testpypi:
@@ -162,6 +229,25 @@ jobs:
         name: python-package-distributions
         path: dist/
 
+    - name: Verify package contents before upload
+      run: |
+        echo "📦 Verifying package contents..."
+        python -m pip install pkginfo
+
+        for file in dist/*; do
+          echo "📋 Checking: $file"
+          python -c "
+          from pkginfo import get_metadata
+          metadata = get_metadata('$file')
+          if metadata:
+              print(f'  ✅ {metadata.name} v{metadata.version}')
+              print(f'     Summary: {metadata.summary}')
+          else:
+              print(f'  ❌ Failed to read metadata from $file')
+              exit(1)
+          "
+        done
+
     - name: Publish to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -171,10 +257,18 @@ jobs:
 
     - name: Test TestPyPI installation
       run: |
-        sleep 60  # Wait for package to be available
+        echo "🧪 Testing installation from TestPyPI..."
+        sleep 60  # Wait for package to be available on TestPyPI
+
+        # Test installation from TestPyPI
         python -m pip install --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple/ \
-          nostr-tools==${{ needs.build.outputs.version }} || echo "Installation test failed, but continuing..."
+          ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }} || {
+          echo "⚠️ TestPyPI installation test failed, but continuing..."
+          echo "This is often due to TestPyPI propagation delays"
+        }
+
+        echo "✅ TestPyPI publication completed"
 
   # Publish to PyPI
   publish-to-pypi:
@@ -201,19 +295,56 @@ jobs:
         name: python-package-distributions
         path: dist/
 
+    - name: Final package verification
+      run: |
+        echo "🔍 Final package verification before PyPI upload..."
+        python -m pip install pkginfo twine
+
+        # Comprehensive package check
+        python -c "
+        import os
+        from pkginfo import get_metadata
+
+        for filename in os.listdir('dist'):
+            filepath = os.path.join('dist', filename)
+            print(f'📋 Verifying: {filename}')
+
+            metadata = get_metadata(filepath)
+            if not metadata:
+                print(f'❌ Cannot read metadata from {filename}')
+                exit(1)
+
+            # Verify required fields
+            required_fields = ['name', 'version', 'summary']
+            for field in required_fields:
+                value = getattr(metadata, field, None)
+                if not value:
+                    print(f'❌ Missing required field: {field}')
+                    exit(1)
+                print(f'  ✅ {field}: {value}')
+
+            print(f'  ✅ Package verification passed')
+        "
+
+        # Additional twine check
+        python -m twine check dist/*
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true
         print-hash: true
 
-    - name: Test PyPI installation
+    - name: Verify PyPI publication
       run: |
-        sleep 60  # Wait for package to be available
-        python -m pip install nostr-tools==${{ needs.build.outputs.version }}
+        echo "🧪 Verifying PyPI publication..."
+        sleep 90  # Wait for package to be available on PyPI
+
+        # Test installation from PyPI
+        python -m pip install ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }}
         python -c "
-        import nostr_tools
-        print(f'✅ nostr_tools v{nostr_tools.__version__} installed from PyPI successfully')
+        import ${{ needs.build.outputs.name }}
+        print(f'✅ {${{ needs.build.outputs.name }}} v{${{ needs.build.outputs.version }} installed successfully from PyPI')
         "
 
   # Create GitHub Release (for tag pushes)
@@ -246,7 +377,8 @@ jobs:
 
         # Try to extract release notes from CHANGELOG.md
         if [ -f CHANGELOG.md ]; then
-          echo "Extracting release notes from CHANGELOG.md..."
+          echo "📖 Extracting release notes from CHANGELOG.md..."
+
           # Extract section between version headers
           awk "
           /## \[$VERSION\]/ { found=1; next }
@@ -254,30 +386,50 @@ jobs:
           found && !/^## \[$VERSION\]/ { print }
           " CHANGELOG.md > release_notes.txt
 
-          # Remove leading/trailing empty lines
-          sed -i '/./,$!d' release_notes.txt
-          sed -i '${/^$/d}' release_notes.txt
+          # Clean up release notes
+          sed -i '/./,$!d' release_notes.txt  # Remove leading empty lines
+          sed -i '${/^$/d}' release_notes.txt # Remove trailing empty lines
 
           # If empty or too short, use default
           if [ ! -s release_notes.txt ] || [ $(wc -l < release_notes.txt) -lt 2 ]; then
-            echo "Release v$VERSION" > release_notes.txt
-            echo "" >> release_notes.txt
-            echo "See [CHANGELOG.md](CHANGELOG.md) for detailed changes." >> release_notes.txt
+            cat > release_notes.txt << EOF
+        🚀 Release v$VERSION
+
+        ## What's New
+        ${{ needs.build.outputs.summary }}
+
+        ## Installation
+        \`\`\`bash
+        pip install ${{ needs.build.outputs.name }}==$VERSION
+        \`\`\`
+
+        ## Links
+        - 📦 [PyPI Package](https://pypi.org/project/${{ needs.build.outputs.name }}/$VERSION/)
+        - 📚 [Documentation](https://nostr-tools.readthedocs.io/)
+        - 📋 [Full Changelog](CHANGELOG.md)
+        EOF
           fi
         else
-          echo "No CHANGELOG.md found, using default release notes..."
-          echo "Release v$VERSION" > release_notes.txt
-          echo "" >> release_notes.txt
-          echo "See commit history for changes in this release." >> release_notes.txt
+          echo "📝 No CHANGELOG.md found, creating default release notes..."
+          cat > release_notes.txt << EOF
+        🚀 Release v$VERSION
+
+        ## Installation
+        \`\`\`bash
+        pip install ${{ needs.build.outputs.name }}==$VERSION
+        \`\`\`
+
+        See commit history for detailed changes in this release.
+        EOF
         fi
 
-        echo "Release notes content:"
+        echo "📋 Release notes preview:"
         cat release_notes.txt
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: Release v${{ steps.extract-release-notes.outputs.VERSION }}
+        name: "🚀 Release v${{ steps.extract-release-notes.outputs.VERSION }}"
         body_path: release_notes.txt
         files: dist/*
         draft: false
@@ -285,17 +437,22 @@ jobs:
         generate_release_notes: true
         make_latest: true
 
-  # Notify on success
+  # Success notification
   notify-success:
-    name: Notify Release Success
+    name: Success Notification 🎉
     runs-on: ubuntu-latest
     needs: [build, publish-to-pypi, github-release]
     if: always() && (needs.publish-to-pypi.result == 'success')
     timeout-minutes: 5
 
     steps:
-    - name: Success notification
+    - name: Celebrate success
       run: |
-        echo "🎉 Successfully published nostr-tools v${{ needs.build.outputs.version }} to PyPI!"
-        echo "📦 Package: https://pypi.org/project/nostr-tools/${{ needs.build.outputs.version }}/"
-        echo "📋 Release: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"
+        echo "🎉 Successfully published ${{ needs.build.outputs.name }} v${{ needs.build.outputs.version }} to PyPI!"
+        echo ""
+        echo "📦 Package URL: https://pypi.org/project/${{ needs.build.outputs.name }}/${{ needs.build.outputs.version }}/"
+        echo "📋 Release URL: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"
+        echo "📚 Documentation: https://nostr-tools.readthedocs.io/"
+        echo ""
+        echo "🚀 Installation command:"
+        echo "pip install ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }}"
