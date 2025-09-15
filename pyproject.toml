@@ -219,6 +219,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
+    "_version.py",
 ]
 
 # Import sorting configuration
