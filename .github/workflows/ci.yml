@@ -177,7 +177,7 @@ jobs:
           -v --tb=short
 
   codecov:
-    name: Upload coverage to Codecov
+    name: Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -262,7 +262,7 @@ jobs:
   all-checks-passed:
     name: All Checks Passed
     if: always()
-    needs: [pre-commit, quality, security, test, build]
+    needs: [pre-commit, quality, security, test, build, codecov]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
