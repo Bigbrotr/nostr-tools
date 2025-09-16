@@ -63,13 +63,14 @@ help:
 	@echo ""
 	@echo "$(BOLD)$(GREEN)📚 Documentation:$(RESET)"
 	@echo "  docs-build        Build documentation"
-	@echo "  docs-build-check  Build docs for verification (used by pre-commit)"
 	@echo "  docs-serve        Serve documentation locally"
 	@echo "  docs-watch        Auto-rebuild docs on changes"
 	@echo "  docs-open         Build and open docs in browser"
 	@echo "  docs-clean        Clean documentation build"
+	@echo "  docs-build-check  Build docs with warnings as errors"
 	@echo "  docs-links-check  Check documentation links"
 	@echo "  docs-coverage-check Check documentation coverage"
+	@echo "  docs-check        Run all documentation checks"
 	@echo ""
 	@echo "$(BOLD)$(GREEN)🔧 Build & Distribution:$(RESET)"
 	@echo "  build             Build distribution packages"
@@ -188,17 +189,17 @@ test-cov:
 	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(RESET)"
 
 # =====================================================
-# Documentation targets (integrated from docs/Makefile)
+# Documentation targets
 # =====================================================
 
 docs-build:
 	@echo "$(BLUE)📚 Building documentation...$(RESET)"
 	@if [ ! -d "$(DOCS_DIR)" ]; then \
-		echo "$(RED)❌ docs/ directory not found!$(RESET)"; \
+		echo "$(RED)❌ Documentation directory not found: $(DOCS_DIR)$(RESET)"; \
 		exit 1; \
 	fi
 	cd $(DOCS_DIR) && \
-	sphinx-build -b html . _build/html -W --keep-going -j auto -v
+	sphinx-build -b html . _build/html
 	@echo "$(GREEN)✅ Documentation built in $(DOCS_BUILD_DIR)/html/$(RESET)"
 
 docs-serve: docs-build
