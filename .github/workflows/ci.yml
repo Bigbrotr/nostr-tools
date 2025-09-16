@@ -177,17 +177,16 @@ jobs:
           --cov-report=term-missing \
           --cov-fail-under=80 \
           tests/ \
-          -v --tb=short
+          -v --tb=short \
+          --junitxml=junit.xml
 
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v4
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
       with:
-        name: coverage-reports-${{ github.sha }}
-        path: |
-          coverage.xml
-          htmlcov/
-        retention-days: 30
+        slug: Bigbrotr/nostr-tools
+
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
 
   # Build package to ensure it works
   build:
