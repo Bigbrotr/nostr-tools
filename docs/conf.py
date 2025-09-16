@@ -61,7 +61,6 @@ html_static_path = []
 html_theme_options = {
     # Navigation
     "navigation_with_keys": True,
-    "top_of_page_button": "edit",
     # Sidebar
     "sidebar_hide_name": False,
     # Footer
@@ -186,7 +185,7 @@ texinfo_documents = [
 epub_title = project
 epub_author = author
 epub_publisher = author
-epub_copyright = copyright  # Will use "Bigbrotr" without year
+epub_copyright = copyright
 
 # -- Custom configuration to suppress warnings ----------------------------------------------------
 
