@@ -69,7 +69,6 @@ dependencies = [
     "aiohttp-socks>=0.8.0,<1.0.0",
     # Backport typing features for Python 3.8 compatibility (if needed)
     "typing-extensions>=4.0.0; python_version<'3.9'",
-    "urllib3<2.0",
 ]
 
 [project.optional-dependencies]
