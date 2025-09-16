@@ -69,6 +69,7 @@ dependencies = [
     "aiohttp-socks>=0.8.0,<1.0.0",
     # Backport typing features for Python 3.8 compatibility (if needed)
     "typing-extensions>=4.0.0; python_version<'3.9'",
+    "urllib3<2.0",
 ]
 
 [project.optional-dependencies]
@@ -146,7 +147,7 @@ all = ["nostr-tools[dev,test,security,docs]"]
 # Project URLs for PyPI and documentation discovery
 [project.urls]
 Homepage = "https://github.com/bigbrotr/nostr-tools"
-Documentation = "https://nostr-tools.readthedocs.io/"
+Documentation = "https://bigbrotr.github.io/nostr-tools/"
 Repository = "https://github.com/bigbrotr/nostr-tools.git"
 "Bug Reports" = "https://github.com/bigbrotr/nostr-tools/issues"
 "Source Code" = "https://github.com/bigbrotr/nostr-tools"

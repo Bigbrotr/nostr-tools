@@ -201,16 +201,6 @@ docs-build:
 	sphinx-build -b html . _build/html -W --keep-going -j auto -v
 	@echo "$(GREEN)✅ Documentation built in $(DOCS_BUILD_DIR)/html/$(RESET)"
 
-docs-build-check:
-	@echo "$(BLUE)📚 Building documentation for verification...$(RESET)"
-	@if [ ! -d "$(DOCS_DIR)" ]; then \
-		echo "$(RED)❌ docs/ directory not found!$(RESET)"; \
-		exit 1; \
-	fi
-	cd $(DOCS_DIR) && \
-	sphinx-build -b html . _build/html -W --keep-going -q
-	@echo "$(GREEN)✅ Documentation build verification passed$(RESET)"
-
 docs-serve: docs-build
 	@echo "$(BLUE)📚 Serving documentation at http://localhost:8000...$(RESET)"
 	cd $(DOCS_BUILD_DIR)/html && $(PYTHON) -m http.server 8000
@@ -239,7 +229,18 @@ docs-clean:
 	@echo "$(BLUE)🧹 Cleaning documentation build...$(RESET)"
 	rm -rf $(DOCS_BUILD_DIR)/*
 	rm -rf $(DOCS_DIR)/_autosummary/
+	rm -rf $(DOCS_DIR)/_static/
 	@echo "$(GREEN)✅ Documentation cleaned!$(RESET)"
+
+docs-build-check:
+	@echo "$(BLUE)📚 Building documentation for verification...$(RESET)"
+	@if [ ! -d "$(DOCS_DIR)" ]; then \
+		echo "$(RED)❌ docs/ directory not found!$(RESET)"; \
+		exit 1; \
+	fi
+	cd $(DOCS_DIR) && \
+	sphinx-build -b html . _build/html -W --keep-going -q
+	@echo "$(GREEN)✅ Documentation build verification passed$(RESET)"
 
 docs-links-check:
 	@echo "$(BLUE)🔗 Checking documentation links...$(RESET)"
@@ -264,6 +265,13 @@ docs-coverage-check:
 		exit 1; \
 	fi
 
+docs-check:
+	@echo "$(BLUE)🔍 Running all documentation checks...$(RESET)"
+	@$(MAKE) docs-build-check
+	@$(MAKE) docs-links-check
+	@$(MAKE) docs-coverage-check
+	@echo "$(GREEN)✅ All documentation checks passed!$(RESET)"
+
 # =====================================================
 # Build and distribution targets
 # =====================================================
@@ -276,6 +284,7 @@ clean:
 	rm -rf bandit-report.json
 	rm -rf $(DOCS_BUILD_DIR)/*
 	rm -rf $(DOCS_DIR)/_autosummary/
+	rm -rf $(DOCS_DIR)/_static/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	@echo "$(GREEN)✅ Cleanup complete!$(RESET)"
@@ -304,8 +313,8 @@ check:
 	@$(MAKE) format-check
 	@$(MAKE) lint
 	@$(MAKE) type-check
-	@$(MAKE) test-unit
-	@$(MAKE) docs-build-check
+	@$(MAKE) test
+	@$(MAKE) docs-check
 	@echo "$(GREEN)✅ All quality checks passed!$(RESET)"
 
 check-all:
@@ -315,9 +324,7 @@ check-all:
 	@$(MAKE) type-check
 	@$(MAKE) security-scan
 	@$(MAKE) test-cov
-	@$(MAKE) docs-build
-	@$(MAKE) docs-links-check
-	@$(MAKE) docs-coverage-check
+	@$(MAKE) docs-check
 	@echo "$(GREEN)✅ All comprehensive checks passed!$(RESET)"
 
 pre-commit:

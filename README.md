@@ -5,7 +5,6 @@
 [![License](https://img.shields.io/github/license/bigbrotr/nostr-tools.svg)](https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE)
 [![CI Status](https://github.com/bigbrotr/nostr-tools/workflows/CI/badge.svg)](https://github.com/bigbrotr/nostr-tools/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/bigbrotr/nostr-tools.svg)](https://codecov.io/gh/bigbrotr/nostr-tools)
-[![Documentation](https://readthedocs.org/projects/nostr-tools/badge/?version=latest)](https://nostr-tools.readthedocs.io/)
 [![Downloads](https://static.pepy.tech/badge/nostr-tools)](https://pepy.tech/project/nostr-tools)
 
 A comprehensive Python library for building applications on the Nostr protocol - featuring WebSocket communication, event handling, and cryptographic operations with full async support.
@@ -357,7 +356,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [Read the Docs](https://nostr-tools.readthedocs.io/)
+- **Documentation**: [Read the Docs](https://bigbrotr.github.io/nostr-tools/)
 - **Issues**: [GitHub Issues](https://github.com/bigbrotr/nostr-tools/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/bigbrotr/nostr-tools/discussions)
 - **Email**: hello@bigbrotr.com
@@ -373,7 +372,7 @@ This project is actively maintained and welcomes contributions. We follow semant
 **Built with ❤️ for the Nostr ecosystem**
 
 [PyPI](https://pypi.org/project/nostr-tools/) •
-[Documentation](https://nostr-tools.readthedocs.io/) •
+[Documentation](https://bigbrotr.github.io/nostr-tools/) •
 [GitHub](https://github.com/bigbrotr/nostr-tools)
 
 </div>

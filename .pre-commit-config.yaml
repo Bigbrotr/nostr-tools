@@ -81,32 +81,14 @@ repos:
   # Documentation verification
   - repo: local
     hooks:
-      - id: docs-build
-        name: docs-build
+      - id: docs-check
+        name: docs-check
         description: Build documentation to verify it works
-        entry: make docs-build-check
+        entry: bash -c 'if command -v sphinx-build >/dev/null 2>&1; then make docs-check; else echo "Sphinx not found, skipping docs check"; fi'
         language: system
         files: ^(docs/|src/.*\.py|README\.md|CHANGELOG\.md)$
         pass_filenames: false
         stages: [commit]
-
-      - id: docs-links
-        name: docs-links
-        description: Check documentation links
-        entry: make docs-links-check
-        language: system
-        files: ^(docs/.*\.(rst|md)|src/.*\.py)$
-        pass_filenames: false
-        stages: [push]
-
-      - id: docs-coverage
-        name: docs-coverage
-        description: Check documentation coverage
-        entry: make docs-coverage-check
-        language: system
-        files: ^src/.*\.py$
-        pass_filenames: false
-        stages: [push]
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]

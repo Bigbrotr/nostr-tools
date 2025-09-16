@@ -97,5 +97,5 @@ We follow semantic versioning and maintain backward compatibility within major v
 
 - [PyPI Package](https://pypi.org/project/nostr-tools/)
 - [GitHub Repository](https://github.com/bigbrotr/nostr-tools)
-- [Documentation](https://nostr-tools.readthedocs.io/)
+- [Documentation](https://bigbrotr.github.io/nostr-tools/)
 - [Issue Tracker](https://github.com/bigbrotr/nostr-tools/issues)
