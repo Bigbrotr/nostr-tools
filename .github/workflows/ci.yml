@@ -172,21 +172,48 @@ jobs:
       run: |
         python -m pytest \
           --cov=nostr_tools \
-          --cov-report=xml \
-          --cov-report=html \
-          --cov-report=term-missing \
           --cov-fail-under=80 \
           tests/ \
-          -v --tb=short \
-          --junitxml=junit.xml
+          -v --tb=short
 
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        slug: Bigbrotr/nostr-tools
+  codecov:
+    name: Upload coverage to Codecov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[test]
+
+      - name: Run all tests with coverage
+        run: |
+          python -m pytest \
+            --cov=nostr_tools \
+            --cov-fail-under=80 \
+            tests/ \
+            -v --tb=short \
+            --cov-branch --cov-report=xml \
+            --junitxml=junit.xml -o junit_family=legacy
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: bigbrotr/nostr-tools
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Build package to ensure it works
   build:
@@ -230,7 +257,6 @@ jobs:
         name: dist-packages-${{ github.sha }}
         path: dist/
         retention-days: 30
-
 
   # Final status check
   all-checks-passed:
