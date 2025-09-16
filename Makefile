@@ -283,6 +283,7 @@ clean:
 	rm -rf .coverage htmlcov/ .pytest_cache/
 	rm -rf .mypy_cache/ .ruff_cache/
 	rm -rf bandit-report.json
+	rm -rf .benchmarks/
 	rm -rf $(DOCS_BUILD_DIR)/*
 	rm -rf $(DOCS_DIR)/_autosummary/
 	rm -rf $(DOCS_DIR)/_static/
