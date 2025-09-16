@@ -57,7 +57,6 @@ repos:
       - id: check-shebang-scripts-are-executable
 
       # Security checks
-      # - id: check-private-key
       - id: detect-private-key
 
   # Security scanning with Bandit
@@ -79,33 +78,35 @@ repos:
         name: pip-audit
         description: Audit Python packages for known vulnerabilities
 
-  # Spell checking (optional but recommended)
-  # - repo: https://github.com/crate-ci/typos
-  #   rev: v1.36.2
-  #   hooks:
-  #     - id: typos
-  #       name: typos
-  #       description: Check for common typos
-  #       exclude: |
-  #         (?x)^(
-  #             .*\.lock$|
-  #             .*\.min\.(js|css)$|
-  #             build/|
-  #             dist/|
-  #             \.git/|
-  #             node_modules/|
-  #             .*\.egg-info/
-  #         )$
+  # Documentation verification
+  - repo: local
+    hooks:
+      - id: docs-build
+        name: docs-build
+        description: Build documentation to verify it works
+        entry: make docs-build-check
+        language: system
+        files: ^(docs/|src/.*\.py|README\.md|CHANGELOG\.md)$
+        pass_filenames: false
+        stages: [commit]
 
-  # Markdown linting
-  # - repo: https://github.com/igorshubovych/markdownlint-cli
-  #   rev: v0.45.0
-  #   hooks:
-  #     - id: markdownlint-fix
-  #       name: markdownlint
-  #       description: Lint and fix Markdown files
-  #       args: [--fix]
-  #       # exclude: ^(CHANGELOG\.md|\.github/)
+      - id: docs-links
+        name: docs-links
+        description: Check documentation links
+        entry: make docs-links-check
+        language: system
+        files: ^(docs/.*\.(rst|md)|src/.*\.py)$
+        pass_filenames: false
+        stages: [push]
+
+      - id: docs-coverage
+        name: docs-coverage
+        description: Check documentation coverage
+        entry: make docs-coverage-check
+        language: system
+        files: ^src/.*\.py$
+        pass_filenames: false
+        stages: [push]
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
@@ -126,7 +127,9 @@ exclude: |
       \.venv/|
       venv/|
       node_modules/|
-      backup_.*
+      backup_.*|
+      docs/_build/|
+      docs/_autosummary/
   )$
 
 # Minimum pre-commit version required
@@ -137,4 +140,3 @@ fail_fast: false
 
 ci:
   autoupdate_schedule: weekly
-  skip: [safety]  # Skip safety in CI due to network requirements
