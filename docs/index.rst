@@ -13,6 +13,18 @@ Nostr-Tools Documentation
    :target: https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE
    :alt: License
 
+.. image:: https://github.com/bigbrotr/nostr-tools/workflows/CI/badge.svg
+   :target: https://github.com/bigbrotr/nostr-tools/actions
+   :alt: CI Status
+
+.. image:: https://img.shields.io/codecov/c/github/bigbrotr/nostr-tools.svg
+   :target: https://codecov.io/gh/bigbrotr/nostr-tools
+   :alt: Coverage
+
+.. image:: https://static.pepy.tech/badge/nostr-tools
+   :target: https://pepy.tech/project/nostr-tools
+   :alt: Downloads
+
 A comprehensive Python library for Nostr protocol interactions.
 
 Features
