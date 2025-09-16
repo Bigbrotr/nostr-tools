@@ -1,110 +1,101 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to nostr-tools will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2025-09-15
+
+### 🎉 First Stable Release
+
+This is the first stable release of nostr-tools, a comprehensive Python library for building applications on the Nostr protocol.
 
 ### Added
 
-- Comprehensive project restructure and modernization
-- Complete CI/CD pipeline with GitHub Actions
-- Automated documentation generation with Sphinx
-- Pre-commit hooks for code quality enforcement
-- Security scanning with Bandit, Safety, and pip-audit
-- Type checking with MyPy
-- Code formatting and linting with Ruff
-- Coverage reporting with pytest-cov
-- ReadTheDocs integration
-- GitHub Pages documentation deployment
+#### Core Features
+- **Complete Nostr Protocol Implementation** - Full support for NIP-01 basic protocol
+- **Event Management** - Create, sign, verify, and serialize Nostr events
+- **WebSocket Client** - Async WebSocket client with automatic reconnection
+- **Relay Communication** - Connect to and interact with Nostr relays
+- **Cryptographic Operations** - Key generation, signing, and verification using secp256k1
+- **Event Filtering** - Advanced filtering with support for all NIP-01 filter attributes
+- **Subscription Management** - Subscribe to events with multiple active subscriptions
 
-### Changed
+#### Utilities
+- **Key Management** - Generate and validate keypairs
+- **Encoding/Decoding** - Bech32 encoding (npub, nsec) and hex conversion
+- **Event ID Calculation** - Compute event IDs according to NIP-01
+- **Proof of Work** - Generate events with configurable proof-of-work difficulty
+- **URL Parsing** - Extract and validate WebSocket relay URLs
+- **Relay Metadata** - Fetch and parse NIP-11 relay information documents
 
-- Updated pyproject.toml to follow modern Python packaging standards
-- Restructured project to use src-layout
-- Enhanced package metadata and dependencies
-- Improved development workflow with Makefile commands
+#### Developer Experience
+- **Full Type Hints** - Complete type annotations for all public APIs
+- **Async/Await Support** - Built on asyncio for concurrent operations
+- **Context Managers** - Async context manager support for automatic cleanup
+- **Comprehensive Documentation** - Detailed docstrings and usage examples
+- **Error Handling** - Custom exceptions with descriptive error messages
+- **Logging** - Structured logging throughout the library
 
-### Fixed
+#### Testing & Quality
+- **Test Suite** - Unit, integration, and security tests
+- **Code Coverage** - Over 80% test coverage
+- **Type Checking** - MyPy strict mode compliance
+- **Code Formatting** - Consistent formatting with Ruff
+- **Security Scanning** - Automated security checks with Bandit
+- **Pre-commit Hooks** - Automated quality checks before commits
 
-- Package name consistency (nostr-tools → nostr_tools)
-- Import path corrections
-- Dependency version constraints
-- Configuration file syntax and formatting
+### Infrastructure
+- **Modern Packaging** - PEP 517/518 compliant with pyproject.toml
+- **CI/CD Pipeline** - GitHub Actions for testing and deployment
+- **Documentation** - Sphinx documentation with Read the Docs integration
+- **Distribution** - Automated PyPI releases on tag push
+- **Development Tools** - Makefile with common development commands
 
-## [0.1.0] - 2024-XX-XX
+### Security Features
+- **Secure Random Generation** - Uses os.urandom() for cryptographic operations
+- **Input Validation** - Comprehensive validation of all inputs
+- **No Key Storage** - Private keys never stored or logged
+- **Connection Security** - Enforces secure WebSocket connections
 
-### Added
+### Supported Python Versions
+- Python 3.9
+- Python 3.10
+- Python 3.11
+- Python 3.12
+- Python 3.13
 
-- Initial release of nostr-tools
-- Core Nostr protocol implementation
-- WebSocket relay client with async/await support
-- Cryptographic utilities (secp256k1, bech32)
-- Event creation, signing, and verification
-- Relay connection management
-- Filter-based event subscription
-- NIP-11 relay metadata support
-- Complete type annotations
-
-### Core Features
-
-- `Client` class for relay interactions
-- `Event` class for Nostr events
-- `Relay` class for connection management
-- `Filter` class for event filtering
-- Utility functions for key management and encoding
-- High-level action functions for common operations
-
-### Developer Experience
-
-- Comprehensive test suite
-- Type hints throughout codebase
-- Detailed docstrings
-- Example implementations
-- Error handling and logging
+### Dependencies
+- secp256k1 (>=0.14.0) - Cryptographic operations
+- bech32 (>=1.2.0) - Bech32 encoding/decoding
+- aiohttp (>=3.9.0) - WebSocket client
+- aiohttp-socks (>=0.8.0) - SOCKS proxy support
 
 ---
 
-## Release Process
+## Version Support Policy
 
-### Version Numbering
+### Supported Versions
 
-We follow [Semantic Versioning](https://semver.org/):
+| Version | Support Status | End of Support |
+|---------|----------------|----------------|
+| 1.0.x   | ✅ Active      | TBD            |
+| 0.x.x   | ❌ End of Life | 2025-08-31     |
 
-- **MAJOR.MINOR.PATCH** (e.g., 1.2.3)
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
+### Support Timeline
 
-### Release Types
+- **Active Support**: Bug fixes, security updates, and new features
+- **Security Support**: Security updates only
+- **End of Life**: No further updates
 
-- **🚀 Major Release**: Breaking changes, new architecture
-- **✨ Minor Release**: New features, enhancements
-- **🐛 Patch Release**: Bug fixes, security updates
-- **🔧 Pre-release**: Alpha/Beta/RC versions
+We follow semantic versioning and maintain backward compatibility within major versions.
 
-### Automatic Releases
+---
 
-Releases are automatically created when:
+## Links
 
-1. A tag matching `v*.*.*` is pushed
-2. GitHub Actions build and test the release
-3. Distributions are published to PyPI
-4. GitHub Release is created with changelog
-5. Documentation is updated
-
-### Manual Release Process
-
-```bash
-# 1. Update version and changelog
-git add CHANGELOG.md
-git commit -m "chore: prepare release v1.2.3"
-
-# 2. Create and push tag
-git tag v1.2.3
-git push origin v1.2.3
-
-# 3. GitHub Actions handles the rest!
-```
+- [PyPI Package](https://pypi.org/project/nostr-tools/)
+- [GitHub Repository](https://github.com/bigbrotr/nostr-tools)
+- [Documentation](https://bigbrotr.github.io/nostr-tools/)
+- [Issue Tracker](https://github.com/bigbrotr/nostr-tools/issues)

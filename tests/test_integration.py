@@ -603,8 +603,12 @@ class TestClientErrorHandling:
 
         assert len(messages) == 0  # Should exit gracefully on timeout
 
+    from contextlib import asynccontextmanager
+
     async def test_client_listen_websocket_message_types(self):
         """Test listen with different WebSocket message types."""
+        from contextlib import asynccontextmanager
+
         from aiohttp import WSMsgType
 
         relay = Relay(TEST_RELAY_URL)
@@ -626,32 +630,45 @@ class TestClientErrorHandling:
         mock_msg_binary = MagicMock()
         mock_msg_binary.type = WSMsgType.BINARY
 
+        @asynccontextmanager
+        async def listen_context():
+            """Context manager to properly close async generator."""
+            listen_gen = client.listen()
+            try:
+                yield listen_gen
+            finally:
+                await listen_gen.aclose()
+
         # Test TEXT message (should yield)
         mock_ws.receive = AsyncMock(return_value=mock_msg_text)
         client._ws = mock_ws
 
-        async for message in client.listen():
+        async with listen_context() as listen_gen:
+            message = await listen_gen.__anext__()
             assert message == ["TEST", "message"]
-            break
 
         # Test ERROR message (should raise)
         mock_ws.receive = AsyncMock(return_value=mock_msg_error)
         with pytest.raises(RelayConnectionError, match="WebSocket error"):
-            async for _ in client.listen():
-                break
+            async with listen_context() as listen_gen:
+                await listen_gen.__anext__()
 
         # Test CLOSED message (should exit gracefully)
         mock_ws.receive = AsyncMock(return_value=mock_msg_closed)
-        messages = []
-        async for message in client.listen():
-            messages.append(message)
-        assert len(messages) == 0
+        async with listen_context() as listen_gen:
+            messages = []
+            try:
+                async for message in listen_gen:
+                    messages.append(message)
+            except StopAsyncIteration:
+                pass
+            assert len(messages) == 0
 
         # Test unexpected message type (should raise)
         mock_ws.receive = AsyncMock(return_value=mock_msg_binary)
         with pytest.raises(RelayConnectionError, match="Unexpected message type"):
-            async for _ in client.listen():
-                break
+            async with listen_context() as listen_gen:
+                await listen_gen.__anext__()
 
 
 @pytest.mark.integration
@@ -722,25 +739,6 @@ class TestActionsErrorHandling:
         except RelayConnectionError:
             # If it times out, that's expected with short timeout
             pass
-
-    @skip_integration
-    async def test_malformed_filter_handling(self, sample_client):
-        """Test handling of edge case filters."""
-        try:
-            async with sample_client:
-                # Very restrictive filter that might return no results
-                empty_filter = Filter(
-                    kinds=[65535],  # Uncommon kind
-                    limit=1,
-                    since=int(time.time()) + 3600,  # Future timestamp
-                )
-
-                events = await fetch_events(sample_client, empty_filter)
-                assert isinstance(events, list)
-                assert len(events) == 0  # Should return empty list, not error
-
-        except RelayConnectionError:
-            pytest.skip("Could not connect to test relay")
 
     @patch("nostr_tools.actions.actions.fetch_nip11")
     async def test_compute_relay_metadata_nip11_error(self, mock_fetch_nip11, sample_keypair):

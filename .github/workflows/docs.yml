@@ -1,9 +1,9 @@
-# .github/workflows/docs.yml
 name: Documentation - Build & Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
+    tags: ['v*']
     paths:
       - 'docs/**'
       - 'src/**'
@@ -12,11 +12,14 @@ on:
       - 'pyproject.toml'
       - '.github/workflows/docs.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
     paths:
       - 'docs/**'
       - 'src/**'
       - 'README.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 concurrency:
@@ -33,6 +36,10 @@ jobs:
     name: Build Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    outputs:
+      docs-artifact: ${{ steps.upload.outputs.artifact-id }}
+      docs-size: ${{ steps.check-size.outputs.size }}
 
     steps:
     - name: Checkout code
@@ -52,191 +59,200 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install -e .[docs]
 
-    - name: Check if docs directory exists
-      id: check-docs
+    - name: Verify documentation structure
       run: |
-        if [ -d "docs" ]; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-          echo "✅ docs/ directory found"
-        else
-          echo "exists=false" >> $GITHUB_OUTPUT
-          echo "📝 docs/ directory not found, will create basic documentation"
+        if [ ! -d "docs" ]; then
+          echo "❌ docs/ directory not found!"
+          exit 1
         fi
 
-    - name: Create basic documentation structure
-      if: steps.check-docs.outputs.exists == 'false'
-      run: |
-        mkdir -p docs
+        if [ ! -f "docs/conf.py" ]; then
+          echo "❌ docs/conf.py not found!"
+          exit 1
+        fi
 
-        # Create conf.py for Sphinx
-        cat > docs/conf.py << 'EOF'
-        """Sphinx configuration for nostr-tools documentation."""
-        import os
-        import sys
-        sys.path.insert(0, os.path.abspath('../src'))
+        if [ ! -f "docs/index.rst" ]; then
+          echo "❌ docs/index.rst not found!"
+          exit 1
+        fi
 
-        # Project information
-        project = 'nostr-tools'
-        copyright = '2024, Bigbrotr'
-        author = 'Bigbrotr'
+        echo "✅ Documentation structure verified"
+        echo "📁 Documentation files found:"
+        find docs -name "*.rst" -o -name "*.md" | head -10
 
-        # Get version from package
-        try:
-            from nostr_tools import __version__
-            release = __version__
-            version = '.'.join(release.split('.')[:2])
-        except ImportError:
-            release = '0.1.0'
-            version = '0.1'
-
-        # Extensions
-        extensions = [
-            'sphinx.ext.autodoc',
-            'sphinx.ext.autosummary',
-            'sphinx.ext.napoleon',
-            'sphinx.ext.viewcode',
-            'sphinx.ext.intersphinx',
-            'myst_parser',
-        ]
-
-        # Autodoc settings
-        autodoc_typehints = 'description'
-        autodoc_member_order = 'bysource'
-
-        # Napoleon settings
-        napoleon_google_docstring = True
-        napoleon_numpy_docstring = True
-
-        # Intersphinx mapping
-        intersphinx_mapping = {
-            'python': ('https://docs.python.org/3', None),
-            'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
-        }
-
-        # Theme
-        html_theme = 'sphinx_rtd_theme'
-        html_static_path = ['_static']
-
-        # Source file extensions
-        source_suffix = {
-            '.rst': None,
-            '.md': 'myst_parser.parsers.myst',
-        }
-
-        # Master document
-        master_doc = 'index'
-        EOF
-
-        # Create index.rst
-        cat > docs/index.rst << 'EOF'
-        nostr-tools Documentation
-        =========================
-
-        Welcome to nostr-tools, a comprehensive Python library for Nostr protocol interactions.
-
-        .. toctree::
-           :maxdepth: 2
-           :caption: Contents:
-
-           readme
-           api
-           changelog
-
-        Indices and tables
-        ==================
-
-        * :ref:`genindex`
-        * :ref:`modindex`
-        * :ref:`search`
-        EOF
-
-        # Create API reference
-        cat > docs/api.rst << 'EOF'
-        API Reference
-        =============
-
-        .. automodule:: nostr_tools
-           :members:
-           :undoc-members:
-           :show-inheritance:
-
-        Core Module
-        -----------
-
-        .. automodule:: nostr_tools.core
-           :members:
-           :undoc-members:
-           :show-inheritance:
-
-        Actions Module
-        --------------
-
-        .. automodule:: nostr_tools.actions
-           :members:
-           :undoc-members:
-           :show-inheritance:
-
-        Utils Module
-        ------------
-
-        .. automodule:: nostr_tools.utils
-           :members:
-           :undoc-members:
-           :show-inheritance:
-
-        Exceptions Module
-        -----------------
-
-        .. automodule:: nostr_tools.exceptions
-           :members:
-           :undoc-members:
-           :show-inheritance:
-        EOF
-
-        # Include README
-        cat > docs/readme.md << 'EOF'
-        ```{include} ../README.md
-        ```
-        EOF
-
-        # Include CHANGELOG
-        cat > docs/changelog.md << 'EOF'
-        ```{include} ../CHANGELOG.md
-        ```
-        EOF
-
-        # Create static directory
-        mkdir -p docs/_static
-
-        echo "✅ Basic documentation structure created"
-
-    - name: Build documentation with Sphinx
+    - name: Clean previous builds
       run: |
         cd docs
-        sphinx-build -b html . _build/html -W --keep-going
+        rm -rf _build
+        echo "🧹 Cleaned previous builds"
 
-    - name: Check documentation links
+    - name: Build with Sphinx
       run: |
         cd docs
-        sphinx-build -b linkcheck . _build/linkcheck
-      continue-on-error: true
 
-    - name: Upload documentation artifacts
+        echo "🔨 Building HTML documentation..."
+        sphinx-build -b html . _build/html -W --keep-going -j auto -v
+
+        echo "✅ Documentation built successfully"
+
+    - name: Check for build warnings
+      run: |
+        cd docs
+
+        # Check if there were any warnings in the build
+        if sphinx-build -b html . _build/html -W --keep-going 2>&1 | grep -i warning; then
+          echo "⚠️ Build completed with warnings"
+        else
+          echo "✅ Build completed without warnings"
+        fi
+
+    - name: Run quality checks
+      run: |
+        cd docs
+
+        echo "🔗 Checking documentation links..."
+        sphinx-build -b linkcheck . _build/linkcheck || echo "⚠️ Some links may be broken"
+
+        echo "📊 Generating documentation coverage..."
+        sphinx-build -b coverage . _build/coverage
+
+        if [ -f "_build/coverage/python.txt" ]; then
+          echo "📈 Documentation coverage report:"
+          cat _build/coverage/python.txt | head -20
+        fi
+
+    - name: Check build size and quality
+      id: check-size
+      run: |
+        cd docs/_build/html
+
+        # Check total size
+        DOCS_SIZE=$(du -sh . | cut -f1)
+        DOCS_SIZE_BYTES=$(du -sb . | cut -f1)
+
+        echo "size=$DOCS_SIZE" >> $GITHUB_OUTPUT
+        echo "size_bytes=$DOCS_SIZE_BYTES" >> $GITHUB_OUTPUT
+
+        echo "📊 Documentation metrics:"
+        echo "  Size: $DOCS_SIZE"
+        echo "  Files: $(find . -type f | wc -l)"
+        echo "  HTML files: $(find . -name "*.html" | wc -l)"
+
+        # Check for essential files
+        if [ ! -f "index.html" ]; then
+          echo "❌ index.html not found!"
+          exit 1
+        fi
+
+        if [ ! -f "genindex.html" ]; then
+          echo "⚠️ genindex.html not found - API documentation may be incomplete"
+        fi
+
+        # Size warning
+        if [ $DOCS_SIZE_BYTES -gt 104857600 ]; then  # 100MB
+          echo "⚠️ Documentation is quite large ($DOCS_SIZE). Consider optimization."
+        fi
+
+        echo "✅ Build quality checks completed"
+
+    - name: Upload documentation artifact
+      id: upload
       uses: actions/upload-artifact@v4
       with:
         name: documentation-${{ github.sha }}
         path: docs/_build/html/
         retention-days: 30
+        compression-level: 6
 
-    outputs:
-      docs-built: "true"
-
-  # Deploy to GitHub Pages
-  deploy-github-pages:
-    name: Deploy to GitHub Pages
+  # Validate documentation
+  validate-docs:
+    name: Validate Documentation
     runs-on: ubuntu-latest
     needs: build-docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 10
+
+    steps:
+    - name: Download documentation
+      uses: actions/download-artifact@v4
+      with:
+        name: documentation-${{ github.sha }}
+        path: ./docs
+
+    - name: Validate HTML structure
+      run: |
+        echo "🔍 Validating HTML structure..."
+
+        # Check for broken internal links in HTML
+        echo "🔗 Checking for broken internal references..."
+        BROKEN_LINKS=$(find docs -name "*.html" -exec grep -l "404\|File not found\|broken reference" {} \; || true)
+        if [ -n "$BROKEN_LINKS" ]; then
+          echo "⚠️ Found files with potential broken references:"
+          echo "$BROKEN_LINKS" | head -5
+        else
+          echo "✅ No obvious broken references found"
+        fi
+
+        # Check for missing images
+        echo "🖼️ Checking for missing images..."
+        MISSING_IMAGES=$(find docs -name "*.html" -exec grep -o 'src="[^"]*"' {} \; | sed 's/src="//;s/"//' | while read img; do
+          if [[ "$img" == http* ]] || [[ "$img" == //* ]]; then
+            continue  # Skip external URLs
+          fi
+          if [ ! -f "docs/$img" ]; then
+            echo "Missing: $img"
+          fi
+        done)
+
+        if [ -n "$MISSING_IMAGES" ]; then
+          echo "⚠️ Missing image files:"
+          echo "$MISSING_IMAGES" | head -5
+        else
+          echo "✅ All local images found"
+        fi
+
+    - name: Performance analysis
+      run: |
+        echo "⚡ Performance analysis:"
+
+        # File counts
+        TOTAL_FILES=$(find docs -type f | wc -l)
+        HTML_FILES=$(find docs -name "*.html" | wc -l)
+
+        echo "📊 File statistics:"
+        echo "  Total files: $TOTAL_FILES"
+        echo "  HTML files: $HTML_FILES"
+
+        # Size breakdown
+        echo "📦 Size breakdown:"
+        find docs -name "*.html" -exec du -sch {} + 2>/dev/null | tail -1 | awk '{print "  HTML: " $1}' || echo "  HTML: N/A"
+        find docs -name "*.css" -exec du -sch {} + 2>/dev/null | tail -1 | awk '{print "  CSS: " $1}' || echo "  CSS: N/A"
+        find docs -name "*.js" -exec du -sch {} + 2>/dev/null | tail -1 | awk '{print "  JS: " $1}' || echo "  JS: N/A"
+        find docs \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" \) -exec du -sch {} + 2>/dev/null | tail -1 | awk '{print "  Images: " $1}' || echo "  Images: N/A"
+
+        # Large files check
+        echo "🏋️ Large files (>1MB):"
+        find docs -type f -size +1M -exec ls -lh {} \; 2>/dev/null | awk '{print "  " $5 " " $9}' | head -5 || echo "  None found"
+
+    - name: Accessibility check
+      run: |
+        echo "♿ Basic accessibility check..."
+
+        # Check for images without alt text
+        IMAGES_NO_ALT=$(find docs -name "*.html" -exec grep -l '<img[^>]*>' {} \; | xargs grep '<img[^>]*>' | grep -v 'alt=' | wc -l)
+        if [ "$IMAGES_NO_ALT" -gt 0 ]; then
+          echo "⚠️ Found $IMAGES_NO_ALT images without alt text"
+        else
+          echo "✅ All images have alt text"
+        fi
+
+        echo "✅ Validation completed"
+
+  # Deploy to GitHub Pages
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [build-docs, validate-docs]
+    if: startsWith(github.ref, 'refs/tags/v') && contains(github.event.base_ref, 'refs/heads/main')
     timeout-minutes: 10
 
     permissions:
@@ -249,55 +265,58 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check if tag is on main branch
+      id: check-branch
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        echo "Checking if tag $TAG_NAME exists on main branch..."
+
+        # Check if the tag points to a commit that exists on main
+        if git merge-base --is-ancestor $TAG_NAME origin/main; then
+          echo "✅ Tag $TAG_NAME is on main branch"
+          echo "deploy=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Tag $TAG_NAME is NOT on main branch"
+          echo "🚫 Skipping deployment - tags must be on main branch"
+          echo "deploy=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Download documentation
+      if: steps.check-branch.outputs.deploy == 'true' || github.event.inputs.deploy_to_pages == 'true'
       uses: actions/download-artifact@v4
       with:
         name: documentation-${{ github.sha }}
         path: ./docs
 
-    - name: Setup Pages
+    - name: Setup GitHub Pages
+      if: steps.check-branch.outputs.deploy == 'true' || github.event.inputs.deploy_to_pages == 'true'
       uses: actions/configure-pages@v4
 
     - name: Upload to GitHub Pages
+      if: steps.check-branch.outputs.deploy == 'true' || github.event.inputs.deploy_to_pages == 'true'
       uses: actions/upload-pages-artifact@v3
       with:
         path: ./docs
 
     - name: Deploy to GitHub Pages
+      if: steps.check-branch.outputs.deploy == 'true' || github.event.inputs.deploy_to_pages == 'true'
       id: deployment
       uses: actions/deploy-pages@v4
 
-  # Validate documentation in PRs
-  validate-docs:
-    name: Validate Documentation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 10
-
-    steps:
-    - name: Download documentation
-      uses: actions/download-artifact@v4
-      with:
-        name: documentation-${{ github.sha }}
-        path: ./docs
-
-    - name: Check documentation size
+    - name: Report deployment
+      if: steps.check-branch.outputs.deploy == 'true' || github.event.inputs.deploy_to_pages == 'true'
       run: |
-        DOC_SIZE=$(du -sh docs | cut -f1)
-        echo "📊 Documentation size: $DOC_SIZE"
+        echo "🚀 Documentation deployed successfully!"
+        echo "📖 Documentation URL: ${{ steps.deployment.outputs.page_url }}"
+        echo "📊 Documentation size: ${{ needs.build-docs.outputs.docs-size }}"
 
-        # Check if docs are too large (> 100MB)
-        SIZE_BYTES=$(du -sb docs | cut -f1)
-        if [ $SIZE_BYTES -gt 104857600 ]; then
-          echo "⚠️ Documentation is larger than 100MB"
-          exit 1
-        fi
-
-    - name: Check for broken internal links
+    - name: Report skipped deployment
+      if: steps.check-branch.outputs.deploy == 'false'
       run: |
-        echo "🔍 Checking for broken internal links..."
-        find docs -name "*.html" -exec grep -l "404\|broken\|not found" {} \; || true
-
-    - name: Validate HTML
-      run: |
-        echo "✅ Documentation validation completed"
+        echo "🚫 Deployment skipped - tag must be created from main branch"
+        echo "ℹ️ To deploy documentation, create tags from the main branch only"

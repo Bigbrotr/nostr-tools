@@ -57,7 +57,6 @@ repos:
       - id: check-shebang-scripts-are-executable
 
       # Security checks
-      # - id: check-private-key
       - id: detect-private-key
 
   # Security scanning with Bandit
@@ -79,33 +78,17 @@ repos:
         name: pip-audit
         description: Audit Python packages for known vulnerabilities
 
-  # Spell checking (optional but recommended)
-  # - repo: https://github.com/crate-ci/typos
-  #   rev: v1.36.2
-  #   hooks:
-  #     - id: typos
-  #       name: typos
-  #       description: Check for common typos
-  #       exclude: |
-  #         (?x)^(
-  #             .*\.lock$|
-  #             .*\.min\.(js|css)$|
-  #             build/|
-  #             dist/|
-  #             \.git/|
-  #             node_modules/|
-  #             .*\.egg-info/
-  #         )$
-
-  # Markdown linting
-  # - repo: https://github.com/igorshubovych/markdownlint-cli
-  #   rev: v0.45.0
-  #   hooks:
-  #     - id: markdownlint-fix
-  #       name: markdownlint
-  #       description: Lint and fix Markdown files
-  #       args: [--fix]
-  #       # exclude: ^(CHANGELOG\.md|\.github/)
+  # Documentation verification
+  - repo: local
+    hooks:
+      - id: docs-check
+        name: docs-check
+        description: Build documentation to verify it works
+        entry: bash -c 'if command -v sphinx-build >/dev/null 2>&1; then make docs-check; else echo "Sphinx not found, skipping docs check"; fi'
+        language: system
+        files: ^(docs/|src/.*\.py|README\.md|CHANGELOG\.md)$
+        pass_filenames: false
+        stages: [commit]
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
@@ -126,7 +109,9 @@ exclude: |
       \.venv/|
       venv/|
       node_modules/|
-      backup_.*
+      backup_.*|
+      docs/_build/|
+      docs/_autosummary/
   )$
 
 # Minimum pre-commit version required
@@ -137,4 +122,3 @@ fail_fast: false
 
 ci:
   autoupdate_schedule: weekly
-  skip: [safety]  # Skip safety in CI due to network requirements

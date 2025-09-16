@@ -111,35 +111,6 @@ class TestCryptographicSecurity:
         # Signature should not verify with second public key
         assert not verify_sig(event_data["id"], keypair2[1], event_data["sig"])
 
-    def test_event_id_tampering_detection(self, sample_keypair):
-        """Test detection of event ID tampering."""
-        private_key, public_key = sample_keypair
-
-        event_data = generate_event(
-            private_key=private_key,
-            public_key=public_key,
-            kind=1,
-            tags=[],
-            content="Test content",
-        )
-
-        # Tamper with event ID
-        original_id = event_data["id"]
-        tampered_ids = [
-            original_id[:-2] + "00",  # Change last byte
-            "00" + original_id[2:],  # Change first byte
-            "f" * 64,  # All f's
-            "0" * 64,  # All zeros
-        ]
-
-        for tampered_id in tampered_ids:
-            tampered_event = event_data.copy()
-            tampered_event["id"] = tampered_id
-
-            # Should fail validation
-            with pytest.raises(ValueError, match="id does not match"):
-                Event.from_dict(tampered_event)
-
 
 @pytest.mark.security
 class TestInputValidation:

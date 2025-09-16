@@ -13,10 +13,6 @@ Nostr-Tools Documentation
    :target: https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE
    :alt: License
 
-.. image:: https://github.com/bigbrotr/nostr-tools/workflows/Test/badge.svg
-   :target: https://github.com/bigbrotr/nostr-tools/actions
-   :alt: Test Status
-
 A comprehensive Python library for Nostr protocol interactions.
 
 Features
@@ -88,50 +84,20 @@ Basic Usage
    if __name__ == "__main__":
        asyncio.run(main())
 
-Table of Contents
------------------
-
-.. toctree::
-   :maxdepth: 2
-   :caption: User Guide
-
-   installation
-   quickstart
-   examples
-   best_practices
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-
-   api/client
-   api/event
-   api/relay
-   api/utils
-   api/exceptions
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Development
-
-   contributing
-   testing
-   changelog
-
 API Documentation
 -----------------
 
-Core Classes
-~~~~~~~~~~~~
+Core
+~~~~~
 
 .. autosummary::
    :toctree: _autosummary
-   :caption: Core Classes
+   :caption: Core
 
    nostr_tools.Client
    nostr_tools.Event
-   nostr_tools.Relay
    nostr_tools.Filter
+   nostr_tools.Relay
    nostr_tools.RelayMetadata
 
 Utilities

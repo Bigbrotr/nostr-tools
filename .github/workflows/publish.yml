@@ -1,458 +1,119 @@
-# .github/workflows/publish.yml
-name: Publish - Build & Release to PyPI
+name: Publish to PyPI
 
 on:
-  # Publish to TestPyPI on main branch pushes and to PyPI on version tags
   push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
-  # Manual releases
+    tags: ['v*']  # All version tags
   release:
     types: [published]
-  # Manual trigger
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger with options
     inputs:
       target:
-        description: 'Publish target'
+        description: 'Deployment target'
         required: true
         default: 'testpypi'
         type: choice
         options:
           - testpypi
           - pypi
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false  # Don't cancel ongoing releases
-
-env:
-  PYTHONUNBUFFERED: "1"
-  FORCE_COLOR: "1"
+          - both
 
 jobs:
-  # Run tests before publishing
-  pre-publish-tests:
-    name: Pre-publish Tests 🧪
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        cache: 'pip'
-        cache-dependency-path: 'pyproject.toml'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -e .[dev,test]
-
-    - name: Run quick quality checks
-      run: |
-        echo "🔍 Running code quality checks..."
-        python -m ruff check src/nostr_tools
-        python -m ruff format --check src/nostr_tools
-        python -m mypy src/nostr_tools
-
-    - name: Run core tests
-      run: |
-        echo "🧪 Running test suite..."
-        python -m pytest tests/
-
-  # Build distribution packages
   build:
-    name: Build Distribution 📦
+    name: Build Package
     runs-on: ubuntu-latest
-    needs: pre-publish-tests
-    timeout-minutes: 10
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
-        # Fetch full history for setuptools-scm version detection
         fetch-depth: 0
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: '3.11'
 
-    - name: Install build dependencies
+    - name: Build distributions
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install build twine pkginfo
-
-    - name: Build source and wheel distributions
-      run: |
-        echo "🔨 Building package distributions..."
+        pip install --upgrade build
         python -m build
-        echo "📦 Built packages:"
-        ls -la dist/
 
-    - name: Verify distributions
-      run: |
-        echo "✅ Checking package integrity..."
-        python -m twine check dist/*
-        echo "✅ All distributions are valid"
-
-    - name: Extract package metadata
-      id: package-info
-      run: |
-        # Use pkginfo - the professional standard for reading wheel metadata
-        WHEEL_FILE=$(ls dist/*.whl | head -1)
-        TARBALL_FILE=$(ls dist/*.tar.gz | head -1)
-
-        echo "📋 Extracting metadata from: $WHEEL_FILE"
-
-        # Extract comprehensive package information using pkginfo
-        PACKAGE_INFO=$(python -c "
-        from pkginfo import Wheel
-        import json
-
-        wheel = Wheel('$WHEEL_FILE')
-        info = {
-            'name': wheel.name,
-            'version': wheel.version,
-            'summary': wheel.summary,
-            'author': wheel.author,
-            'author_email': wheel.author_email,
-            'license': wheel.license,
-            'home_page': wheel.home_page,
-            'requires_python': wheel.requires_python,
-        }
-
-        # Output individual values for GitHub Actions
-        print(f'VERSION={wheel.version}')
-        print(f'NAME={wheel.name}')
-        print(f'SUMMARY={wheel.summary or \"Python library for Nostr protocol\"}')
-        ")
-
-        # Parse the output and set GitHub Actions outputs
-        eval "$PACKAGE_INFO"
-
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "NAME=$NAME" >> $GITHUB_OUTPUT
-        echo "SUMMARY=$SUMMARY" >> $GITHUB_OUTPUT
-        echo "WHEEL_FILE=$WHEEL_FILE" >> $GITHUB_OUTPUT
-        echo "TARBALL_FILE=$TARBALL_FILE" >> $GITHUB_OUTPUT
-
-        echo "📋 Package Information:"
-        echo "  Name: $NAME"
-        echo "  Version: $VERSION"
-        echo "  Summary: $SUMMARY"
-        echo "  Wheel: $WHEEL_FILE"
-        echo "  Source: $TARBALL_FILE"
-
-    - name: Test package installation
-      run: |
-        echo "🧪 Testing package installation..."
-
-        # Create a clean virtual environment for testing
-        python -m venv test_env
-        source test_env/bin/activate
-
-        # Install the built wheel
-        pip install dist/*.whl
-
-        # Test basic import and functionality
-        python -c "
-        try:
-            import nostr_tools
-            print('✅ Package imported successfully')
-
-            # Test version access
-            try:
-                version = getattr(nostr_tools, '__version__', 'unknown')
-                print(f'✅ Version: {version}')
-            except Exception as e:
-                print(f'⚠️  Version check failed: {e}')
-
-            # Test core imports
-            try:
-                from nostr_tools import Event, Relay, Client
-                print('✅ Core classes imported successfully')
-            except ImportError as e:
-                print(f'⚠️  Core imports failed: {e}')
-                # Continue anyway - basic package works
-
-            print('✅ Package installation test passed')
-
-        except Exception as e:
-            print(f'❌ Package installation test failed: {e}')
-            exit(1)
-        "
-
-        # Cleanup
-        deactivate
-
-    - name: Upload build artifacts
+    - name: Store distributions
       uses: actions/upload-artifact@v4
       with:
-        name: python-package-distributions
+        name: dist
         path: dist/
-        retention-days: 90
 
-    outputs:
-      version: ${{ steps.package-info.outputs.VERSION }}
-      name: ${{ steps.package-info.outputs.NAME }}
-      summary: ${{ steps.package-info.outputs.SUMMARY }}
-
-  # Publish to TestPyPI
-  publish-to-testpypi:
-    name: Publish to TestPyPI 🧪
-    runs-on: ubuntu-latest
+  # 🧪 TestPyPI: Auto-deploy pre-releases + manual trigger
+  test-pypi:
+    name: Test PyPI
     needs: build
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'testpypi')
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
 
     environment:
       name: testpypi
       url: https://test.pypi.org/p/nostr-tools
 
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
-    - name: Download distributions
-      uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v4
       with:
-        name: python-package-distributions
+        name: dist
         path: dist/
-
-    - name: Verify package contents before upload
-      run: |
-        echo "📦 Verifying package contents..."
-        python -m pip install pkginfo
-
-        for file in dist/*; do
-          echo "📋 Checking: $file"
-          python -c "
-          from pkginfo import get_metadata
-          metadata = get_metadata('$file')
-          if metadata:
-              print(f'  ✅ {metadata.name} v{metadata.version}')
-              print(f'     Summary: {metadata.summary}')
-          else:
-              print(f'  ❌ Failed to read metadata from $file')
-              exit(1)
-          "
-        done
 
     - name: Publish to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
-        verbose: true
-        print-hash: true
 
-    - name: Test TestPyPI installation
-      run: |
-        echo "🧪 Testing installation from TestPyPI..."
-        sleep 60  # Wait for package to be available on TestPyPI
-
-        # Test installation from TestPyPI
-        python -m pip install --index-url https://test.pypi.org/simple/ \
-          --extra-index-url https://pypi.org/simple/ \
-          ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }} || {
-          echo "⚠️ TestPyPI installation test failed, but continuing..."
-          echo "This is often due to TestPyPI propagation delays"
-        }
-
-        echo "✅ TestPyPI publication completed"
-
-  # Publish to PyPI
-  publish-to-pypi:
-    name: Publish to PyPI 🚀
-    runs-on: ubuntu-latest
+  # 🚀 PyPI: Only stable releases
+  pypi:
+    name: PyPI
     needs: build
+    runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'release' && github.event.action == 'published') ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi')
-    timeout-minutes: 10
+      (startsWith(github.ref, 'refs/tags/v') &&
+       !contains(github.ref, '-') &&
+       github.event_name != 'workflow_dispatch') ||
+      (github.event_name == 'workflow_dispatch' &&
+       contains(github.event.inputs.target, 'pypi'))
 
     environment:
       name: pypi
       url: https://pypi.org/p/nostr-tools
 
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
-    - name: Download distributions
-      uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v4
       with:
-        name: python-package-distributions
+        name: dist
         path: dist/
-
-    - name: Final package verification
-      run: |
-        echo "🔍 Final package verification before PyPI upload..."
-        python -m pip install pkginfo twine
-
-        # Comprehensive package check
-        python -c "
-        import os
-        from pkginfo import get_metadata
-
-        for filename in os.listdir('dist'):
-            filepath = os.path.join('dist', filename)
-            print(f'📋 Verifying: {filename}')
-
-            metadata = get_metadata(filepath)
-            if not metadata:
-                print(f'❌ Cannot read metadata from {filename}')
-                exit(1)
-
-            # Verify required fields
-            required_fields = ['name', 'version', 'summary']
-            for field in required_fields:
-                value = getattr(metadata, field, None)
-                if not value:
-                    print(f'❌ Missing required field: {field}')
-                    exit(1)
-                print(f'  ✅ {field}: {value}')
-
-            print(f'  ✅ Package verification passed')
-        "
-
-        # Additional twine check
-        python -m twine check dist/*
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        verbose: true
-        print-hash: true
 
-    - name: Verify PyPI publication
-      run: |
-        echo "🧪 Verifying PyPI publication..."
-        sleep 90  # Wait for package to be available on PyPI
-
-        # Test installation from PyPI
-        python -m pip install ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }}
-        python -c "
-        import ${{ needs.build.outputs.name }}
-        print(f'✅ {${{ needs.build.outputs.name }}} v{${{ needs.build.outputs.version }} installed successfully from PyPI')
-        "
-
-  # Create GitHub Release (for tag pushes)
-  github-release:
-    name: Create GitHub Release 📋
+  # 📦 GitHub Release: Only for stable versions
+  release:
+    name: GitHub Release
+    needs: pypi
     runs-on: ubuntu-latest
-    needs: [build, publish-to-pypi]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    timeout-minutes: 10
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
 
     permissions:
-      contents: write  # IMPORTANT: mandatory for creating releases
+      contents: write
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Download distributions
-      uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v4
       with:
-        name: python-package-distributions
+        name: dist
         path: dist/
 
-    - name: Extract release notes
-      id: extract-release-notes
-      run: |
-        # Extract version from tag
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-        # Try to extract release notes from CHANGELOG.md
-        if [ -f CHANGELOG.md ]; then
-          echo "📖 Extracting release notes from CHANGELOG.md..."
-
-          # Extract section between version headers
-          awk "
-          /## \[$VERSION\]/ { found=1; next }
-          /## \[/ && found { exit }
-          found && !/^## \[$VERSION\]/ { print }
-          " CHANGELOG.md > release_notes.txt
-
-          # Clean up release notes
-          sed -i '/./,$!d' release_notes.txt  # Remove leading empty lines
-          sed -i '${/^$/d}' release_notes.txt # Remove trailing empty lines
-
-          # If empty or too short, use default
-          if [ ! -s release_notes.txt ] || [ $(wc -l < release_notes.txt) -lt 2 ]; then
-            cat > release_notes.txt << EOF
-        🚀 Release v$VERSION
-
-        ## What's New
-        ${{ needs.build.outputs.summary }}
-
-        ## Installation
-        \`\`\`bash
-        pip install ${{ needs.build.outputs.name }}==$VERSION
-        \`\`\`
-
-        ## Links
-        - 📦 [PyPI Package](https://pypi.org/project/${{ needs.build.outputs.name }}/$VERSION/)
-        - 📚 [Documentation](https://nostr-tools.readthedocs.io/)
-        - 📋 [Full Changelog](CHANGELOG.md)
-        EOF
-          fi
-        else
-          echo "📝 No CHANGELOG.md found, creating default release notes..."
-          cat > release_notes.txt << EOF
-        🚀 Release v$VERSION
-
-        ## Installation
-        \`\`\`bash
-        pip install ${{ needs.build.outputs.name }}==$VERSION
-        \`\`\`
-
-        See commit history for detailed changes in this release.
-        EOF
-        fi
-
-        echo "📋 Release notes preview:"
-        cat release_notes.txt
-
-    - name: Create GitHub Release
+    - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        name: "🚀 Release v${{ steps.extract-release-notes.outputs.VERSION }}"
-        body_path: release_notes.txt
         files: dist/*
-        draft: false
-        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         generate_release_notes: true
-        make_latest: true
-
-  # Success notification
-  notify-success:
-    name: Success Notification 🎉
-    runs-on: ubuntu-latest
-    needs: [build, publish-to-pypi, github-release]
-    if: always() && (needs.publish-to-pypi.result == 'success')
-    timeout-minutes: 5
-
-    steps:
-    - name: Celebrate success
-      run: |
-        echo "🎉 Successfully published ${{ needs.build.outputs.name }} v${{ needs.build.outputs.version }} to PyPI!"
-        echo ""
-        echo "📦 Package URL: https://pypi.org/project/${{ needs.build.outputs.name }}/${{ needs.build.outputs.version }}/"
-        echo "📋 Release URL: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"
-        echo "📚 Documentation: https://nostr-tools.readthedocs.io/"
-        echo ""
-        echo "🚀 Installation command:"
-        echo "pip install ${{ needs.build.outputs.name }}==${{ needs.build.outputs.version }}"

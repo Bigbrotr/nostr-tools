@@ -1,4 +1,19 @@
-.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance lint lint-fix format format-check clean build upload upload-test verify pre-commit check check-all examples security-scan deps-check type-check docs-build docs-serve docs-clean version
+# =====================================================
+# 🚀 nostr-tools Makefile
+# =====================================================
+# Development automation and project management commands
+# Run 'make help' for available commands
+# =====================================================
+
+.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance \
+        lint lint-fix format format-check clean build upload upload-test verify pre-commit \
+        check check-all examples security-scan deps-check type-check \
+        docs-build docs-serve docs-clean docs-watch docs-open docs-links-check docs-coverage-check docs-build-check \
+        version
+
+# =====================================================
+# Configuration Variables
+# =====================================================
 
 # Colors for output
 BLUE := \033[36m
@@ -13,9 +28,14 @@ PYTHON := python3
 PACKAGE := nostr_tools
 # Use src/ layout directories
 SRC_DIRS := src/$(PACKAGE) tests examples
+DOCS_DIR := docs
+DOCS_BUILD_DIR := $(DOCS_DIR)/_build
 VERSION := $(shell $(PYTHON) -c "import setuptools_scm; print(setuptools_scm.get_version())" 2>/dev/null || echo "unknown")
 
-# Default target
+# =====================================================
+# Default Target - Help Menu
+# =====================================================
+
 help:
 	@echo "$(BOLD)$(BLUE)🚀 nostr-tools v$(VERSION) Development Commands$(RESET)"
 	@echo ""
@@ -41,6 +61,17 @@ help:
 	@echo "  test-performance  Run performance benchmarks"
 	@echo "  test-cov          Run tests with coverage report"
 	@echo ""
+	@echo "$(BOLD)$(GREEN)📚 Documentation:$(RESET)"
+	@echo "  docs-build        Build documentation"
+	@echo "  docs-serve        Serve documentation locally"
+	@echo "  docs-watch        Auto-rebuild docs on changes"
+	@echo "  docs-open         Build and open docs in browser"
+	@echo "  docs-clean        Clean documentation build"
+	@echo "  docs-build-check  Build docs with warnings as errors"
+	@echo "  docs-links-check  Check documentation links"
+	@echo "  docs-coverage-check Check documentation coverage"
+	@echo "  docs-check        Run all documentation checks"
+	@echo ""
 	@echo "$(BOLD)$(GREEN)🔧 Build & Distribution:$(RESET)"
 	@echo "  build             Build distribution packages"
 	@echo "  clean             Clean build artifacts"
@@ -48,15 +79,21 @@ help:
 	@echo "  upload-test       Upload to TestPyPI"
 	@echo "  version           Show current version"
 	@echo ""
-	@echo "$(BOLD)$(GREEN)📚 Documentation:$(RESET)"
-	@echo "  docs-build        Build documentation"
-	@echo "  docs-serve        Serve documentation locally"
-	@echo "  docs-clean        Clean documentation build"
-	@echo ""
 	@echo "$(BOLD)$(GREEN)✅ Quality Assurance:$(RESET)"
 	@echo "  check             Run all quality checks (fast)"
 	@echo "  check-all         Run comprehensive quality checks"
 	@echo "  pre-commit        Set up and run pre-commit hooks"
+	@echo "  deps-check        Check for dependency updates"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)🔍 Utilities:$(RESET)"
+	@echo "  examples          Run example scripts"
+	@echo "  verify            Verify installation"
+	@echo ""
+	@echo "$(BOLD)$(YELLOW)💡 Quick Start:$(RESET)"
+	@echo "  make install-dev  # Set up development environment"
+	@echo "  make check        # Run quality checks"
+	@echo "  make test         # Run tests"
+	@echo "  make docs-open    # Build and view documentation"
 
 # =====================================================
 # Installation targets
@@ -65,19 +102,25 @@ help:
 install:
 	@echo "$(BLUE)📦 Installing nostr-tools...$(RESET)"
 	$(PYTHON) -m pip install .
+	@echo "$(GREEN)✅ Installation complete!$(RESET)"
 
 install-dev:
 	@echo "$(BLUE)📦 Installing nostr-tools with development dependencies...$(RESET)"
-	$(PYTHON) -m pip install -e .[dev]
+	$(PYTHON) -m pip install -e ".[dev]"
+	@echo "$(BLUE)🔧 Setting up pre-commit hooks...$(RESET)"
+	pre-commit install
+	@echo "$(GREEN)✅ Development environment ready!$(RESET)"
 
 install-all:
-	@echo "$(BLUE)📦 Installing nostr-tools with all dependencies...$(RESET)"
-	$(PYTHON) -m pip install -e .[all]
+	@echo "$(BLUE)📦 Installing nostr-tools with all optional dependencies...$(RESET)"
+	$(PYTHON) -m pip install -e ".[all]"
+	@echo "$(GREEN)✅ Full installation complete!$(RESET)"
 
 install-ci:
 	@echo "$(BLUE)📦 Installing for CI environment...$(RESET)"
 	$(PYTHON) -m pip install --upgrade pip setuptools wheel
-	$(PYTHON) -m pip install -e .[test,security]
+	$(PYTHON) -m pip install -e ".[test,security,docs]"
+	@echo "$(GREEN)✅ CI environment ready!$(RESET)"
 
 # =====================================================
 # Code quality targets
@@ -85,19 +128,21 @@ install-ci:
 
 format:
 	@echo "$(BLUE)🎨 Formatting code with Ruff...$(RESET)"
-	$(PYTHON) -m ruff format $(SRC_DIRS)
+	$(PYTHON) -m ruff format $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
+	@echo "$(GREEN)✅ Code formatted!$(RESET)"
 
 format-check:
 	@echo "$(BLUE)🎨 Checking code formatting...$(RESET)"
-	$(PYTHON) -m ruff format --check $(SRC_DIRS)
+	$(PYTHON) -m ruff format --check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 lint:
 	@echo "$(BLUE)🔍 Running linting checks...$(RESET)"
-	$(PYTHON) -m ruff check $(SRC_DIRS)
+	$(PYTHON) -m ruff check $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
 
 lint-fix:
 	@echo "$(BLUE)🔧 Running linting with fixes...$(RESET)"
-	$(PYTHON) -m ruff check --fix $(SRC_DIRS)
+	$(PYTHON) -m ruff check --fix $(SRC_DIRS) --exclude="src/nostr_tools/_version.py"
+	@echo "$(GREEN)✅ Linting issues fixed!$(RESET)"
 
 type-check:
 	@echo "$(BLUE)🏷️  Running type checks...$(RESET)"
@@ -112,6 +157,7 @@ security-scan:
 	$(PYTHON) -m safety check
 	@echo "$(YELLOW)Running pip-audit...$(RESET)"
 	$(PYTHON) -m pip_audit
+	@echo "$(GREEN)✅ Security scan complete!$(RESET)"
 
 # =====================================================
 # Testing targets
@@ -123,7 +169,7 @@ test:
 
 test-unit:
 	@echo "$(BLUE)🧪 Running unit tests...$(RESET)"
-	$(PYTHON) -m pytest -m "unit or (not integration and not slow)"
+	$(PYTHON) -m pytest -m "not integration and not slow"
 
 test-integration:
 	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
@@ -134,12 +180,98 @@ test-security:
 	$(PYTHON) -m pytest -m security
 
 test-performance:
-	@echo "$(BLUE)🧪 Running performance tests...$(RESET)"
-	$(PYTHON) -m pytest -m "not (unit or integration)" --benchmark-only
+	@echo "$(BLUE)🧪 Running performance benchmarks...$(RESET)"
+	$(PYTHON) -m pytest -m benchmark --benchmark-only
 
 test-cov:
 	@echo "$(BLUE)🧪 Running tests with coverage...$(RESET)"
-	$(PYTHON) -m pytest --cov=src/$(PACKAGE) --cov-report=html --cov-report=term --cov-report=xml
+	$(PYTHON) -m pytest --cov=src/$(PACKAGE) --cov-report=html --cov-report=term
+	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(RESET)"
+
+# =====================================================
+# Documentation targets
+# =====================================================
+
+docs-build:
+	@echo "$(BLUE)📚 Building documentation...$(RESET)"
+	@if [ ! -d "$(DOCS_DIR)" ]; then \
+		echo "$(RED)❌ Documentation directory not found: $(DOCS_DIR)$(RESET)"; \
+		exit 1; \
+	fi
+	cd $(DOCS_DIR) && \
+	sphinx-build -b html . _build/html
+	@echo "$(GREEN)✅ Documentation built in $(DOCS_BUILD_DIR)/html/$(RESET)"
+
+docs-serve: docs-build
+	@echo "$(BLUE)📚 Serving documentation at http://localhost:8000...$(RESET)"
+	cd $(DOCS_BUILD_DIR)/html && $(PYTHON) -m http.server 8000
+
+docs-watch:
+	@echo "$(BLUE)📚 Auto-rebuilding documentation on changes...$(RESET)"
+	@if command -v sphinx-autobuild >/dev/null 2>&1; then \
+		cd $(DOCS_DIR) && sphinx-autobuild . _build/html --port 8000 --host 0.0.0.0; \
+	else \
+		echo "$(YELLOW)sphinx-autobuild not found. Install with: pip install sphinx-autobuild$(RESET)"; \
+		echo "$(BLUE)Building once and serving...$(RESET)"; \
+		$(MAKE) docs-serve; \
+	fi
+
+docs-open: docs-build
+	@echo "$(BLUE)📚 Opening documentation in browser...$(RESET)"
+	@if command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open "$(DOCS_BUILD_DIR)/html/index.html"; \
+	elif command -v open >/dev/null 2>&1; then \
+		open "$(DOCS_BUILD_DIR)/html/index.html"; \
+	else \
+		echo "$(YELLOW)Please open $(DOCS_BUILD_DIR)/html/index.html manually$(RESET)"; \
+	fi
+
+docs-clean:
+	@echo "$(BLUE)🧹 Cleaning documentation build...$(RESET)"
+	rm -rf $(DOCS_BUILD_DIR)/*
+	rm -rf $(DOCS_DIR)/_autosummary/
+	rm -rf $(DOCS_DIR)/_static/
+	@echo "$(GREEN)✅ Documentation cleaned!$(RESET)"
+
+docs-build-check:
+	@echo "$(BLUE)📚 Building documentation for verification...$(RESET)"
+	@if [ ! -d "$(DOCS_DIR)" ]; then \
+		echo "$(RED)❌ docs/ directory not found!$(RESET)"; \
+		exit 1; \
+	fi
+	cd $(DOCS_DIR) && \
+	sphinx-build -b html . _build/html -W --keep-going -q
+	@echo "$(GREEN)✅ Documentation build verification passed$(RESET)"
+
+docs-links-check:
+	@echo "$(BLUE)🔗 Checking documentation links...$(RESET)"
+	cd $(DOCS_DIR) && \
+	sphinx-build -b linkcheck . _build/linkcheck -q
+	@if [ -f "$(DOCS_BUILD_DIR)/linkcheck/output.txt" ]; then \
+		echo "$(YELLOW)📊 Link check results:$(RESET)"; \
+		grep -E "(broken|redirect)" $(DOCS_BUILD_DIR)/linkcheck/output.txt | head -10 || echo "$(GREEN)✅ No broken links found$(RESET)"; \
+	fi
+
+docs-coverage-check:
+	@echo "$(BLUE)📊 Checking documentation coverage...$(RESET)"
+	cd $(DOCS_DIR) && \
+	sphinx-build -b coverage . _build/coverage -q
+	@if [ -f "$(DOCS_BUILD_DIR)/coverage/python.txt" ]; then \
+		echo "$(YELLOW)📈 Documentation coverage report:$(RESET)"; \
+		head -20 $(DOCS_BUILD_DIR)/coverage/python.txt; \
+		echo ""; \
+		echo "$(BLUE)💡 Full report available at: $(DOCS_BUILD_DIR)/coverage/python.txt$(RESET)"; \
+	else \
+		echo "$(RED)❌ Coverage report not generated$(RESET)"; \
+		exit 1; \
+	fi
+
+docs-check:
+	@echo "$(BLUE)🔍 Running all documentation checks...$(RESET)"
+	@$(MAKE) docs-build-check
+	@$(MAKE) docs-links-check
+	@$(MAKE) docs-coverage-check
+	@echo "$(GREEN)✅ All documentation checks passed!$(RESET)"
 
 # =====================================================
 # Build and distribution targets
@@ -147,156 +279,87 @@ test-cov:
 
 clean:
 	@echo "$(BLUE)🧹 Cleaning build artifacts...$(RESET)"
-	rm -rf build/
-	rm -rf dist/
-	rm -rf *.egg-info/
-	rm -rf htmlcov/
-	rm -rf .coverage
-	rm -rf .pytest_cache/
-	rm -rf .ruff_cache/
-	rm -rf .mypy_cache/
+	rm -rf build/ dist/ *.egg-info
+	rm -rf .coverage htmlcov/ .pytest_cache/
+	rm -rf .mypy_cache/ .ruff_cache/
 	rm -rf bandit-report.json
-	rm -rf coverage.xml
+	rm -rf .benchmarks/
+	rm -rf $(DOCS_BUILD_DIR)/*
+	rm -rf $(DOCS_DIR)/_autosummary/
+	rm -rf $(DOCS_DIR)/_static/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
+	@echo "$(GREEN)✅ Cleanup complete!$(RESET)"
 
 build: clean
-	@echo "$(BLUE)🔨 Building distribution packages...$(RESET)"
+	@echo "$(BLUE)📦 Building distribution packages...$(RESET)"
 	$(PYTHON) -m build
-
-version:
-	@echo "$(BLUE)📋 Current version: $(YELLOW)$(VERSION)$(RESET)"
+	@echo "$(GREEN)✅ Build complete! Packages in dist/$(RESET)"
 
 upload: build
 	@echo "$(BLUE)📤 Uploading to PyPI...$(RESET)"
 	$(PYTHON) -m twine upload dist/*
+	@echo "$(GREEN)✅ Package uploaded to PyPI!$(RESET)"
 
 upload-test: build
 	@echo "$(BLUE)📤 Uploading to TestPyPI...$(RESET)"
 	$(PYTHON) -m twine upload --repository testpypi dist/*
-
-# =====================================================
-# Documentation targets
-# =====================================================
-
-docs-build:
-	@echo "$(BLUE)📖 Building documentation...$(RESET)"
-	@if [ -d "docs" ]; then \
-		cd docs && $(PYTHON) -m sphinx . _build/html; \
-	else \
-		echo "$(YELLOW)No docs directory found$(RESET)"; \
-	fi
-
-docs-serve:
-	@echo "$(BLUE)📖 Serving documentation at http://localhost:8000...$(RESET)"
-	@if [ -d "docs/_build/html" ]; then \
-		$(PYTHON) -m http.server 8000 -d docs/_build/html; \
-	else \
-		echo "$(RED)Documentation not built. Run 'make docs-build' first$(RESET)"; \
-	fi
-
-docs-clean:
-	@echo "$(BLUE)🧹 Cleaning documentation build...$(RESET)"
-	@if [ -d "docs/_build" ]; then \
-		rm -rf docs/_build/; \
-	fi
+	@echo "$(GREEN)✅ Package uploaded to TestPyPI!$(RESET)"
 
 # =====================================================
 # Quality assurance targets
 # =====================================================
 
-check: format-check lint type-check test-unit
-	@echo "$(GREEN)✅ All fast quality checks passed!$(RESET)"
-
-check-all: format-check lint type-check security-scan test
+check:
+	@echo "$(BOLD)$(BLUE)🔍 Running quality checks...$(RESET)"
+	@$(MAKE) format-check
+	@$(MAKE) lint
+	@$(MAKE) type-check
+	@$(MAKE) test
+	@$(MAKE) docs-check
 	@echo "$(GREEN)✅ All quality checks passed!$(RESET)"
 
+check-all:
+	@echo "$(BOLD)$(BLUE)🔍 Running comprehensive quality checks...$(RESET)"
+	@$(MAKE) format-check
+	@$(MAKE) lint
+	@$(MAKE) type-check
+	@$(MAKE) security-scan
+	@$(MAKE) test-cov
+	@$(MAKE) docs-check
+	@echo "$(GREEN)✅ All comprehensive checks passed!$(RESET)"
+
 pre-commit:
-	@echo "$(BLUE)🪝 Setting up pre-commit hooks...$(RESET)"
-	$(PYTHON) -m pre_commit install
-	$(PYTHON) -m pre_commit run --all-files
+	@echo "$(BLUE)🪝 Running pre-commit hooks...$(RESET)"
+	pre-commit run --all-files
+	@echo "$(GREEN)✅ Pre-commit checks complete!$(RESET)"
+
+deps-check:
+	@echo "$(BLUE)📦 Checking for dependency updates...$(RESET)"
+	$(PYTHON) -m pip list --outdated
+	@echo "$(YELLOW)💡 Run 'pip install --upgrade package-name' to update$(RESET)"
 
 # =====================================================
-# Development utilities
+# Utility targets
 # =====================================================
-
-deps-update:
-	@echo "$(BLUE)🔄 Updating development dependencies...$(RESET)"
-	$(PYTHON) -m pip install --upgrade pip build twine setuptools-scm
-	$(PYTHON) -m pip install --upgrade -e .[all]
-
-dev-shell:
-	@echo "$(BLUE)🐚 Starting development shell...$(RESET)"
-	$(PYTHON) -i -c "import sys; sys.path.insert(0, 'src'); import $(PACKAGE); print('$(PACKAGE) development shell ready - version $(VERSION)')"
 
 examples:
-	@echo "$(BLUE)🎯 Running examples...$(RESET)"
-	@for example in examples/*.py; do \
-		if [ -f "$$example" ]; then \
-			echo "$(YELLOW)Running $$example...$(RESET)"; \
-			$(PYTHON) "$$example" || echo "$(RED)Example $$example failed$(RESET)"; \
-		fi; \
-	done
-
-# =====================================================
-# CI/CD helpers
-# =====================================================
-
-ci-test:
-	@echo "$(BLUE)🤖 Running CI test suite...$(RESET)"
-	$(PYTHON) -m pytest -v --tb=short --maxfail=3
-
-ci-check:
-	@echo "$(BLUE)🤖 Running CI quality checks...$(RESET)"
-	$(PYTHON) -m ruff check $(SRC_DIRS)
-	$(PYTHON) -m ruff format --check $(SRC_DIRS)
-	$(PYTHON) -m mypy src/$(PACKAGE)
-
-# =====================================================
-# Migration helpers (temporary)
-# =====================================================
-
-migrate-to-src:
-	@echo "$(BLUE)🔄 Migrating to src/ layout...$(RESET)"
-	@if [ -d "$(PACKAGE)" ] && [ ! -d "src/$(PACKAGE)" ]; then \
-		echo "Creating src/ directory..."; \
-		mkdir -p src; \
-		echo "Moving $(PACKAGE)/ to src/$(PACKAGE)/..."; \
-		mv $(PACKAGE) src/; \
-		echo "Creating py.typed marker..."; \
-		touch src/$(PACKAGE)/py.typed; \
-		echo "$(GREEN)✅ Migration completed! Update your pyproject.toml and reinstall.$(RESET)"; \
+	@echo "$(BLUE)🚀 Running example scripts...$(RESET)"
+	@if [ -d "examples" ]; then \
+		for script in examples/*.py; do \
+			if [ -f "$$script" ]; then \
+				echo "$(YELLOW)Running $$script...$(RESET)"; \
+				$(PYTHON) "$$script" || echo "$(RED)❌ $$script failed$(RESET)"; \
+			fi; \
+		done; \
 	else \
-		echo "$(YELLOW)Migration already completed or $(PACKAGE) directory not found$(RESET)"; \
+		echo "$(YELLOW)⚠️ No examples directory found$(RESET)"; \
 	fi
 
-# =====================================================
-# Debugging and development helpers
-# =====================================================
-
-debug-info:
-	@echo "$(BOLD)$(BLUE)🔍 Debug Information$(RESET)"
-	@echo "Python: $(shell $(PYTHON) --version)"
-	@echo "Pip: $(shell $(PYTHON) -m pip --version)"
-	@echo "Project root: $(shell pwd)"
-	@echo "Package version: $(VERSION)"
-	@echo "Package location: $(shell $(PYTHON) -c 'import $(PACKAGE); print($(PACKAGE).__file__)' 2>/dev/null || echo 'Not installed')"
-	@echo "Git branch: $(shell git branch --show-current 2>/dev/null || echo 'Not a git repo')"
-	@echo "Git status: $(shell git status --porcelain 2>/dev/null | wc -l || echo 'N/A') modified files"
-
-list-deps:
-	@echo "$(BLUE)📋 Listing current dependencies...$(RESET)"
-	$(PYTHON) -m pip list
-
-freeze-deps:
-	@echo "$(BLUE)🧊 Freezing current dependencies...$(RESET)"
-	$(PYTHON) -m pip freeze > requirements-frozen.txt
-	@echo "$(GREEN)Dependencies frozen to requirements-frozen.txt$(RESET)"
-
-# Verification that installation worked correctly
-verify-install:
+verify:
 	@echo "$(BLUE)🔍 Verifying installation...$(RESET)"
-	$(PYTHON) -c "import $(PACKAGE); print(f'✅ {$(PACKAGE).__name__} v{$(PACKAGE).__version__} imported successfully')"
-	$(PYTHON) -c "from $(PACKAGE) import Event, Relay, Client; print('✅ Core classes imported successfully')"
-	@echo "$(GREEN)✅ Installation verified successfully!$(RESET)"
+	$(PYTHON) -c "import $(PACKAGE); print(f'✅ $(PACKAGE) v{$(PACKAGE).__version__} imported successfully')"
+	@echo "$(GREEN)✅ Installation verified!$(RESET)"
+
+version:
+	@echo "$(BOLD)nostr-tools version: $(GREEN)$(VERSION)$(RESET)"

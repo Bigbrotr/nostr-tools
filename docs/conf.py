@@ -2,7 +2,6 @@
 # For the full list of built-in configuration values, see:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import os
 import sys
 from pathlib import Path
 
@@ -13,7 +12,7 @@ sys.path.insert(0, str(project_root / "src"))
 # -- Project information -----------------------------------------------------
 
 project = "nostr-tools"
-copyright = "2024, Bigbrotr"
+copyright = "Bigbrotr"
 author = "Bigbrotr"
 
 # The version info from setuptools-scm
@@ -36,6 +35,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.githubpages",
+    "sphinx.ext.coverage",  # Documentation coverage tracking
     # Third-party extensions
     "myst_parser",  # For Markdown support
 ]
@@ -43,63 +43,50 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# -- Options for HTML output -------------------------------------------------
-
-html_theme = "sphinx_rtd_theme"
-html_title = f"{project} v{version}"
-html_short_title = project
-
-html_static_path = ["_static"]
-html_css_files = ["custom.css"]
-
-# Theme options
-html_theme_options = {
-    "canonical_url": "https://bigbrotr.github.io/nostr-tools/",
-    "logo_only": False,
-    "display_version": True,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": True,
-    "collapse_navigation": False,
-    "sticky_navigation": True,
-    "navigation_depth": 4,
-    "includehidden": True,
-    "titles_only": False,
+# Source file suffixes
+source_suffix = {
+    ".rst": None,
+    ".md": "myst_parser.parsers.myst",
 }
 
-# -- Extension configuration -------------------------------------------------
+# -- Coverage extension configuration ----------------------------------------
 
-# Napoleon settings (for Google/NumPy docstrings)
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
-napoleon_use_ivar = False
-napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_preprocess_types = False
-napoleon_type_aliases = None
-napoleon_attr_annotations = True
+# Coverage options
+coverage_show_missing_items = True
+coverage_skip_undoc_in_source = False
+coverage_write_headline = True
 
-# Autodoc settings
+# What to check for coverage
+coverage_ignore_modules = [
+    "nostr_tools._version",
+]
+
+coverage_ignore_functions = [
+    "__repr__",
+    "__str__",
+    "__eq__",
+    "__hash__",
+]
+
+# -- Autodoc configuration ---------------------------------------------------
+
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
-    "special-members": "__init__",
     "undoc-members": True,
     "exclude-members": "__weakref__",
-    "show-inheritance": True,
 }
+
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
-autodoc_preserve_defaults = True
+autodoc_class_signature = "mixed"
 
-# Autosummary settings
+# -- Autosummary configuration -----------------------------------------------
+
+# Generate stubs automatically
 autosummary_generate = True
 autosummary_imported_members = False
+autosummary_generate_overwrite = True
 
 # MyST settings (Markdown parser)
 myst_enable_extensions = [
@@ -119,6 +106,31 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
     "websockets": ("https://websockets.readthedocs.io/en/stable/", None),
+}
+
+# -- Options for HTML output -------------------------------------------------
+
+html_theme = "furo"
+html_title = f"{project} v{version}"
+html_short_title = project
+
+# No custom static files - let the theme handle everything
+html_static_path = []
+
+# Furo theme options
+html_theme_options = {
+    # Navigation
+    "navigation_with_keys": True,
+    # Sidebar
+    "sidebar_hide_name": False,
+    # Footer
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/bigbrotr/nostr-tools",
+            "html": '<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>',
+        },
+    ],
 }
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -162,52 +174,3 @@ epub_title = project
 epub_author = author
 epub_publisher = author
 epub_copyright = copyright
-
-# -- Custom configuration ----------------------------------------------------
-
-# Add any paths that contain custom static files (such as style sheets)
-if not os.path.exists("_static"):
-    os.makedirs("_static")
-
-# Create custom CSS if it doesn't exist
-custom_css_path = Path("_static/custom.css")
-if not custom_css_path.exists():
-    custom_css_content = """
-/* Custom CSS for nostr-tools documentation */
-
-.wy-nav-content {
-    max-width: 1200px;
-}
-
-/* Better code block styling */
-.highlight pre {
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-/* Improve table styling */
-.wy-table-responsive table td, .wy-table-responsive table th {
-    white-space: normal;
-}
-
-/* Better admonition styling */
-.admonition {
-    margin: 1em 0;
-    padding: 0.5em 1em;
-}
-
-/* Code inline styling */
-code.literal {
-    background: #f8f8f8;
-    border: 1px solid #e1e4e5;
-    padding: 2px 5px;
-    border-radius: 3px;
-}
-"""
-    with open(custom_css_path, "w") as f:
-        f.write(custom_css_content)
-
-
-def setup(app):
-    """Custom Sphinx setup function."""
-    app.add_css_file("custom.css")
