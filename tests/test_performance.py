@@ -13,7 +13,7 @@ import pytest
 from nostr_tools import Event
 from nostr_tools import Filter
 from nostr_tools import calc_event_id
-from nostr_tools import find_websocket_relay_urls
+from nostr_tools import find_ws_urls
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
 from nostr_tools import parse_connection_response
@@ -197,7 +197,7 @@ class TestUtilityPerformance:
         performance_timer.start()
         for _ in range(iterations):
             for text in test_texts:
-                find_websocket_relay_urls(text)
+                find_ws_urls(text)
         performance_timer.stop()
 
         total_operations = iterations * len(test_texts)
@@ -253,7 +253,7 @@ class TestUtilityPerformance:
         }
 
         connection_response = {
-            "connection_success": True,
+            "nip66_success": True,
             "rtt_open": 100,
             "rtt_read": 150,
             "rtt_write": 200,
@@ -611,7 +611,7 @@ class TestConcurrencyPerformance:
         def process_urls_batch():
             for _ in range(iterations // threads):
                 for text in test_texts:
-                    find_websocket_relay_urls(text)
+                    find_ws_urls(text)
 
         performance_timer.start()
         with ThreadPoolExecutor(max_workers=threads) as executor:
@@ -730,7 +730,7 @@ class TestMemoryPerformance:
         ]
 
         performance_timer.start()
-        url_results = [find_websocket_relay_urls(text) for text in bulk_texts]
+        url_results = [find_ws_urls(text) for text in bulk_texts]
         performance_timer.stop()
 
         bulk_url_time = performance_timer.elapsed
@@ -804,7 +804,7 @@ class TestBenchmarkComparison:
         test_text = "wss://relay1.com wss://relay2.com:443 ws://relay3.com/path"
         performance_timer.start()
         for _ in range(500):
-            find_websocket_relay_urls(test_text)
+            find_ws_urls(test_text)
         performance_timer.stop()
         results["url_discovery"] = performance_timer.elapsed / 500
 

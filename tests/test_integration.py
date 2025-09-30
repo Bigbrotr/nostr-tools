@@ -338,13 +338,13 @@ class TestRelayMetadata:
             metadata = await compute_relay_metadata(sample_client, private_key, public_key)
 
             # Validate metadata structure
-            assert hasattr(metadata, "connection_success")
+            assert hasattr(metadata, "nip66_success")
             assert hasattr(metadata, "nip11_success")
             assert hasattr(metadata, "readable")
             assert hasattr(metadata, "writable")
             assert hasattr(metadata, "openable")
 
-            if metadata.connection_success:
+            if metadata.nip66_success:
                 assert metadata.openable is True
                 assert metadata.rtt_open is not None
                 assert metadata.rtt_open > 0
@@ -758,7 +758,7 @@ class TestActionsErrorHandling:
 
             # Should still return metadata object even if NIP-11 fails
             assert metadata.nip11_success is False
-            assert metadata.connection_success is False
+            assert metadata.nip66_success is False
 
     @patch("nostr_tools.actions.actions.fetch_connection")
     async def test_compute_relay_metadata_connection_error(self, mock_fetch_conn, sample_keypair):
@@ -774,7 +774,7 @@ class TestActionsErrorHandling:
         metadata = await compute_relay_metadata(client, private_key, public_key)
 
         # Should still return metadata object even if connection fails
-        assert metadata.connection_success is False
+        assert metadata.nip66_success is False
 
     @patch("aiohttp.ClientSession.get")
     async def test_fetch_nip11_http_error(self, mock_get, sample_client):

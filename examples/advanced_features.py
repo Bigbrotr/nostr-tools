@@ -52,12 +52,10 @@ async def relay_testing_example():
             metadata = await compute_relay_metadata(client, private_key, public_key)
 
             print("  📊 Results:")
-            print(f"    Connection: {'✅' if metadata.connection_success else '❌'}")
+            print(f"    NIP-66: {'✅' if metadata.nip66_success else '❌'}")
             print(f"    NIP-11: {'✅' if metadata.nip11_success else '❌'}")
-            print(f"    Readable: {'✅' if metadata.readable else '❌'}")
-            print(f"    Writable: {'✅' if metadata.writable else '❌'}")
 
-            if metadata.connection_success:
+            if metadata.nip66_success:
                 print(f"    Open RTT: {metadata.rtt_open}ms")
                 if metadata.rtt_read:
                     print(f"    Read RTT: {metadata.rtt_read}ms")

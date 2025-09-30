@@ -14,7 +14,7 @@ from nostr_tools import Event
 from nostr_tools import Filter
 from nostr_tools import Relay
 from nostr_tools import calc_event_id
-from nostr_tools import find_websocket_relay_urls
+from nostr_tools import find_ws_urls
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
 from nostr_tools import parse_connection_response
@@ -139,54 +139,54 @@ class TestBech32Encoding:
 class TestURLDiscovery:
     """Test WebSocket URL discovery and validation."""
 
-    def test_find_websocket_relay_urls_basic(self):
+    def test_find_ws_urls_basic(self):
         """Test basic WebSocket URL discovery."""
         text = "Connect to wss://relay.damus.io for Nostr"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert "wss://relay.damus.io" in urls
 
-    def test_find_websocket_relay_urls_multiple(self):
+    def test_find_ws_urls_multiple(self):
         """Test finding multiple URLs."""
         text = "Use wss://relay1.com:443 or wss://relay2.com:8080"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert len(urls) >= 2
         assert "wss://relay1.com:443" in urls
         assert "wss://relay2.com:8080" in urls
 
-    def test_find_websocket_relay_urls_onion(self):
+    def test_find_ws_urls_onion(self):
         """Test finding .onion URLs."""
         text = "Tor relay: wss://pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert any(".onion" in url for url in urls)
 
-    def test_find_websocket_relay_urls_invalid_port(self):
+    def test_find_ws_urls_invalid_port(self):
         """Test rejection of invalid port numbers."""
         text = "Invalid port: wss://relay.com:99999"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert not any("99999" in url for url in urls)
 
-    def test_find_websocket_relay_urls_invalid_onion(self):
+    def test_find_ws_urls_invalid_onion(self):
         """Test rejection of invalid .onion addresses."""
         text = "Invalid onion: wss://short.onion"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert not any("short.onion" in url for url in urls)
 
-    def test_find_websocket_relay_urls_invalid_tld(self):
+    def test_find_ws_urls_invalid_tld(self):
         """Test rejection of invalid TLDs."""
         text = "Invalid TLD: wss://relay.invalidtld"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert not any("invalidtld" in url for url in urls)
 
-    def test_find_websocket_relay_urls_normalization(self):
+    def test_find_ws_urls_normalization(self):
         """Test URL normalization to wss://."""
         text = "Use ws://relay.com (insecure)"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         assert "wss://relay.com" in urls
 
-    def test_find_websocket_relay_urls_path_handling(self):
+    def test_find_ws_urls_path_handling(self):
         """Test URL path normalization."""
         text = "Relay with path: wss://relay.com/ and wss://relay2.com/path"
-        urls = find_websocket_relay_urls(text)
+        urls = find_ws_urls(text)
         # Should normalize paths
         assert any(url.endswith("relay.com") for url in urls)
         assert any(url.endswith("/path") for url in urls)
@@ -329,7 +329,7 @@ class TestResponseParsing:
     def test_parse_connection_response_valid(self):
         """Test parsing valid connection response."""
         conn_data = {
-            "connection_success": True,
+            "nip66_success": True,
             "rtt_open": 100,
             "rtt_read": 150,
             "rtt_write": 200,
@@ -339,14 +339,14 @@ class TestResponseParsing:
         }
 
         result = parse_connection_response(conn_data)
-        assert result["connection_success"] is True
+        assert result["nip66_success"] is True
         assert result["rtt_open"] == 100
         assert result["openable"] is True
 
     def test_parse_connection_response_invalid(self):
         """Test parsing invalid connection response."""
         result = parse_connection_response("not a dict")
-        assert result["connection_success"] is False
+        assert result["nip66_success"] is False
 
 
 class TestEventCreation:

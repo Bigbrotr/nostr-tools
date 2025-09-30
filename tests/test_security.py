@@ -12,7 +12,7 @@ import pytest
 from nostr_tools import Event
 from nostr_tools import Filter
 from nostr_tools import Relay
-from nostr_tools import find_websocket_relay_urls
+from nostr_tools import find_ws_urls
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
 from nostr_tools import sanitize
@@ -331,7 +331,7 @@ class TestURLSecurityValidation:
 
         for url in malicious_urls:
             # Should not find valid relay URLs in malicious input
-            found_urls = find_websocket_relay_urls(url)
+            found_urls = find_ws_urls(url)
 
             # Either no URLs found, or only valid websocket URLs
             for found_url in found_urls:
@@ -352,7 +352,7 @@ class TestURLSecurityValidation:
         ]
 
         for url in invalid_onions:
-            found_urls = find_websocket_relay_urls(url)
+            found_urls = find_ws_urls(url)
             # Should not validate invalid onion addresses
             assert url not in found_urls
 
