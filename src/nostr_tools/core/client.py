@@ -1,9 +1,5 @@
 """
 WebSocket client for Nostr relays.
-
-This module provides the Client class for establishing WebSocket connections
-to Nostr relays, subscribing to events, publishing events, and managing
-relay communications.
 """
 
 import asyncio
@@ -11,6 +7,8 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
+from dataclasses import field
 from inspect import Traceback
 from typing import Any
 from typing import Optional
@@ -31,62 +29,102 @@ from .relay import Relay
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class Client:
     """
     WebSocket client for connecting to Nostr relays.
 
-    This class provides async methods for subscribing to events, sending events,
+    This class provides async methods for subscribing to events, publishing events,
     and managing connections with proper error handling. It supports both
     clearnet and Tor relays.
 
     Attributes:
-        relay (Relay): The relay to connect to
-        timeout (Optional[int]): Connection timeout in seconds
-        socks5_proxy_url (Optional[str]): SOCKS5 proxy URL for Tor relays
+        relay: The relay to connect to
+        timeout: Connection timeout in seconds
+        socks5_proxy_url: SOCKS5 proxy URL for Tor relays
     """
 
-    def __init__(
-        self,
-        relay: Relay,
-        timeout: Optional[int] = 10,
-        socks5_proxy_url: Optional[str] = None,
-    ):
-        """
-        Initialize the WebSocket client.
+    relay: Relay
+    timeout: Optional[int] = 10
+    socks5_proxy_url: Optional[str] = None
+    _session: Optional[ClientSession] = field(default=None, init=False)
+    _ws: Optional[ClientWebSocketResponse] = field(default=None, init=False)
+    _subscriptions: dict[str, dict[str, Any]] = field(default_factory=dict, init=False)
 
-        Args:
-            relay (Relay): Relay to connect to
-            timeout (Optional[int]): Connection timeout in seconds (default: 10)
-            socks5_proxy_url (Optional[str]): SOCKS5 proxy URL for Tor relays
+    def __post_init__(self) -> None:
+        """Validate Client after initialization."""
+        self.validate()
+
+    def validate(self) -> None:
+        """
+        Validate the Client instance.
 
         Raises:
-            TypeError: If arguments are of incorrect type
-            ValueError: If SOCKS5 proxy URL is required for Tor but not provided
+            TypeError: If any attribute is of incorrect type
+            ValueError: If any attribute has an invalid value
         """
-        # Validate inputs
-        fields_to_validate = [
-            ("relay", relay, Relay, False),
-            ("timeout", timeout, int, True),
-            ("socks5_proxy_url", socks5_proxy_url, str, True),
+        type_checks: list[tuple[str, Any, tuple[type, ...]]] = [
+            ("relay", self.relay, (Relay,)),
+            ("timeout", self.timeout, (int, type(None))),
+            ("socks5_proxy_url", self.socks5_proxy_url, (str, type(None))),
         ]
-        for field_name, field_value, expected_type, optional in fields_to_validate:
-            if optional and field_value is None:
-                continue
-            if not isinstance(field_value, expected_type):
-                type_desc = f"{expected_type.__name__}" + (" or None" if optional else "")
-                raise TypeError(
-                    f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
-                )
 
-        # Additional validation
-        if relay.network == "tor" and not socks5_proxy_url:
+        for field_name, field_value, expected_type in type_checks:
+            if not isinstance(field_value, expected_type):
+                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
+
+        if self.timeout is not None and self.timeout < 0:
+            raise ValueError("timeout must be non-negative")
+        if self.relay.network == "tor" and not self.socks5_proxy_url:
             raise ValueError("socks5_proxy_url is required for Tor relays")
-        self.relay = relay
-        self.timeout = timeout
-        self.socks5_proxy_url = socks5_proxy_url
-        self._session: Optional[ClientSession] = None
-        self._ws: Optional[ClientWebSocketResponse] = None
-        self._subscriptions: dict[str, dict[str, Any]] = {}
+
+    @property
+    def is_valid(self) -> bool:
+        """
+        Check if the Client configuration is valid.
+
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        try:
+            self.validate()
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Client":
+        """
+        Create Client from dictionary.
+
+        Args:
+            data (dict[str, Any]): Dictionary containing client data
+        Returns:
+            Client: An instance of Client
+        Raises:
+            TypeError: If data is not a dictionary
+        """
+        if not isinstance(data, dict):
+            raise TypeError(f"data must be a dict, got {type(data)}")
+
+        return cls(
+            relay=Relay.from_dict(data["relay"]),
+            timeout=data.get("timeout"),
+            socks5_proxy_url=data.get("socks5_proxy_url"),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert Client to dictionary.
+
+        Returns:
+            dict[str, Any]: Dictionary representation of Client
+        """
+        return {
+            "relay": self.relay.to_dict(),
+            "timeout": self.timeout,
+            "socks5_proxy_url": self.socks5_proxy_url,
+        }
 
     async def __aenter__(self) -> "Client":
         """
@@ -119,7 +157,6 @@ class Client:
         Raises:
             RelayConnectionError: If SOCKS5 proxy URL required for Tor but not provided
         """
-        # Choose connector based on network type
         if self.relay.network == "tor":
             if not self.socks5_proxy_url:
                 raise RelayConnectionError("SOCKS5 proxy URL required for Tor relays")
@@ -206,11 +243,15 @@ class Client:
         Send a message to the relay.
 
         Args:
-            message (List[Any]): Message to send as a list (will be JSON encoded)
+            message (list[Any]): Message to send as a list (will be JSON encoded)
 
         Raises:
             RelayConnectionError: If not connected or send fails
+            TypeError: If message is not a list
         """
+        if not isinstance(message, list):
+            raise TypeError(f"message must be a list, got {type(message)}")
+
         if not self._ws:
             raise RelayConnectionError("Not connected to relay")
 
@@ -232,11 +273,15 @@ class Client:
 
         Raises:
             RelayConnectionError: If subscription fails
+            TypeError: If filter is not a Filter instance
         """
+        if not isinstance(filter, Filter):
+            raise TypeError(f"filter must be Filter, got {type(filter)}")
+
         if subscription_id is None:
             subscription_id = str(uuid.uuid4())
 
-        request = ["REQ", subscription_id, filter.filter_dict]
+        request = ["REQ", subscription_id, filter.subscription_filter]
         await self.send_message(request)
 
         self._subscriptions[subscription_id] = {"filter": filter, "active": True}
@@ -249,7 +294,13 @@ class Client:
 
         Args:
             subscription_id (str): Subscription ID to close
+
+        Raises:
+            TypeError: If subscription_id is not a string
         """
+        if not isinstance(subscription_id, str):
+            raise TypeError(f"subscription_id must be str, got {type(subscription_id)}")
+
         if subscription_id in self._subscriptions:
             request = ["CLOSE", subscription_id]
             await self.send_message(request)
@@ -267,7 +318,11 @@ class Client:
 
         Raises:
             RelayConnectionError: If publish fails
+            TypeError: If event is not an Event instance
         """
+        if not isinstance(event, Event):
+            raise TypeError(f"event must be Event, got {type(event)}")
+
         request = ["EVENT", event.to_dict()]
         await self.send_message(request)
 
@@ -292,7 +347,11 @@ class Client:
 
         Raises:
             ValueError: If event kind is not 22242
+            TypeError: If event is not an Event instance
         """
+        if not isinstance(event, Event):
+            raise TypeError(f"event must be Event, got {type(event)}")
+
         if event.kind != 22242:
             raise ValueError("Event kind must be 22242 for authentication")
 
@@ -316,7 +375,7 @@ class Client:
         and yields them as they arrive.
 
         Yields:
-            List[Any]: Messages received from relay
+            list[Any]: Messages received from relay
 
         Raises:
             RelayConnectionError: If connection fails or encounters errors
@@ -363,8 +422,14 @@ class Client:
             subscription_id (str): Subscription to listen to
 
         Yields:
-            List[Any]: Events received from the subscription
+            list[Any]: Events received from the subscription
+
+        Raises:
+            TypeError: If subscription_id is not a string
         """
+        if not isinstance(subscription_id, str):
+            raise TypeError(f"subscription_id must be str, got {type(subscription_id)}")
+
         async for message in self.listen():
             if message[0] == "EVENT" and message[1] == subscription_id:
                 yield message
@@ -391,6 +456,6 @@ class Client:
         Get list of active subscription IDs.
 
         Returns:
-            List[str]: List of subscription IDs that are currently active
+            list[str]: List of subscription IDs that are currently active
         """
         return [sub_id for sub_id, sub_data in self._subscriptions.items() if sub_data["active"]]

@@ -8,7 +8,7 @@ and encoding/decoding utilities.
 The main categories of utilities include:
 
 WebSocket Relay Discovery:
-    - find_websocket_relay_urls: Extract and validate WebSocket URLs from text
+    - find_ws_urls: Extract and validate WebSocket URLs from text
 
 Data Sanitization:
     - sanitize: Remove null bytes and clean data structures recursively
@@ -58,7 +58,7 @@ Example:
 
     >>> # Find relay URLs in text
     >>> text = "Connect to wss://relay.damus.io"
-    >>> relays = find_websocket_relay_urls(text)
+    >>> relays = find_ws_urls(text)
 """
 
 import hashlib
@@ -1609,9 +1609,9 @@ URI_GENERIC_REGEX = r"""
 """
 
 
-def find_websocket_relay_urls(text: str) -> list[str]:
+def find_ws_urls(text: str) -> list[str]:
     """
-    Find all WebSocket relay URLs in the given text.
+    Find all WebSocket URLs in the given text.
 
     This function searches for valid WebSocket URLs (ws:// or wss://) in text,
     validates them according to URI standards, and returns normalized URLs.
@@ -1621,12 +1621,12 @@ def find_websocket_relay_urls(text: str) -> list[str]:
         text (str): The text to search for WebSocket relays
 
     Returns:
-        List[str]: List of valid WebSocket relay URLs found in the text,
+        List[str]: List of valid WebSocket URLs found in the text,
                    normalized to use wss:// scheme
 
     Example:
         >>> text = "Connect to wss://relay.example.com:443 and ws://relay.example.com"
-        >>> find_websocket_relay_urls(text)
+        >>> find_ws_urls(text)
         ['wss://relay.example.com:443', 'wss://relay.example.com']
     """
     result = []
@@ -2063,13 +2063,13 @@ def parse_connection_response(connection_response: Any) -> dict[str, Any]:
 
     Returns:
         dict: Parsed connection metadata with validated fields, or
-              {'connection_success': False} if parsing fails
+              {'nip66_success': False} if parsing fails
     """
     if not isinstance(connection_response, dict):
-        return {"connection_success": False}
+        return {"nip66_success": False}
 
     return {
-        "connection_success": True,
+        "nip66_success": True,
         "rtt_open": connection_response["rtt_open"],
         "rtt_read": connection_response["rtt_read"],
         "rtt_write": connection_response["rtt_write"],

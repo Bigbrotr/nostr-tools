@@ -70,7 +70,7 @@ if _BUILDING_DOCS:
     from .utils.utils import TLDS
     from .utils.utils import URI_GENERIC_REGEX
     from .utils.utils import calc_event_id
-    from .utils.utils import find_websocket_relay_urls
+    from .utils.utils import find_ws_urls
     from .utils.utils import generate_event
     from .utils.utils import generate_keypair
     from .utils.utils import parse_connection_response
@@ -102,7 +102,7 @@ else:
         "to_bech32": ("nostr_tools.utils.utils", "to_bech32"),
         "to_hex": ("nostr_tools.utils.utils", "to_hex"),
         # Network and parsing utilities
-        "find_websocket_relay_urls": ("nostr_tools.utils.utils", "find_websocket_relay_urls"),
+        "find_ws_urls": ("nostr_tools.utils.utils", "find_ws_urls"),
         "sanitize": ("nostr_tools.utils.utils", "sanitize"),
         "parse_nip11_response": ("nostr_tools.utils.utils", "parse_nip11_response"),
         "parse_connection_response": ("nostr_tools.utils.utils", "parse_connection_response"),
@@ -181,7 +181,7 @@ __all__ = [
     "to_bech32",
     "to_hex",
     # Utility functions
-    "find_websocket_relay_urls",
+    "find_ws_urls",
     "sanitize",
     "parse_connection_response",
     "parse_nip11_response",

@@ -6,127 +6,114 @@ Nostr relay configurations, including URL validation and network type
 detection.
 """
 
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
+from typing import Optional
 
-from ..utils import find_websocket_relay_urls
+from ..utils import find_ws_urls
 
 
+@dataclass
 class Relay:
     """
-    Class to represent a NOSTR relay.
+    Nostr relay representation following protocol specifications.
 
     This class handles validation and representation of Nostr relay
     configurations, automatically detecting network type (clearnet or tor)
     based on the URL format.
 
     Attributes:
-        url (str): WebSocket URL of the relay
-        network (str): Network type ("clearnet" or "tor")
+        url: WebSocket URL of the relay
+        network: Network type ("clearnet" or "tor")
+        relay_dict: Internal dictionary representation of the relay
     """
 
-    def __init__(self, url: str) -> None:
-        """
-        Initialize a Relay object with URL validation.
+    url: str
+    network: Optional[str] = field(default=None)
 
-        Args:
-            url (str): WebSocket URL of the relay (ws:// or wss://)
+    def __post_init__(self) -> None:
+        """Validate and build relay dictionary after initialization."""
+        if isinstance(self.url, str):
+            urls = find_ws_urls(self.url)
+            self.url = urls[0] if urls else self.url
+        if self.network is None and isinstance(self.url, str):
+            self.network = self.__network
+        self.validate()
+
+    def validate(self) -> None:
+        """
+        Validate the Relay instance.
 
         Raises:
-            TypeError: If url is not a string
-            ValueError: If url is not a valid clearnet or tor websocket URL
+            TypeError: If any attribute is of incorrect type
+            ValueError: If any attribute has an invalid value
         """
-        if not isinstance(url, str):
-            raise TypeError(f"url must be a str, not {type(url)}")
+        type_checks = [
+            ("url", self.url, str),
+            ("network", self.network, str),
+        ]
+        for field_name, field_value, expected_type in type_checks:
+            if not isinstance(field_value, expected_type):
+                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
 
-        # Validate URL format using utility function
-        urls = find_websocket_relay_urls(url)
-        if not urls:
+        urls = find_ws_urls(self.url)
+        if len(urls) != 1 or urls[0] != self.url:
+            raise ValueError(f"url must be a valid WebSocket URL, got {self.url}")
+
+        if self.network != self.__network:
             raise ValueError(
-                f"Invalid URL format: {url}. Must be a valid clearnet or tor websocket URL."
+                f"network must be '{self.__network}' based on the url, got {self.network}"
             )
 
-        url = urls[0]
-
-        # Determine network type based on domain
-        if url.removeprefix("wss://").partition(":")[0].endswith(".onion"):
-            self.network = "tor"
-        else:
-            self.network = "clearnet"
-
-        self.url = url
-
-    def __repr__(self) -> str:
+    @property
+    def is_valid(self) -> bool:
         """
-        Return string representation of the Relay.
+        Check if the Relay is valid.
 
         Returns:
-            str: String representation showing URL and network type
+            bool: True if valid, False otherwise
         """
-        return f"Relay(url={self.url}, network={self.network})"
-
-    def __eq__(self, other: object) -> bool:
-        """
-        Check equality with another Relay.
-
-        Args:
-            other: Object to compare with
-
-        Returns:
-            bool: True if relays are equal, False otherwise
-        """
-        if not isinstance(other, Relay):
+        try:
+            self.validate()
+            return True
+        except (TypeError, ValueError):
             return False
-        return self.url == other.url and self.network == other.network
 
-    def __ne__(self, other: object) -> bool:
-        """
-        Check inequality with another Relay.
-
-        Args:
-            other: Object to compare with
-
-        Returns:
-            bool: True if relays are not equal, False otherwise
-        """
-        return not self.__eq__(other)
-
-    def __hash__(self) -> int:
-        """
-        Return hash of the relay.
-
-        Returns:
-            int: Hash value for the relay
-        """
-        return hash((self.url, self.network))
+    @property
+    def __network(self) -> str:
+        if not isinstance(self.url, str):
+            raise TypeError(f"url must be str, got {type(self.url)}")
+        if self.url.removeprefix("wss://").partition(":")[0].endswith(".onion"):
+            return "tor"
+        else:
+            return "clearnet"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Relay":
         """
-        Create a Relay object from a dictionary.
+        Create Relay from dictionary.
 
         Args:
-            data (Dict[str, Any]): Dictionary containing relay data with 'url' key
+            data (dict[str, Any]): Dictionary containing relay data with 'url' key
 
         Returns:
-            Relay: Validated Relay object
+            Relay: An instance of Relay
 
         Raises:
             TypeError: If data is not a dictionary
-            ValueError: If 'url' key is missing or invalid
+            ValueError: If 'url' key is missing
         """
         if not isinstance(data, dict):
-            raise TypeError(f"data must be a dict, not {type(data)}")
+            raise TypeError(f"data must be a dict, got {type(data)}")
 
-        if "url" not in data:
-            raise ValueError("data must contain key 'url'")
-
-        return cls(data["url"])
+        return cls(url=data["url"], network=data.get("network"))
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Return the Relay object as a dictionary.
+        Convert Relay to dictionary.
 
         Returns:
-            Dict[str, Any]: Dictionary representation of the relay
+            dict[str, Any]: Dictionary representation of Relay
         """
         return {"url": self.url, "network": self.network}

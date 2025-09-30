@@ -1,302 +1,78 @@
 """
-Nostr relay metadata representation and validation.
-
-This module provides the RelayMetadata class for storing and managing
-comprehensive information about Nostr relays, including connection metrics,
-NIP-11 information document data, and operational capabilities.
+Nostr relay metadata representation with separated NIP data.
 """
 
 import json
+from dataclasses import dataclass
 from typing import Any
 from typing import Optional
+from typing import Union
 
 from .relay import Relay
 
 
+@dataclass
 class RelayMetadata:
     """
-    Class to represent metadata associated with a NOSTR relay.
+    Comprehensive metadata for a NOSTR relay.
 
-    This class stores comprehensive information about a relay including
-    connection metrics, NIP-11 information document data, and operational
-    capabilities like read/write permissions.
+    This class stores metadata about a relay, including information
+    from NIP-11 and NIP-66 standards.
 
     Attributes:
-        relay (Relay): The relay object this metadata describes
-        generated_at (int): Timestamp when metadata was generated
-        connection_success (bool): Whether connection was successful
-        nip11_success (bool): Whether NIP-11 metadata was retrieved
-        openable (Optional[bool]): Whether relay accepts connections
-        readable (Optional[bool]): Whether relay allows reading events
-        writable (Optional[bool]): Whether relay allows writing events
-        rtt_open (Optional[int]): Round-trip time for connection (ms)
-        rtt_read (Optional[int]): Round-trip time for reading (ms)
-        rtt_write (Optional[int]): Round-trip time for writing (ms)
-        name (Optional[str]): Relay name from NIP-11
-        description (Optional[str]): Relay description from NIP-11
-        banner (Optional[str]): Banner image URL from NIP-11
-        icon (Optional[str]): Icon image URL from NIP-11
-        pubkey (Optional[str]): Relay public key from NIP-11
-        contact (Optional[str]): Contact information from NIP-11
-        supported_nips (Optional[List[int]]): List of supported NIPs
-        software (Optional[str]): Software name from NIP-11
-        version (Optional[str]): Software version from NIP-11
-        privacy_policy (Optional[str]): Privacy policy URL from NIP-11
-        terms_of_service (Optional[str]): Terms of service URL from NIP-11
-        limitation (Optional[Dict[str, Any]]): Relay limitations from NIP-11
-        extra_fields (Optional[Dict[str, Any]]): Additional custom fields
+        relay: The relay object this metadata describes
+        nip11: NIP-11 relay information document data
+        nip66: NIP-66 connection and performance data
+        generated_at: Timestamp when the metadata was generated
     """
 
-    def __init__(
-        self,
-        relay: Relay,
-        generated_at: int,
-        connection_success: bool,
-        nip11_success: bool,
-        openable: Optional[bool] = None,
-        readable: Optional[bool] = None,
-        writable: Optional[bool] = None,
-        rtt_open: Optional[int] = None,
-        rtt_read: Optional[int] = None,
-        rtt_write: Optional[int] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        banner: Optional[str] = None,
-        icon: Optional[str] = None,
-        pubkey: Optional[str] = None,
-        contact: Optional[str] = None,
-        supported_nips: Optional[list[int]] = None,
-        software: Optional[str] = None,
-        version: Optional[str] = None,
-        privacy_policy: Optional[str] = None,
-        terms_of_service: Optional[str] = None,
-        limitation: Optional[dict[str, Any]] = None,
-        extra_fields: Optional[dict[str, Any]] = None,
-    ) -> None:
-        """
-        Initialize a RelayMetadata object with comprehensive validation.
+    relay: Relay
+    nip11: "RelayMetadata.Nip11"
+    nip66: "RelayMetadata.Nip66"
+    generated_at: int
 
-        Args:
-            relay (Relay): The relay object
-            generated_at (int): Timestamp when metadata was generated
-            connection_success (bool): Whether connection was successful
-            nip11_success (bool): Whether NIP-11 metadata was retrieved
-            openable (Optional[bool]): Whether relay accepts connections
-            readable (Optional[bool]): Whether relay allows reading
-            writable (Optional[bool]): Whether relay allows writing
-            rtt_open (Optional[int]): Round-trip time for connection (ms)
-            rtt_read (Optional[int]): Round-trip time for reading (ms)
-            rtt_write (Optional[int]): Round-trip time for writing (ms)
-            name (Optional[str]): Relay name
-            description (Optional[str]): Relay description
-            banner (Optional[str]): Banner image URL
-            icon (Optional[str]): Icon image URL
-            pubkey (Optional[str]): Relay public key
-            contact (Optional[str]): Contact information
-            supported_nips (Optional[List[int]]): List of supported NIPs
-            software (Optional[str]): Software name
-            version (Optional[str]): Software version
-            privacy_policy (Optional[str]): Privacy policy URL
-            terms_of_service (Optional[str]): Terms of service URL
-            limitation (Optional[Dict[str, Any]]): Relay limitations
-            extra_fields (Optional[Dict[str, Any]]): Additional custom fields
+    def __post_init__(self) -> None:
+        """Validate RelayMetadata after initialization."""
+        self.validate()
+
+    def validate(self) -> None:
+        """
+        Validate the RelayMetadata instance.
 
         Raises:
-            TypeError: If any argument is of incorrect type
-            ValueError: If any argument has an invalid value
+            TypeError: If any attribute is of incorrect type
+            ValueError: If any attribute has an invalid value
         """
-        # Validate inputs
-        fields_to_validate = [
-            ("relay", relay, Relay, False),
-            ("generated_at", generated_at, int, False),
-            ("connection_success", connection_success, bool, False),
-            ("nip11_success", nip11_success, bool, False),
-            ("openable", openable, bool, True),
-            ("readable", readable, bool, True),
-            ("writable", writable, bool, True),
-            ("rtt_open", rtt_open, int, True),
-            ("rtt_read", rtt_read, int, True),
-            ("rtt_write", rtt_write, int, True),
-            ("name", name, str, True),
-            ("description", description, str, True),
-            ("banner", banner, str, True),
-            ("icon", icon, str, True),
-            ("pubkey", pubkey, str, True),
-            ("contact", contact, str, True),
-            ("supported_nips", supported_nips, list, True),
-            ("software", software, str, True),
-            ("version", version, str, True),
-            ("privacy_policy", privacy_policy, str, True),
-            ("terms_of_service", terms_of_service, str, True),
-            ("limitation", limitation, dict, True),
-            ("extra_fields", extra_fields, dict, True),
+
+        type_checks = [
+            ("relay", self.relay, Relay),
+            ("nip11", self.nip11, RelayMetadata.Nip11),
+            ("nip66", self.nip66, RelayMetadata.Nip66),
+            ("generated_at", self.generated_at, int),
         ]
-        for field_name, field_value, expected_type, optional in fields_to_validate:
-            if optional and field_value is None:
-                continue
+        for field_name, field_value, expected_type in type_checks:
             if not isinstance(field_value, expected_type):
-                type_desc = f"{expected_type.__name__}" + (" or None" if optional else "")
-                raise TypeError(
-                    f"{field_name} must be {type_desc}, not {type(field_value).__name__}"
-                )
+                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
 
-        # Additional validation for specific fields
-        if generated_at < 0:
-            raise ValueError("generated_at must be a non-negative integer")
-        if supported_nips is not None:
-            for nip in supported_nips:
-                if not isinstance(nip, (int, str)):
-                    raise TypeError(f"supported_nips items must be int or str, not {type(nip)}")
+        if self.generated_at < 0:
+            raise ValueError("generated_at must be non-negative")
 
-        # Validate dictionary fields for JSON serializability
-        dict_fields_to_validate = [
-            ("limitation", limitation),
-            ("extra_fields", extra_fields),
-        ]
-        for field_name, field_value in dict_fields_to_validate:
-            if field_value is not None:
-                for key, val in field_value.items():
-                    if not isinstance(key, str):
-                        raise TypeError(f"{field_name} keys must be strings, not {type(key)}")
-                    try:
-                        json.dumps(val)
-                    except Exception as e:
-                        raise ValueError(
-                            f"{field_name} values must be JSON serializable: {e}"
-                        ) from e
+        self.nip11.validate()
+        self.nip66.validate()
 
-        # Assign attributes with conditional logic based on success flags
-        self.relay = relay
-        self.generated_at = generated_at
-        self.connection_success = connection_success
-        self.nip11_success = nip11_success
-
-        # Connection-dependent attributes (only set if connection succeeded)
-        self.openable = openable if connection_success else None
-        self.readable = readable if connection_success else None
-        self.writable = writable if connection_success else None
-        self.rtt_open = rtt_open if connection_success else None
-        self.rtt_read = rtt_read if connection_success else None
-        self.rtt_write = rtt_write if connection_success else None
-
-        # NIP-11 dependent attributes (only set if NIP-11 retrieval succeeded)
-        self.name = name if nip11_success else None
-        self.description = description if nip11_success else None
-        self.banner = banner if nip11_success else None
-        self.icon = icon if nip11_success else None
-        self.pubkey = pubkey if nip11_success else None
-        self.contact = contact if nip11_success else None
-        self.supported_nips = supported_nips if nip11_success else None
-        self.software = software if nip11_success else None
-        self.version = version if nip11_success else None
-        self.privacy_policy = privacy_policy if nip11_success else None
-        self.terms_of_service = terms_of_service if nip11_success else None
-        self.limitation = limitation if nip11_success else None
-        self.extra_fields = extra_fields if nip11_success else None
-
-    def __repr__(self) -> str:
+    @property
+    def is_valid(self) -> bool:
         """
-        Return string representation of RelayMetadata.
+        Check if all metadata is valid.
 
         Returns:
-            str: Comprehensive string representation of all metadata
+            bool: True if valid, False otherwise
         """
-        return (
-            f"RelayMetadata(relay={self.relay}, generated_at={self.generated_at}, "
-            f"connection_success={self.connection_success}, nip11_success={self.nip11_success}, "
-            f"openable={self.openable}, readable={self.readable}, writable={self.writable}, "
-            f"rtt_open={self.rtt_open}, rtt_read={self.rtt_read}, rtt_write={self.rtt_write}, "
-            f"name={self.name}, description={self.description}, banner={self.banner}, icon={self.icon}, "
-            f"pubkey={self.pubkey}, contact={self.contact}, supported_nips={self.supported_nips}, "
-            f"software={self.software}, version={self.version}, privacy_policy={self.privacy_policy}, "
-            f"terms_of_service={self.terms_of_service}, limitation={self.limitation}, "
-            f"extra_fields={self.extra_fields})"
-        )
-
-    def __eq__(self, other: object) -> bool:
-        """
-        Check equality with another RelayMetadata.
-
-        Args:
-            other: Object to compare with
-
-        Returns:
-            bool: True if metadata objects are equal, False otherwise
-        """
-        if not isinstance(other, RelayMetadata):
+        try:
+            self.validate()
+            return True
+        except (TypeError, ValueError):
             return False
-        return (
-            self.relay == other.relay
-            and self.generated_at == other.generated_at
-            and self.connection_success == other.connection_success
-            and self.nip11_success == other.nip11_success
-            and self.openable == other.openable
-            and self.readable == other.readable
-            and self.writable == other.writable
-            and self.rtt_open == other.rtt_open
-            and self.rtt_read == other.rtt_read
-            and self.rtt_write == other.rtt_write
-            and self.name == other.name
-            and self.description == other.description
-            and self.banner == other.banner
-            and self.icon == other.icon
-            and self.pubkey == other.pubkey
-            and self.contact == other.contact
-            and self.supported_nips == other.supported_nips
-            and self.software == other.software
-            and self.version == other.version
-            and self.privacy_policy == other.privacy_policy
-            and self.terms_of_service == other.terms_of_service
-            and self.limitation == other.limitation
-            and self.extra_fields == other.extra_fields
-        )
-
-    def __ne__(self, other: object) -> bool:
-        """
-        Check inequality with another RelayMetadata.
-
-        Args:
-            other: Object to compare with
-
-        Returns:
-            bool: True if metadata objects are not equal, False otherwise
-        """
-        return not self.__eq__(other)
-
-    def __hash__(self) -> int:
-        """
-        Return hash of the RelayMetadata.
-
-        Returns:
-            int: Hash value for the metadata object
-        """
-        return hash(
-            (
-                self.relay,
-                self.generated_at,
-                self.connection_success,
-                self.nip11_success,
-                self.openable,
-                self.readable,
-                self.writable,
-                self.rtt_open,
-                self.rtt_read,
-                self.rtt_write,
-                self.name,
-                self.description,
-                self.banner,
-                self.icon,
-                self.pubkey,
-                self.contact,
-                tuple(self.supported_nips) if self.supported_nips else None,
-                self.software,
-                self.version,
-                self.privacy_policy,
-                self.terms_of_service,
-                frozenset(self.limitation.items()) if self.limitation else None,
-                frozenset(self.extra_fields.items()) if self.extra_fields else None,
-            )
-        )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RelayMetadata":
@@ -304,46 +80,20 @@ class RelayMetadata:
         Create RelayMetadata from dictionary.
 
         Args:
-            data (Dict[str, Any]): Dictionary containing metadata with required keys:
-                relay, generated_at, connection_success, nip11_success
-
+            data (dict[str, Any]): Dictionary containing relay metadata
         Returns:
-            RelayMetadata: New RelayMetadata object
-
+            RelayMetadata: An instance of RelayMetadata
         Raises:
             TypeError: If data is not a dictionary
-            KeyError: If required keys are missing
         """
         if not isinstance(data, dict):
-            raise TypeError(f"data must be a dict, not {type(data)}")
-        required_keys = ["relay", "generated_at", "connection_success", "nip11_success"]
-        for key in required_keys:
-            if key not in data:
-                raise KeyError(f"data must contain key {key}")
+            raise TypeError(f"data must be a dict, got {type(data)}")
+
         return cls(
-            relay=data["relay"],
+            relay=Relay.from_dict(data["relay"]),
+            nip11=cls.Nip11.from_dict(data["nip11"]),
+            nip66=cls.Nip66.from_dict(data["nip66"]),
             generated_at=data["generated_at"],
-            connection_success=data["connection_success"],
-            nip11_success=data["nip11_success"],
-            openable=data.get("openable"),
-            readable=data.get("readable"),
-            writable=data.get("writable"),
-            rtt_open=data.get("rtt_open"),
-            rtt_read=data.get("rtt_read"),
-            rtt_write=data.get("rtt_write"),
-            name=data.get("name"),
-            description=data.get("description"),
-            banner=data.get("banner"),
-            icon=data.get("icon"),
-            pubkey=data.get("pubkey"),
-            contact=data.get("contact"),
-            supported_nips=data.get("supported_nips"),
-            software=data.get("software"),
-            version=data.get("version"),
-            privacy_policy=data.get("privacy_policy"),
-            terms_of_service=data.get("terms_of_service"),
-            limitation=data.get("limitation"),
-            extra_fields=data.get("extra_fields"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -351,30 +101,304 @@ class RelayMetadata:
         Convert RelayMetadata to dictionary.
 
         Returns:
-            Dict[str, Any]: Dictionary representation of the metadata
+            dict[str, Any]: Dictionary representation of RelayMetadata
         """
         return {
-            "relay": self.relay,
+            "relay": self.relay.to_dict(),
+            "nip66": self.nip66.to_dict(),
+            "nip11": self.nip11.to_dict(),
             "generated_at": self.generated_at,
-            "connection_success": self.connection_success,
-            "nip11_success": self.nip11_success,
-            "openable": self.openable,
-            "readable": self.readable,
-            "writable": self.writable,
-            "rtt_open": self.rtt_open,
-            "rtt_read": self.rtt_read,
-            "rtt_write": self.rtt_write,
-            "name": self.name,
-            "description": self.description,
-            "banner": self.banner,
-            "icon": self.icon,
-            "pubkey": self.pubkey,
-            "contact": self.contact,
-            "supported_nips": self.supported_nips,
-            "software": self.software,
-            "version": self.version,
-            "privacy_policy": self.privacy_policy,
-            "terms_of_service": self.terms_of_service,
-            "limitation": self.limitation,
-            "extra_fields": self.extra_fields,
         }
+
+    @dataclass
+    class Nip11:
+        """
+        NIP-11: Relay Information Document
+
+        This module defines the Nip11 class for handling relay information documents
+        as specified in NIP-11. It includes validation, normalization, and conversion
+        to/from dictionary representations.
+
+        Attributes:
+            name: Relay name
+            description: Relay description
+            banner: URL to banner image
+            icon: URL to icon image
+            pubkey: Relay public key
+            contact: Contact information
+            supported_nips: List of supported NIPs
+            software: Software name
+            version: Software version
+            privacy_policy: URL to privacy policy
+            terms_of_service: URL to terms of service
+            limitation: Limitation information
+            extra_fields: Additional fields
+        """
+
+        name: Optional[str] = None
+        description: Optional[str] = None
+        banner: Optional[str] = None
+        icon: Optional[str] = None
+        pubkey: Optional[str] = None
+        contact: Optional[str] = None
+        supported_nips: Optional[list[Union[int, str]]] = None
+        software: Optional[str] = None
+        version: Optional[str] = None
+        privacy_policy: Optional[str] = None
+        terms_of_service: Optional[str] = None
+        limitation: Optional[dict[str, Any]] = None
+        extra_fields: Optional[dict[str, Any]] = None
+
+        def __post_init__(self) -> None:
+            """Normalize and validate data after initialization."""
+            # Normalize empty collections to None
+            if self.supported_nips is not None and self.supported_nips == []:
+                self.supported_nips = None
+            if self.limitation is not None and self.limitation == {}:
+                self.limitation = None
+            if self.extra_fields is not None and self.extra_fields == {}:
+                self.extra_fields = None
+            # Validate the data
+            self.validate()
+
+        def validate(self) -> None:
+            """
+            Validate NIP-11 data.
+
+            Raises:
+                TypeError: If any attribute is of incorrect type
+                ValueError: If any attribute has an invalid value
+            """
+            # Type validation for string fields
+            type_checks: list[tuple[str, Any, Union[type[str], tuple[type, ...]]]] = [
+                ("name", self.name, str),
+                ("description", self.description, str),
+                ("banner", self.banner, str),
+                ("icon", self.icon, str),
+                ("pubkey", self.pubkey, str),
+                ("contact", self.contact, str),
+                ("supported_nips", self.supported_nips, (list, type(None))),
+                ("software", self.software, str),
+                ("version", self.version, str),
+                ("privacy_policy", self.privacy_policy, str),
+                ("terms_of_service", self.terms_of_service, str),
+                ("limitation", self.limitation, (dict, type(None))),
+                ("extra_fields", self.extra_fields, (dict, type(None))),
+            ]
+            for field_name, field_value, expected_type in type_checks:
+                if field_value is not None and not isinstance(field_value, expected_type):
+                    raise TypeError(
+                        f"{field_name} must be {expected_type} or None, got {type(field_value)}"
+                    )
+
+            if self.supported_nips is not None:
+                if len(self.supported_nips) == 0:
+                    raise ValueError("supported_nips must not be an empty list")
+                if not any(isinstance(nip, (int, str)) for nip in self.supported_nips or []):
+                    raise TypeError("supported_nips must be a list of int or str")
+
+            checks = [
+                ("limitation", self.limitation),
+                ("extra_fields", self.extra_fields),
+            ]
+            for field_name, field_value in checks:
+                if field_value is not None:
+                    if len(field_value) == 0:
+                        raise ValueError(f"{field_name} must not be an empty dict")
+                    if not all(isinstance(key, str) for key in field_value.keys()):
+                        raise TypeError(f"All keys in {field_name} must be strings")
+                    try:
+                        json.dumps(field_value)
+                    except (TypeError, ValueError) as e:
+                        raise ValueError(f"{field_name} must be JSON serializable: {e}") from e
+
+        @property
+        def is_valid(self) -> bool:
+            """
+            Check if the NIP-11 data is valid.
+
+            Returns:
+                bool: True if valid, False otherwise
+            """
+            try:
+                self.validate()
+                return True
+            except (TypeError, ValueError):
+                return False
+
+        @classmethod
+        def from_dict(cls, data: dict[str, Any]) -> "RelayMetadata.Nip11":
+            """
+            Create Nip11 from dictionary.
+
+            Args:
+                data (dict[str, Any]): Dictionary containing NIP-11 data
+            Returns:
+                RelayMetadata.Nip11: An instance of Nip11
+            Raises:
+                TypeError: If data is not a dictionary
+            """
+            if not isinstance(data, dict):
+                raise TypeError(f"data must be a dict, got {type(data)}")
+
+            return cls(
+                name=data.get("name"),
+                description=data.get("description"),
+                banner=data.get("banner"),
+                icon=data.get("icon"),
+                pubkey=data.get("pubkey"),
+                contact=data.get("contact"),
+                supported_nips=data.get("supported_nips"),
+                software=data.get("software"),
+                version=data.get("version"),
+                privacy_policy=data.get("privacy_policy"),
+                terms_of_service=data.get("terms_of_service"),
+                limitation=data.get("limitation"),
+                extra_fields=data.get("extra_fields"),
+            )
+
+        def to_dict(self) -> dict[str, Any]:
+            """
+            Convert Nip11 to dictionary.
+
+            Returns:
+                dict[str, Any]: Dictionary representation of Nip11
+            """
+            return {
+                "name": self.name,
+                "description": self.description,
+                "banner": self.banner,
+                "icon": self.icon,
+                "pubkey": self.pubkey,
+                "contact": self.contact,
+                "supported_nips": self.supported_nips,
+                "software": self.software,
+                "version": self.version,
+                "privacy_policy": self.privacy_policy,
+                "terms_of_service": self.terms_of_service,
+                "limitation": self.limitation,
+                "extra_fields": self.extra_fields,
+            }
+
+    @dataclass
+    class Nip66:
+        """
+        NIP-66: Relay Connection and Performance Data
+
+        This module defines the Nip66 class for handling relay connection and performance
+        data as specified in NIP-66. It includes validation, conversion to/from dictionary
+        representations, and a property to check data validity.
+
+        Attributes:
+            openable: Whether the relay is openable
+            readable: Whether the relay is readable
+            writable: Whether the relay is writable
+            rtt_open: Round-trip time to open connection in ms
+            rtt_read: Round-trip time to read data in ms
+            rtt_write: Round-trip time to write data in ms
+        """
+
+        openable: bool = False
+        readable: bool = False
+        writable: bool = False
+        rtt_open: Optional[int] = None
+        rtt_read: Optional[int] = None
+        rtt_write: Optional[int] = None
+
+        def __post_init__(self) -> None:
+            """Validate data after initialization."""
+            self.validate()
+
+        def validate(self) -> None:
+            """
+            Validate NIP-66 data.
+
+            Raises:
+                TypeError: If any attribute is of incorrect type
+                ValueError: If any attribute has an invalid value
+            """
+            type_checks: list[tuple[str, Any, Union[type[bool], tuple[type, ...]]]] = [
+                ("openable", self.openable, bool),
+                ("readable", self.readable, bool),
+                ("writable", self.writable, bool),
+                ("rtt_open", self.rtt_open, (int, type(None))),
+                ("rtt_read", self.rtt_read, (int, type(None))),
+                ("rtt_write", self.rtt_write, (int, type(None))),
+            ]
+
+            for field_name, field_value, expected_type in type_checks:
+                if not isinstance(field_value, expected_type):
+                    raise TypeError(
+                        f"{field_name} must be {expected_type}, got {type(field_value)}"
+                    )
+
+            if (self.readable or self.writable) and not self.openable:
+                raise ValueError("If readable or writable is True, openable must be True")
+
+            checks = [
+                ("openable", "rtt_open", self.openable, self.rtt_open),
+                ("readable", "rtt_read", self.readable, self.rtt_read),
+                ("writable", "rtt_write", self.writable, self.rtt_write),
+            ]
+
+            for flag_name, rtt_name, flag_value, rtt_value in checks:
+                if flag_value and rtt_value is None:
+                    raise ValueError(f"{rtt_name} must be provided when {flag_name} is True")
+                if not flag_value and rtt_value is not None:
+                    raise ValueError(f"{rtt_name} must be None when {flag_name} is False")
+                if flag_value and rtt_value is not None and rtt_value < 0:
+                    raise ValueError(f"{rtt_name} must be non-negative when {flag_name} is True")
+
+        @property
+        def is_valid(self) -> bool:
+            """
+            Check if the NIP-66 data is valid.
+
+            Returns:
+                bool: True if valid, False otherwise
+            """
+            try:
+                self.validate()
+                return True
+            except (TypeError, ValueError):
+                return False
+
+        @classmethod
+        def from_dict(cls, data: dict[str, Any]) -> "RelayMetadata.Nip66":
+            """
+            Create Nip66 from dictionary.
+
+            Args:
+                data (dict[str, Any]): Dictionary containing NIP-66 data
+            Returns:
+                RelayMetadata.Nip66: An instance of Nip66
+            Raises:
+                TypeError: If data is not a dictionary
+            """
+            if not isinstance(data, dict):
+                raise TypeError(f"data must be a dict, got {type(data)}")
+
+            return cls(
+                openable=data.get("openable", False),
+                readable=data.get("readable", False),
+                writable=data.get("writable", False),
+                rtt_open=data.get("rtt_open"),
+                rtt_read=data.get("rtt_read"),
+                rtt_write=data.get("rtt_write"),
+            )
+
+        def to_dict(self) -> dict[str, Any]:
+            """
+            Convert Nip66 to dictionary.
+
+            Returns:
+                dict[str, Any]: Dictionary representation of Nip66
+            """
+            return {
+                "openable": self.openable,
+                "readable": self.readable,
+                "writable": self.writable,
+                "rtt_open": self.rtt_open,
+                "rtt_read": self.rtt_read,
+                "rtt_write": self.rtt_write,
+            }

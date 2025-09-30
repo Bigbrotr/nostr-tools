@@ -6,26 +6,26 @@ including WebSocket relay discovery, data sanitization, cryptographic
 operations, and encoding utilities.
 """
 
-from .utils import TLDS  # Constants
-from .utils import URI_GENERIC_REGEX
+from .utils import TLDS  # Top-level domains
+from .utils import URI_GENERIC_REGEX  # Regex patterns
 from .utils import calc_event_id  # Event operations
-from .utils import find_websocket_relay_urls  # WebSocket relay utilities
-from .utils import generate_event
-from .utils import generate_keypair
-from .utils import parse_connection_response
+from .utils import find_ws_urls  # WebSocket URL discovery
+from .utils import generate_event  # Event generation
+from .utils import generate_keypair  # Keypair generation
+from .utils import parse_connection_response  # Connection response parsing
 from .utils import parse_nip11_response  # Response parsing
 from .utils import sanitize  # Data sanitization
-from .utils import sig_event_id
+from .utils import sig_event_id  # Signature operations
 from .utils import to_bech32  # Encoding utilities
-from .utils import to_hex
+from .utils import to_hex  # Hex conversion
 from .utils import validate_keypair  # Key operations
-from .utils import verify_sig
+from .utils import verify_sig  # Signature verification
 
 __all__ = [
     "TLDS",
     "URI_GENERIC_REGEX",
     "calc_event_id",
-    "find_websocket_relay_urls",
+    "find_ws_urls",
     "generate_event",
     "generate_keypair",
     "parse_connection_response",
