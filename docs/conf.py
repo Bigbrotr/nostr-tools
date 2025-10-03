@@ -81,6 +81,9 @@ autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
 autodoc_class_signature = "mixed"
 
+# Prevent duplicate object warnings by not documenting special members
+autodoc_default_flags = ["members"]
+
 # -- Autosummary configuration -----------------------------------------------
 
 # Generate stubs automatically

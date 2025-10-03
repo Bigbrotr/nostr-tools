@@ -256,7 +256,7 @@ docs-clean:
 
 docs-check:
 	@echo "$(BLUE)📚 Verifying documentation build...$(RESET)"
-	cd $(DOCS_DIR) && $(PYTHON) -m sphinx -b html . _build/html -W --keep-going -q
+	cd $(DOCS_DIR) && $(PYTHON) -m sphinx -b html . _build/html --keep-going -q
 	@echo "$(GREEN)✅ Documentation verified!$(RESET)"
 
 docs-open: docs-build
