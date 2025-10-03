@@ -166,102 +166,103 @@ async def fetch_nip11(client: Client) -> Optional[RelayMetadata.Nip11]:
     # Try both HTTPS and HTTP protocols
     for schema in ["https://", "http://"]:
         try:
-            async with (
-                client.session() as session,
-                session.get(schema + relay_id, headers=headers, timeout=client.timeout) as response,
-            ):
-                if response.status == 200:
-                    data = await response.json()
-                    if not isinstance(data, dict):
-                        return None
+            session = client.session()
+            async with session:
+                async with session.get(
+                    schema + relay_id, headers=headers, timeout=client.timeout
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if not isinstance(data, dict):
+                            return None
 
-                    data_processed = {
-                        "name": data.get("name"),
-                        "description": data.get("description"),
-                        "banner": data.get("banner"),
-                        "icon": data.get("icon"),
-                        "pubkey": data.get("pubkey"),
-                        "contact": data.get("contact"),
-                        "supported_nips": data.get("supported_nips"),
-                        "software": data.get("software"),
-                        "version": data.get("version"),
-                        "privacy_policy": data.get("privacy_policy"),
-                        "terms_of_service": data.get("terms_of_service"),
-                        "limitation": data.get("limitation"),
-                        "extra_fields": {
-                            key: value
-                            for key, value in data.items()
-                            if key
-                            not in [
-                                "name",
-                                "description",
-                                "banner",
-                                "icon",
-                                "pubkey",
-                                "contact",
-                                "supported_nips",
-                                "software",
-                                "version",
-                                "privacy_policy",
-                                "terms_of_service",
-                                "limitation",
-                            ]
-                        },
-                    }
+                        data_processed = {
+                            "name": data.get("name"),
+                            "description": data.get("description"),
+                            "banner": data.get("banner"),
+                            "icon": data.get("icon"),
+                            "pubkey": data.get("pubkey"),
+                            "contact": data.get("contact"),
+                            "supported_nips": data.get("supported_nips"),
+                            "software": data.get("software"),
+                            "version": data.get("version"),
+                            "privacy_policy": data.get("privacy_policy"),
+                            "terms_of_service": data.get("terms_of_service"),
+                            "limitation": data.get("limitation"),
+                            "extra_fields": {
+                                key: value
+                                for key, value in data.items()
+                                if key
+                                not in [
+                                    "name",
+                                    "description",
+                                    "banner",
+                                    "icon",
+                                    "pubkey",
+                                    "contact",
+                                    "supported_nips",
+                                    "software",
+                                    "version",
+                                    "privacy_policy",
+                                    "terms_of_service",
+                                    "limitation",
+                                ]
+                            },
+                        }
 
-                    # Validate string fields
-                    string_fields = [
-                        "name",
-                        "description",
-                        "banner",
-                        "icon",
-                        "pubkey",
-                        "contact",
-                        "software",
-                        "version",
-                        "privacy_policy",
-                        "terms_of_service",
-                    ]
-                    for key in string_fields:
-                        if not (
-                            isinstance(data_processed[key], str) or data_processed[key] is None
-                        ):
-                            data_processed[key] = None
-
-                    # Validate supported_nips list
-                    if not isinstance(data_processed["supported_nips"], list):
-                        data_processed["supported_nips"] = None
-                    else:
-                        data_processed["supported_nips"] = [
-                            nip
-                            for nip in data_processed["supported_nips"]
-                            if isinstance(nip, (int, str))
+                        # Validate string fields
+                        string_fields = [
+                            "name",
+                            "description",
+                            "banner",
+                            "icon",
+                            "pubkey",
+                            "contact",
+                            "software",
+                            "version",
+                            "privacy_policy",
+                            "terms_of_service",
                         ]
+                        for key in string_fields:
+                            if not (
+                                isinstance(data_processed[key], str) or data_processed[key] is None
+                            ):
+                                data_processed[key] = None
 
-                    # Validate dictionary fields
-                    dict_fields = ["limitation", "extra_fields"]
-                    for key in dict_fields:
-                        field_value = data_processed[key]
-                        if not isinstance(field_value, dict):
-                            data_processed[key] = None
+                        # Validate supported_nips list
+                        if not isinstance(data_processed["supported_nips"], list):
+                            data_processed["supported_nips"] = None
                         else:
-                            tmp = {}
-                            for dict_key, value in field_value.items():
-                                if isinstance(dict_key, str):
-                                    try:
-                                        json.dumps(value)
-                                        tmp[dict_key] = value
-                                    except (TypeError, ValueError):
-                                        continue
-                            data_processed[key] = tmp
+                            data_processed["supported_nips"] = [
+                                nip
+                                for nip in data_processed["supported_nips"]
+                                if isinstance(nip, (int, str))
+                            ]
 
-                    for value in data_processed.values():
-                        if value is not None:
-                            return RelayMetadata.Nip11.from_dict(data_processed)
-                else:
-                    logger.debug(
-                        f"NIP-11 not found at {schema + relay_id} (status {response.status})"
-                    )
+                        # Validate dictionary fields
+                        dict_fields = ["limitation", "extra_fields"]
+                        for key in dict_fields:
+                            field_value = data_processed[key]
+                            if not isinstance(field_value, dict):
+                                data_processed[key] = None
+                            else:
+                                tmp = {}
+                                for dict_key, value in field_value.items():
+                                    if isinstance(dict_key, str):
+                                        try:
+                                            json.dumps(value)
+                                            tmp[dict_key] = value
+                                        except (TypeError, ValueError):
+                                            continue
+                                data_processed[key] = tmp
+
+                        for value in data_processed.values():
+                            if value is not None:
+                                return RelayMetadata.Nip11.from_dict(data_processed)
+                    else:
+                        logger.debug(
+                            f"NIP-11 not found at {schema + relay_id} (status {response.status})"
+                        )
                     return None
         except (ClientError, TimeoutError) as e:
             logger.debug(f"Failed to fetch NIP-11 from {schema + relay_id}: {e}")
@@ -530,9 +531,9 @@ async def fetch_relay_metadata(
 
     # Combine all metadata into comprehensive object
     data = {
-        "relay": client.relay,
-        "nip11": nip11,
-        "nip66": nip66,
+        "relay": client.relay.to_dict() if client.relay else None,
+        "nip11": nip11.to_dict() if nip11 else None,
+        "nip66": nip66.to_dict() if nip66 else None,
         "generated_at": int(time.time()),
     }
 

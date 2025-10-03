@@ -48,13 +48,11 @@ class RelayMetadata:
         if self.nip66 is not None:
             self.nip66.validate()
 
-        type_checks = [
-            ("relay", self.relay, Relay),
-            ("generated_at", self.generated_at, int),
-        ]
-        for field_name, field_value, expected_type in type_checks:
-            if not isinstance(field_value, expected_type):
-                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
+        # Type validation - use class name comparison for compatibility with lazy loading
+        if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
+            raise TypeError(f"relay must be Relay, got {type(self.relay)}")
+        if not isinstance(self.generated_at, int):
+            raise TypeError(f"generated_at must be int, got {type(self.generated_at)}")
 
         if self.generated_at < 0:
             raise ValueError("generated_at must be non-negative")
@@ -90,8 +88,12 @@ class RelayMetadata:
 
         return cls(
             relay=Relay.from_dict(data["relay"]),
-            nip11=cls.Nip11.from_dict(data["nip11"]) if "nip11" in data else None,
-            nip66=cls.Nip66.from_dict(data["nip66"]) if "nip66" in data else None,
+            nip11=cls.Nip11.from_dict(data["nip11"])
+            if "nip11" in data and data["nip11"] is not None
+            else None,
+            nip66=cls.Nip66.from_dict(data["nip66"])
+            if "nip66" in data and data["nip66"] is not None
+            else None,
             generated_at=data["generated_at"],
         )
 

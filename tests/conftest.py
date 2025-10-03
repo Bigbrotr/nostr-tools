@@ -1,261 +1,221 @@
 """
-Pytest configuration and shared fixtures for nostr-tools tests.
+Shared pytest fixtures for nostr-tools tests.
 
-This file contains pytest configuration, markers, and shared fixtures
-that are used across multiple test files.
+This module provides reusable fixtures for testing the nostr-tools library,
+including mock data, keypairs, events, and client configurations.
 """
 
-import json
 import time
-from typing import Optional
+from typing import Any
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 
 import pytest
 
-from nostr_tools import Client
-from nostr_tools import Event
-from nostr_tools import Filter
-from nostr_tools import Relay
-from nostr_tools import generate_event
-from nostr_tools import generate_keypair
-from tests import SKIP_INTEGRATION
-from tests import TEST_RELAY_URL
-from tests import TEST_TIMEOUT
-
-
-# Pytest configuration
-def pytest_configure(config):
-    """Configure pytest with custom markers."""
-    config.addinivalue_line("markers", "unit: Fast unit tests")
-    config.addinivalue_line("markers", "integration: Integration tests requiring network")
-    config.addinivalue_line("markers", "slow: Slow tests that take time to complete")
-    config.addinivalue_line("markers", "security: Security-focused tests")
-
-
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add markers automatically."""
-    for item in items:
-        # Add unit marker to non-integration tests
-        if "test_integration" not in item.nodeid and "integration" not in item.keywords:
-            item.add_marker(pytest.mark.unit)
-
-        # Add slow marker to proof-of-work and network tests
-        if any(
-            keyword in item.name.lower()
-            for keyword in ["pow", "proof_of_work", "stream", "network"]
-        ):
-            item.add_marker(pytest.mark.slow)
-
-        # Add security marker to cryptographic tests
-        if any(keyword in item.name.lower() for keyword in ["key", "sign", "verify", "crypto"]):
-            item.add_marker(pytest.mark.security)
-
-
-# Skip integration tests if requested
-skip_integration = pytest.mark.skipif(
-    SKIP_INTEGRATION, reason="Integration tests skipped (NOSTR_SKIP_INTEGRATION=true)"
-)
+# ============================================================================
+# Test Data Fixtures
+# ============================================================================
 
 
 @pytest.fixture
-def sample_keypair() -> tuple[str, str]:
-    """Generate a sample key pair for testing."""
+def valid_keypair() -> tuple[str, str]:
+    """Generate a valid keypair for testing."""
+    from nostr_tools import generate_keypair
+
     return generate_keypair()
 
 
 @pytest.fixture
-def sample_event_data(sample_keypair) -> dict:
-    """Generate sample event data for testing."""
-    private_key, public_key = sample_keypair
+def valid_private_key(valid_keypair: tuple[str, str]) -> str:
+    """Provide a valid private key."""
+    return valid_keypair[0]
+
+
+@pytest.fixture
+def valid_public_key(valid_keypair: tuple[str, str]) -> str:
+    """Provide a valid public key."""
+    return valid_keypair[1]
+
+
+@pytest.fixture
+def valid_event_dict(valid_private_key: str, valid_public_key: str) -> dict[str, Any]:
+    """Generate a valid event dictionary for testing."""
+    from nostr_tools import generate_event
+
     return generate_event(
-        private_key=private_key,
-        public_key=public_key,
+        private_key=valid_private_key,
+        public_key=valid_public_key,
         kind=1,
         tags=[["t", "test"]],
         content="Test event content",
+        created_at=int(time.time()),
     )
 
 
 @pytest.fixture
-def sample_event(sample_event_data) -> Event:
-    """Create a sample Event object for testing."""
-    return Event.from_dict(sample_event_data)
+def valid_event(valid_event_dict: dict[str, Any]) -> Any:
+    """Create a valid Event instance for testing."""
+    from nostr_tools.core.event import Event
+
+    return Event.from_dict(valid_event_dict)
 
 
 @pytest.fixture
-def sample_relay() -> Relay:
-    """Create a sample Relay object for testing."""
-    return Relay(TEST_RELAY_URL)
-
-
-@pytest.fixture
-def sample_client(sample_relay) -> Client:
-    """Create a sample Client object for testing."""
-    return Client(sample_relay, timeout=TEST_TIMEOUT)
-
-
-@pytest.fixture
-def sample_filter() -> Filter:
-    """Create a sample Filter object for testing."""
-    return Filter(kinds=[1], limit=10)
-
-
-@pytest.fixture
-def mock_websocket():
-    """Create a mock WebSocket for testing."""
-    mock_ws = AsyncMock()
-    mock_ws.closed = False
-    mock_ws.receive = AsyncMock()
-    mock_ws.send_str = AsyncMock()
-    mock_ws.close = AsyncMock()
-    return mock_ws
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock aiohttp session for testing."""
-    mock_session = AsyncMock()
-    mock_session.ws_connect = AsyncMock()
-    mock_session.get = AsyncMock()
-    mock_session.close = AsyncMock()
-    return mock_session
-
-
-@pytest.fixture
-def fixed_time():
-    """Provide a fixed timestamp for deterministic testing."""
-    return 1640995200  # 2022-01-01 00:00:00 UTC
-
-
-@pytest.fixture
-def sample_metadata_event(sample_keypair, fixed_time) -> dict:
-    """Generate a sample metadata event (kind 0)."""
-    private_key, public_key = sample_keypair
-    metadata = {
-        "name": "Test User",
-        "about": "A test user for nostr-tools",
-        "picture": "https://example.com/avatar.jpg",
-    }
-
-    return generate_event(
-        private_key=private_key,
-        public_key=public_key,
-        kind=0,
-        tags=[],
-        content=json.dumps(metadata),
-        created_at=fixed_time,
-    )
-
-
-@pytest.fixture
-def sample_tags() -> list:
-    """Provide sample tags for testing."""
-    return [
-        ["t", "nostr"],
-        ["t", "python"],
-        ["p", "a" * 64],
-        ["e", "a" * 64],
-    ]
-
-
-@pytest.fixture
-def invalid_event_data() -> dict:
-    """Provide invalid event data for error testing."""
+def valid_filter_dict() -> dict[str, Any]:
+    """Provide a valid filter dictionary."""
     return {
-        "id": "invalid_id",
-        "pubkey": "invalid_pubkey",
-        "created_at": -1,
-        "kind": 999999,
-        "tags": "invalid_tags",
-        "content": "test content",
-        "sig": "invalid_signature",
+        "ids": ["a" * 64],
+        "authors": ["b" * 64],
+        "kinds": [1, 2],
+        "since": 1000000,
+        "until": 2000000,
+        "limit": 10,
+        "tags": {"e": ["event1", "event2"]},
     }
 
 
-def create_mock_nip11_response():
-    """Create a mock NIP-11 response for testing."""
+@pytest.fixture
+def valid_filter(valid_filter_dict: dict[str, Any]) -> Any:
+    """Create a valid Filter instance for testing."""
+    from nostr_tools.core.filter import Filter
+
+    return Filter.from_dict(valid_filter_dict)
+
+
+@pytest.fixture
+def valid_relay_url() -> str:
+    """Provide a valid relay URL."""
+    return "wss://relay.damus.io"
+
+
+@pytest.fixture
+def valid_relay(valid_relay_url: str) -> Any:
+    """Create a valid Relay instance for testing."""
+    from nostr_tools.core.relay import Relay
+
+    return Relay(url=valid_relay_url)
+
+
+@pytest.fixture
+def tor_relay_url() -> str:
+    """Provide a valid Tor relay URL."""
+    return "wss://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion"
+
+
+@pytest.fixture
+def tor_relay(tor_relay_url: str) -> Any:
+    """Create a valid Tor Relay instance for testing."""
+    from nostr_tools.core.relay import Relay
+
+    return Relay(url=tor_relay_url)
+
+
+@pytest.fixture
+def socks5_proxy_url() -> str:
+    """Provide a SOCKS5 proxy URL for Tor testing."""
+    return "socks5://localhost:9050"
+
+
+@pytest.fixture
+def valid_client(valid_relay: Any) -> Any:
+    """Create a valid Client instance for testing."""
+    from nostr_tools.core.client import Client
+
+    return Client(relay=valid_relay, timeout=10)
+
+
+@pytest.fixture
+def tor_client(tor_relay: Any, socks5_proxy_url: str) -> Any:
+    """Create a valid Tor Client instance for testing."""
+    from nostr_tools.core.client import Client
+
+    return Client(relay=tor_relay, timeout=10, socks5_proxy_url=socks5_proxy_url)
+
+
+@pytest.fixture
+def valid_nip11_dict() -> dict[str, Any]:
+    """Provide a valid NIP-11 metadata dictionary."""
     return {
         "name": "Test Relay",
-        "description": "A test relay for nostr-tools",
+        "description": "A test relay for unit tests",
         "pubkey": "a" * 64,
         "contact": "test@example.com",
-        "supported_nips": [1, 2, 9, 11, 12, 15, 16, 20, 22],
+        "supported_nips": [1, 2, 11],
         "software": "test-relay",
         "version": "1.0.0",
-        "limitation": {
-            "max_message_length": 16384,
-            "max_subscriptions": 20,
-            "max_filters": 100,
-            "max_limit": 5000,
-            "max_subid_length": 100,
-            "min_prefix": 4,
-            "max_event_tags": 100,
-            "max_content_length": 8196,
-            "min_pow_difficulty": 0,
-            "auth_required": False,
-            "payment_required": False,
-        },
+        "limitation": {"max_message_length": 16384, "max_subscriptions": 20},
     }
 
 
-# Performance testing utilities
 @pytest.fixture
-def performance_timer():
-    """Utility for measuring test performance."""
-
-    class Timer:
-        def __init__(self):
-            self.start_time = None
-            self.end_time = None
-
-        def start(self):
-            self.start_time = time.perf_counter()
-
-        def stop(self):
-            self.end_time = time.perf_counter()
-
-        @property
-        def elapsed(self):
-            if self.start_time and self.end_time:
-                return self.end_time - self.start_time
-            return None
-
-    return Timer()
+def valid_nip66_dict() -> dict[str, Any]:
+    """Provide a valid NIP-66 metadata dictionary."""
+    return {
+        "openable": True,
+        "readable": True,
+        "writable": True,
+        "rtt_open": 100,
+        "rtt_read": 50,
+        "rtt_write": 75,
+    }
 
 
-# Test data generators
-def generate_test_events(count: int, keypair: Optional[tuple[str, str]] = None) -> list:
-    """Generate multiple test events."""
-    if keypair is None:
-        keypair = generate_keypair()
-
-    private_key, public_key = keypair
-    events = []
-
-    for i in range(count):
-        event_data = generate_event(
-            private_key=private_key,
-            public_key=public_key,
-            kind=1,
-            tags=[["t", f"test{i}"]],
-            content=f"Test event {i}",
-        )
-        events.append(Event.from_dict(event_data))
-
-    return events
+@pytest.fixture
+def valid_relay_metadata_dict(
+    valid_relay: Any, valid_nip11_dict: dict[str, Any], valid_nip66_dict: dict[str, Any]
+) -> dict[str, Any]:
+    """Provide a valid RelayMetadata dictionary."""
+    return {
+        "relay": valid_relay.to_dict(),
+        "nip11": valid_nip11_dict,
+        "nip66": valid_nip66_dict,
+        "generated_at": int(time.time()),
+    }
 
 
-def generate_hex_string(length: int) -> str:
-    """Generate a hex string of specified length."""
-    import secrets
-
-    return secrets.token_hex(length // 2)
+# ============================================================================
+# Mock Fixtures
+# ============================================================================
 
 
-# Add module-level exports
-__all__ = [
-    "create_mock_nip11_response",
-    "generate_hex_string",
-    "generate_test_events",
-    "skip_integration",
-]
+@pytest.fixture
+def mock_websocket() -> AsyncMock:
+    """Create a mock WebSocket connection."""
+    ws = AsyncMock()
+    ws.closed = False
+    ws.send_str = AsyncMock()
+    ws.close = AsyncMock()
+    ws.receive = AsyncMock()
+    return ws
+
+
+@pytest.fixture
+def mock_session(mock_websocket: AsyncMock) -> AsyncMock:
+    """Create a mock aiohttp session."""
+    session = AsyncMock()
+    session.ws_connect = AsyncMock(return_value=mock_websocket)
+    session.close = AsyncMock()
+    session.get = MagicMock()
+    return session
+
+
+# ============================================================================
+# Async Test Utilities
+# ============================================================================
+
+
+# Event loop fixture removed - using pytest-asyncio default
+
+
+# ============================================================================
+# Test Markers Configuration
+# ============================================================================
+
+
+def pytest_configure(config):
+    """Configure custom markers."""
+    config.addinivalue_line("markers", "unit: mark test as a unit test")
+    config.addinivalue_line("markers", "integration: mark test as an integration test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
+    config.addinivalue_line("markers", "security: mark test as security related")
+    config.addinivalue_line("markers", "benchmark: mark test as a performance benchmark")

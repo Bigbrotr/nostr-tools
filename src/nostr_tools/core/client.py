@@ -63,15 +63,15 @@ class Client:
             TypeError: If any attribute is of incorrect type
             ValueError: If any attribute has an invalid value
         """
-        type_checks: list[tuple[str, Any, tuple[type, ...]]] = [
-            ("relay", self.relay, (Relay,)),
-            ("timeout", self.timeout, (int, type(None))),
-            ("socks5_proxy_url", self.socks5_proxy_url, (str, type(None))),
-        ]
-
-        for field_name, field_value, expected_type in type_checks:
-            if not isinstance(field_value, expected_type):
-                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
+        # Type validation - use class name comparison for compatibility with lazy loading
+        if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
+            raise TypeError(f"relay must be Relay, got {type(self.relay)}")
+        if self.timeout is not None and not isinstance(self.timeout, int):
+            raise TypeError(f"timeout must be int or None, got {type(self.timeout)}")
+        if self.socks5_proxy_url is not None and not isinstance(self.socks5_proxy_url, str):
+            raise TypeError(
+                f"socks5_proxy_url must be str or None, got {type(self.socks5_proxy_url)}"
+            )
 
         if self.timeout is not None and self.timeout < 0:
             raise ValueError("timeout must be non-negative")
@@ -275,7 +275,7 @@ class Client:
             RelayConnectionError: If subscription fails
             TypeError: If filter is not a Filter instance
         """
-        if not isinstance(filter, Filter):
+        if not (isinstance(filter, Filter) or type(filter).__name__ == "Filter"):
             raise TypeError(f"filter must be Filter, got {type(filter)}")
 
         if subscription_id is None:
@@ -320,7 +320,7 @@ class Client:
             RelayConnectionError: If publish fails
             TypeError: If event is not an Event instance
         """
-        if not isinstance(event, Event):
+        if not (isinstance(event, Event) or type(event).__name__ == "Event"):
             raise TypeError(f"event must be Event, got {type(event)}")
 
         request = ["EVENT", event.to_dict()]
@@ -349,7 +349,7 @@ class Client:
             ValueError: If event kind is not 22242
             TypeError: If event is not an Event instance
         """
-        if not isinstance(event, Event):
+        if not (isinstance(event, Event) or type(event).__name__ == "Event"):
             raise TypeError(f"event must be Event, got {type(event)}")
 
         if event.kind != 22242:
