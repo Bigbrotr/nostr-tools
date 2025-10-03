@@ -18,23 +18,75 @@ from ..utils import find_ws_urls
 @dataclass
 class Relay:
     """
-    Nostr relay representation following protocol specifications.
+    Nostr relay configuration and representation.
 
     This class handles validation and representation of Nostr relay
-    configurations, automatically detecting network type (clearnet or tor)
-    based on the URL format.
+    configurations. It automatically detects and validates network type
+    (clearnet or Tor) based on the WebSocket URL format. The URL is
+    validated and normalized upon initialization.
 
     Attributes:
-        url: WebSocket URL of the relay
-        network: Network type ("clearnet" or "tor")
-        relay_dict: Internal dictionary representation of the relay
+        url (str): WebSocket URL of the relay (wss:// or ws://).
+            Must be a valid WebSocket URL. Automatically normalized.
+            Examples: "wss://relay.damus.io", "wss://nostr.wine"
+        network (Optional[str]): Network type, automatically detected from URL.
+            - "clearnet" for standard internet relays
+            - "tor" for .onion Tor hidden service relays
+            Detected automatically if not provided.
+
+    Examples:
+        Create a clearnet relay:
+
+        >>> relay = Relay("wss://relay.damus.io")
+        >>> print(relay.network)
+        clearnet
+
+        Create a Tor relay:
+
+        >>> tor_relay = Relay("wss://relay.onion")
+        >>> print(tor_relay.network)
+        tor
+
+        URL is normalized automatically:
+
+        >>> relay = Relay("relay.damus.io")  # Missing wss://
+        >>> print(relay.url)
+        wss://relay.damus.io
+
+        Create from dictionary:
+
+        >>> relay_data = {"url": "wss://relay.damus.io"}
+        >>> relay = Relay.from_dict(relay_data)
+
+        Validate a relay:
+
+        >>> try:
+        ...     relay.validate()
+        ...     print("Relay is valid")
+        ... except RelayValidationError as e:
+        ...     print(f"Validation failed: {e}")
+
+    Raises:
+        TypeError: If url is not a string or network type is invalid.
+        RelayValidationError: If URL is not a valid WebSocket URL or
+            network type doesn't match the URL.
     """
 
     url: str
     network: Optional[str] = field(default=None)
 
     def __post_init__(self) -> None:
-        """Validate and build relay dictionary after initialization."""
+        """
+        Validate and normalize the Relay instance after initialization.
+
+        This method is automatically called after the dataclass is created.
+        It normalizes the URL, auto-detects the network type if not provided,
+        and validates the relay configuration.
+
+        Raises:
+            TypeError: If url or network have incorrect types.
+            RelayValidationError: If URL or network configuration is invalid.
+        """
         if isinstance(self.url, str):
             urls = find_ws_urls(self.url)
             self.url = urls[0] if urls else self.url
@@ -44,11 +96,25 @@ class Relay:
 
     def validate(self) -> None:
         """
-        Validate the Relay instance.
+        Validate the Relay instance against protocol requirements.
+
+        Performs comprehensive validation including:
+        - Type checking for url and network attributes
+        - WebSocket URL format validation (must be ws:// or wss://)
+        - Network type consistency with URL (.onion for Tor)
+        - URL normalization and format compliance
 
         Raises:
-            TypeError: If any attribute is of incorrect type
-            RelayValidationError: If any attribute has an invalid value
+            TypeError: If url is not a string or network is not a string.
+            RelayValidationError: If url is not a valid WebSocket URL,
+                or network type doesn't match the URL pattern.
+
+        Examples:
+            >>> relay = Relay("wss://relay.damus.io")
+            >>> relay.validate()  # Passes validation
+
+            >>> invalid_relay = Relay("https://not-a-websocket.com")
+            >>> invalid_relay.validate()  # Raises RelayValidationError
         """
         type_checks = [
             ("url", self.url, str),
@@ -70,10 +136,22 @@ class Relay:
     @property
     def is_valid(self) -> bool:
         """
-        Check if the Relay is valid.
+        Check if the Relay is valid without raising exceptions.
+
+        This property attempts validation and returns True if successful,
+        False otherwise. Unlike validate(), this method does not raise
+        exceptions, making it safe for conditional checks.
 
         Returns:
-            bool: True if valid, False otherwise
+            bool: True if the relay passes all validation checks,
+                False if validation fails for any reason.
+
+        Examples:
+            >>> relay = Relay("wss://relay.damus.io")
+            >>> if relay.is_valid:
+            ...     client = Client(relay)
+            ... else:
+            ...     print("Invalid relay configuration")
         """
         try:
             self.validate()
@@ -93,17 +171,43 @@ class Relay:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Relay":
         """
-        Create Relay from dictionary.
+        Create a Relay instance from a dictionary representation.
+
+        This class method constructs a Relay from a dictionary, typically
+        used for deserialization from JSON or database records.
 
         Args:
-            data (dict[str, Any]): Dictionary containing relay data with 'url' key
+            data (dict[str, Any]): Dictionary containing relay configuration.
+                Required keys:
+                - url (str): WebSocket URL of the relay
+                Optional keys:
+                - network (str): Network type (auto-detected if omitted)
 
         Returns:
-            Relay: An instance of Relay
+            Relay: A new Relay instance created from the dictionary data.
 
         Raises:
-            TypeError: If data is not a dictionary
-            ValueError: If 'url' key is missing
+            TypeError: If data is not a dictionary.
+            KeyError: If required 'url' key is missing.
+            RelayValidationError: If the resulting relay fails validation.
+
+        Examples:
+            Create from configuration:
+
+            >>> config = {"url": "wss://relay.damus.io"}
+            >>> relay = Relay.from_dict(config)
+
+            Parse from JSON:
+
+            >>> import json
+            >>> json_str = '{"url": "wss://relay.damus.io", "network": "clearnet"}'
+            >>> relay_dict = json.loads(json_str)
+            >>> relay = Relay.from_dict(relay_dict)
+
+            Load from database:
+
+            >>> relay_data = db.relays.find_one({"name": "damus"})
+            >>> relay = Relay.from_dict(relay_data)
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, got {type(data)}")
@@ -112,9 +216,36 @@ class Relay:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert Relay to dictionary.
+        Convert the Relay object to a dictionary representation.
+
+        This method serializes the Relay instance into a dictionary format
+        suitable for JSON encoding, storage, or transmission.
 
         Returns:
-            dict[str, Any]: Dictionary representation of Relay
+            dict[str, Any]: Dictionary containing relay fields with keys:
+                - url (str): WebSocket URL of the relay
+                - network (str): Network type ("clearnet" or "tor")
+
+        Examples:
+            Serialize to JSON:
+
+            >>> relay = Relay("wss://relay.damus.io")
+            >>> relay_dict = relay.to_dict()
+            >>> import json
+            >>> json_str = json.dumps(relay_dict)
+            >>> print(json_str)
+            {"url": "wss://relay.damus.io", "network": "clearnet"}
+
+            Store in database:
+
+            >>> relay_data = relay.to_dict()
+            >>> db.relays.insert_one(relay_data)
+
+            Create client configuration:
+
+            >>> config = {
+            ...     "relay": relay.to_dict(),
+            ...     "timeout": 10
+            ... }
         """
         return {"url": self.url, "network": self.network}

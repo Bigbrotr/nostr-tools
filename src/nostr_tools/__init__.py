@@ -211,12 +211,52 @@ __all__ = [
 
 
 def __dir__() -> list[str]:
-    """Return available attributes for tab completion and introspection."""
+    """
+    Return available attributes for tab completion and introspection.
+
+    This function provides the list of public symbols for the module,
+    used by Python's dir() function and IDE auto-completion.
+
+    Returns:
+        list[str]: Sorted list of all public attribute names exported
+            by the nostr_tools package.
+
+    Examples:
+        >>> import nostr_tools
+        >>> attrs = dir(nostr_tools)
+        >>> 'Event' in attrs
+        True
+        >>> 'generate_keypair' in attrs
+        True
+    """
     return sorted(__all__)
 
 
 def get_info() -> dict[str, str]:
-    """Get package information."""
+    """
+    Get package metadata and version information.
+
+    Returns comprehensive information about the nostr-tools package including
+    name, version, author, and description.
+
+    Returns:
+        dict[str, str]: Dictionary containing package metadata with keys:
+            - name: Package name ("nostr-tools")
+            - version: Current package version
+            - author: Package author
+            - email: Author contact email
+            - description: Brief package description
+
+    Examples:
+        >>> import nostr_tools
+        >>> info = nostr_tools.get_info()
+        >>> print(f"Using {info['name']} version {info['version']}")
+        Using nostr-tools version 1.0.0
+
+        >>> info = nostr_tools.get_info()
+        >>> for key, value in info.items():
+        ...     print(f"{key}: {value}")
+    """
     return {
         "name": "nostr-tools",
         "version": __version__,

@@ -1607,23 +1607,65 @@ URI_GENERIC_REGEX = r"""
 
 def find_ws_urls(text: str) -> list[str]:
     """
-    Find all WebSocket URLs in the given text.
+    Find and validate all WebSocket URLs in the given text.
 
     This function searches for valid WebSocket URLs (ws:// or wss://) in text,
-    validates them according to URI standards, and returns normalized URLs.
-    It supports both clearnet and Tor (.onion) domains.
+    validates them according to RFC 3986 URI standards, and returns normalized
+    URLs. It supports both clearnet domains and Tor .onion hidden services.
+    All URLs are normalized to use the wss:// (secure WebSocket) scheme.
+
+    Validation includes:
+    - WebSocket scheme (ws:// or wss://)
+    - Valid domain name or IP address
+    - Valid port range (0-65535) if specified
+    - Proper .onion address format for Tor (16 or 56 char base32)
+    - Valid TLD for clearnet domains
 
     Args:
-        text (str): The text to search for WebSocket relays
+        text (str): The text to search for WebSocket relay URLs.
+            Can contain multiple URLs mixed with other text.
 
     Returns:
-        List[str]: List of valid WebSocket URLs found in the text,
-                   normalized to use wss:// scheme
+        list[str]: List of valid WebSocket URLs found in the text.
+            All URLs are normalized to use wss:// scheme and lowercase domains.
+            Returns empty list if no valid URLs found.
 
-    Example:
-        >>> text = "Connect to wss://relay.example.com:443 and ws://relay.example.com"
-        >>> find_ws_urls(text)
-        ['wss://relay.example.com:443', 'wss://relay.example.com']
+    Examples:
+        Extract relay URLs from text:
+
+        >>> text = "Connect to wss://relay.damus.io or ws://relay.nostr.band"
+        >>> urls = find_ws_urls(text)
+        >>> print(urls)
+        ['wss://relay.damus.io', 'wss://relay.nostr.band']
+
+        Normalize URLs to wss:
+
+        >>> text = "Use ws://relay.example.com:8080"
+        >>> urls = find_ws_urls(text)
+        >>> print(urls)
+        ['wss://relay.example.com:8080']
+
+        Extract Tor relay:
+
+        >>> text = "Tor relay: wss://somevalidonionaddress.onion"
+        >>> urls = find_ws_urls(text)
+
+        Filter invalid URLs:
+
+        >>> text = "wss://relay.damus.io https://example.com ws://invalid..domain"
+        >>> urls = find_ws_urls(text)
+        >>> print(urls)
+        ['wss://relay.damus.io']  # Only WebSocket URLs with valid format
+
+        Parse relay configuration:
+
+        >>> config_text = '''
+        ... Primary: wss://relay.damus.io
+        ... Backup: wss://nostr.wine
+        ... '''
+        >>> relays = find_ws_urls(config_text)
+        >>> for url in relays:
+        ...     relay = Relay(url)
     """
     result = []
     matches = re.finditer(URI_GENERIC_REGEX, text, re.VERBOSE)
@@ -1670,13 +1712,48 @@ def sanitize(value: Any) -> Any:
     Sanitize values by removing null bytes and recursively cleaning data structures.
 
     This function removes null bytes (\x00) from strings and recursively processes
-    lists and dictionaries to ensure all contained data is sanitized.
+    lists and dictionaries to ensure all contained data is sanitized. Null bytes
+    can cause issues with event validation and relay communication.
+
+    The function handles:
+    - Strings: Removes \x00 null bytes
+    - Lists: Recursively sanitizes all elements
+    - Dictionaries: Recursively sanitizes both keys and values
+    - Other types: Returns unchanged
 
     Args:
-        value (Any): Value to sanitize (str, list, dict, or other)
+        value (Any): Value to sanitize. Can be str, list, dict, or any other type.
 
     Returns:
-        Any: Sanitized value with null bytes removed from strings
+        Any: Sanitized value with null bytes removed from all strings.
+            Type is preserved (str returns str, list returns list, etc.).
+
+    Examples:
+        Sanitize a string:
+
+        >>> text = "Hello\x00World"
+        >>> clean = sanitize(text)
+        >>> print(clean)
+        HelloWorld
+
+        Sanitize nested structures:
+
+        >>> data = {
+        ...     "content": "Test\x00message",
+        ...     "tags": [["e", "id\x00123"], ["p", "abc"]]
+        ... }
+        >>> clean_data = sanitize(data)
+        >>> print(clean_data)
+        {'content': 'Testmessage', 'tags': [['e', 'id123'], ['p', 'abc']]}
+
+        Use with event data:
+
+        >>> event_dict = {
+        ...     "content": user_input,  # May contain null bytes
+        ...     "tags": user_tags
+        ... }
+        >>> sanitized = sanitize(event_dict)
+        >>> event = Event.from_dict(sanitized)  # Now safe to validate
     """
     if isinstance(value, str):
         return value.replace("\x00", "")
@@ -1692,20 +1769,58 @@ def calc_event_id(
     pubkey: str, created_at: int, kind: int, tags: list[list[str]], content: str
 ) -> str:
     """
-    Calculate the event ID for a Nostr event according to NIP-01.
+    Calculate the event ID for a Nostr event according to NIP-01 specification.
 
-    The event ID is calculated as the SHA-256 hash of the serialized event data
-    in the format: [0, pubkey, created_at, kind, tags, content]
+    The event ID is calculated as the SHA-256 hash of the UTF-8 encoded JSON
+    serialization of the event data array: [0, pubkey, created_at, kind, tags, content].
+    The JSON is serialized with minimal formatting (no spaces, compact separators).
 
     Args:
-        pubkey (str): Public key in hex format (64 characters)
-        created_at (int): Unix timestamp of event creation
-        kind (int): Event kind (0-65535)
-        tags (List[List[str]]): List of event tags
-        content (str): Event content
+        pubkey (str): Public key in lowercase hex format (64 characters).
+        created_at (int): Unix timestamp (seconds since epoch) of event creation.
+        kind (int): Event kind number (0-65535).
+        tags (list[list[str]]): List of event tags. Each tag is a list of strings.
+        content (str): Event content as a string.
 
     Returns:
-        str: Event ID as lowercase hex string (64 characters)
+        str: Event ID as lowercase hexadecimal string (64 characters).
+            This is the SHA-256 hash of the serialized event data.
+
+    Examples:
+        Calculate event ID:
+
+        >>> pubkey = "abc123..." # 64-char hex
+        >>> created_at = 1234567890
+        >>> kind = 1
+        >>> tags = [["p", "def456..."], ["e", "789abc..."]]
+        >>> content = "Hello Nostr!"
+        >>> event_id = calc_event_id(pubkey, created_at, kind, tags, content)
+        >>> len(event_id)
+        64
+
+        Use in event creation:
+
+        >>> event_id = calc_event_id(
+        ...     public_key, timestamp, kind, tags, content
+        ... )
+        >>> signature = sig_event_id(event_id, private_key)
+        >>> event = {
+        ...     "id": event_id,
+        ...     "pubkey": public_key,
+        ...     "created_at": timestamp,
+        ...     "kind": kind,
+        ...     "tags": tags,
+        ...     "content": content,
+        ...     "sig": signature
+        ... }
+
+        Verify event ID matches:
+
+        >>> recalculated_id = calc_event_id(
+        ...     event['pubkey'], event['created_at'],
+        ...     event['kind'], event['tags'], event['content']
+        ... )
+        >>> assert recalculated_id == event['id']
     """
     event_data = [0, pubkey, created_at, kind, tags, content]
     event_json = json.dumps(event_data, separators=(",", ":"), ensure_ascii=False)
@@ -1716,18 +1831,49 @@ def calc_event_id(
 
 def verify_sig(event_id: str, pubkey: str, signature: str) -> bool:
     """
-    Verify an event signature using Schnorr verification.
+    Verify an event signature using Schnorr verification (secp256k1).
 
-    This function verifies that the given signature was created by the private key
-    corresponding to the public key for the given event ID.
+    This function verifies that the given Schnorr signature was created by the
+    private key corresponding to the public key for the given event ID. Uses
+    the secp256k1 elliptic curve as specified in the Nostr protocol.
 
     Args:
-        event_id (str): Event ID in hex format (64 characters)
-        pubkey (str): Public key in hex format (64 characters)
-        signature (str): Signature in hex format (128 characters)
+        event_id (str): Event ID in hexadecimal format (64 characters).
+            This is the SHA-256 hash of the serialized event.
+        pubkey (str): Public key in hexadecimal format (64 characters).
+            This is the x-only public key (Schnorr format).
+        signature (str): Schnorr signature in hexadecimal format (128 characters).
 
     Returns:
-        bool: True if signature is valid, False otherwise
+        bool: True if signature is valid and matches the event ID and public key.
+            False if signature is invalid, or if there's any error during verification.
+
+    Examples:
+        Verify event signature:
+
+        >>> event_id = "abc123..."  # 64-char hex
+        >>> pubkey = "def456..."    # 64-char hex
+        >>> signature = "789ghi..."  # 128-char hex
+        >>> is_valid = verify_sig(event_id, pubkey, signature)
+        >>> if is_valid:
+        ...     print("Signature is valid!")
+
+        Validate event from relay:
+
+        >>> event_dict = {
+        ...     "id": "...",
+        ...     "pubkey": "...",
+        ...     "sig": "...",
+        ...     # ... other fields
+        ... }
+        >>> if verify_sig(event_dict['id'], event_dict['pubkey'], event_dict['sig']):
+        ...     event = Event.from_dict(event_dict)
+
+        Handle invalid signatures:
+
+        >>> if not verify_sig(event_id, pubkey, signature):
+        ...     print("Invalid signature - event may be forged")
+        ...     return None
     """
     try:
         pub_key = secp256k1.PublicKey(bytes.fromhex("02" + pubkey), True)
@@ -1741,17 +1887,47 @@ def verify_sig(event_id: str, pubkey: str, signature: str) -> bool:
 
 def sig_event_id(event_id: str, private_key: str) -> str:
     """
-    Sign an event ID with a private key using Schnorr signatures.
+    Sign an event ID with a private key using Schnorr signatures (secp256k1).
 
-    This function creates a Schnorr signature of the event ID using the
-    provided private key.
+    This function creates a Schnorr signature of the event ID using the provided
+    private key. The signature can be verified using verify_sig() with the
+    corresponding public key.
 
     Args:
-        event_id (str): Event ID in hex format (64 characters)
-        private_key (str): Private key in hex format (64 characters)
+        event_id (str): Event ID in hexadecimal format (64 characters).
+            This is the SHA-256 hash of the serialized event.
+        private_key (str): Private key in hexadecimal format (64 characters).
+            Must be a valid secp256k1 private key.
 
     Returns:
-        str: Signature as hex string (128 characters)
+        str: Schnorr signature as hexadecimal string (128 characters).
+
+    Examples:
+        Sign an event:
+
+        >>> event_id = calc_event_id(pubkey, timestamp, kind, tags, content)
+        >>> signature = sig_event_id(event_id, private_key)
+        >>> len(signature)
+        128
+
+        Create complete signed event:
+
+        >>> event_id = calc_event_id(public_key, timestamp, kind, tags, content)
+        >>> signature = sig_event_id(event_id, private_key)
+        >>> event = {
+        ...     "id": event_id,
+        ...     "pubkey": public_key,
+        ...     "created_at": timestamp,
+        ...     "kind": kind,
+        ...     "tags": tags,
+        ...     "content": content,
+        ...     "sig": signature
+        ... }
+
+        Verify your own signature:
+
+        >>> sig = sig_event_id(event_id, private_key)
+        >>> assert verify_sig(event_id, public_key, sig)
     """
     priv_key = secp256k1.PrivateKey(bytes.fromhex(private_key), raw=True)
     signature = priv_key.schnorr_sign(bytes.fromhex(event_id), bip340tag=None, raw=True)
@@ -1870,21 +2046,62 @@ def validate_keypair(private_key: str, public_key: str) -> bool:
 
 def to_bech32(prefix: str, hex_str: str) -> str:
     """
-    Convert a hex string to Bech32 format.
+    Convert a hexadecimal string to Bech32 encoded format.
 
     This function converts hexadecimal data to Bech32 encoding with the
-    specified prefix, commonly used for Nostr keys and identifiers.
+    specified prefix. Bech32 is commonly used for Nostr keys and identifiers
+    as it provides better error detection and is more user-friendly than raw hex.
+
+    Common Nostr prefixes:
+    - 'npub': Public key (nostr public key)
+    - 'nsec': Private key (nostr secret key)
+    - 'note': Event ID
+    - 'nprofile': Profile identifier
+    - 'nevent': Event identifier
 
     Args:
-        prefix (str): The prefix for the Bech32 encoding (e.g., 'nsec', 'npub')
-        hex_str (str): The hex string to convert
+        prefix (str): The Bech32 prefix to use (e.g., 'nsec', 'npub', 'note').
+        hex_str (str): The hexadecimal string to convert (typically 64 characters).
 
     Returns:
-        str: The Bech32 encoded string
+        str: The Bech32 encoded string with the specified prefix.
+            Returns empty string if encoding fails.
 
-    Example:
-        >>> to_bech32('npub', '1234567890abcdef...')
-        'npub1...'
+    Examples:
+        Encode public key:
+
+        >>> pubkey_hex = "abc123..."  # 64-char hex
+        >>> npub = to_bech32('npub', pubkey_hex)
+        >>> print(npub)
+        npub1...
+
+        Encode private key:
+
+        >>> privkey_hex = "def456..."  # 64-char hex
+        >>> nsec = to_bech32('nsec', privkey_hex)
+        >>> print(nsec)
+        nsec1...
+
+        Encode event ID:
+
+        >>> event_id = "789ghi..."  # 64-char hex
+        >>> note_id = to_bech32('note', event_id)
+        >>> print(note_id)
+        note1...
+
+        Convert keys for display:
+
+        >>> priv, pub = generate_keypair()
+        >>> nsec = to_bech32('nsec', priv)
+        >>> npub = to_bech32('npub', pub)
+        >>> print(f"Your public key: {npub}")
+        >>> print(f"Your private key (keep secret!): {nsec}")
+
+        Share event reference:
+
+        >>> event_id = event.id
+        >>> shareable_id = to_bech32('note', event_id)
+        >>> print(f"View event: nostr:{shareable_id}")
     """
     byte_data = bytes.fromhex(hex_str)
     data = bech32.convertbits(byte_data, 8, 5, True)
@@ -1896,20 +2113,59 @@ def to_bech32(prefix: str, hex_str: str) -> str:
 
 def to_hex(bech32_str: str) -> str:
     """
-    Convert a Bech32 string to hex format.
+    Convert a Bech32 encoded string to hexadecimal format.
 
-    This function decodes a Bech32 string and returns the underlying
-    data as a hexadecimal string.
+    This function decodes a Bech32 string (npub, nsec, note, etc.) and returns
+    the underlying data as a hexadecimal string. Useful for converting
+    user-friendly Bech32 identifiers back to hex format for protocol use.
 
     Args:
-        bech32_str (str): The Bech32 string to convert
+        bech32_str (str): The Bech32 encoded string to convert.
+            Examples: npub1..., nsec1..., note1...
 
     Returns:
-        str: The hex encoded string
+        str: The hexadecimal encoded string (typically 64 characters).
+            Returns empty string if decoding fails.
 
-    Example:
-        >>> to_hex('npub1...')
-        '1234567890abcdef...'
+    Examples:
+        Decode public key:
+
+        >>> npub = "npub1..."
+        >>> pubkey_hex = to_hex(npub)
+        >>> len(pubkey_hex)
+        64
+
+        Decode private key:
+
+        >>> nsec = "nsec1..."
+        >>> privkey_hex = to_hex(nsec)
+        >>> # Use privkey_hex for signing
+
+        Decode event ID:
+
+        >>> note_id = "note1..."
+        >>> event_id_hex = to_hex(note_id)
+        >>> # Use event_id_hex to fetch event
+
+        Convert user input:
+
+        >>> user_input = input("Enter npub: ")  # User enters npub1...
+        >>> pubkey = to_hex(user_input)
+        >>> if pubkey:
+        ...     filter = Filter(authors=[pubkey])
+
+        Round-trip conversion:
+
+        >>> original_hex = "abc123..."  # 64-char hex
+        >>> bech32 = to_bech32('npub', original_hex)
+        >>> decoded_hex = to_hex(bech32)
+        >>> assert original_hex == decoded_hex
+
+        Handle invalid input:
+
+        >>> result = to_hex("invalid-bech32")
+        >>> if not result:
+        ...     print("Invalid Bech32 string")
     """
     _, data = bech32.bech32_decode(bech32_str)
     if data is None:
@@ -1922,19 +2178,57 @@ def to_hex(bech32_str: str) -> str:
 
 def generate_keypair() -> tuple[str, str]:
     """
-    Generate a new private/public key pair for Nostr.
+    Generate a new cryptographically secure private/public key pair for Nostr.
 
-    This function creates a new secp256k1 key pair suitable for use
-    with the Nostr protocol.
+    This function creates a new secp256k1 key pair using cryptographically
+    secure random number generation. The keys are suitable for use with the
+    Nostr protocol and can be used to create and sign events.
 
     Returns:
-        tuple[str, str]: Tuple of (private_key_hex, public_key_hex)
-                        Both keys are 64-character hex strings
+        tuple[str, str]: Tuple of (private_key_hex, public_key_hex).
+            - private_key_hex: 64-character lowercase hexadecimal string
+            - public_key_hex: 64-character lowercase hexadecimal string (x-only pubkey)
+            Both keys are suitable for Nostr protocol use.
 
-    Example:
-        >>> priv, pub = generate_keypair()
-        >>> len(priv), len(pub)
+    Examples:
+        Generate new identity:
+
+        >>> private_key, public_key = generate_keypair()
+        >>> len(private_key), len(public_key)
         (64, 64)
+
+        Create and sign an event:
+
+        >>> priv, pub = generate_keypair()
+        >>> event_dict = generate_event(
+        ...     priv, pub,
+        ...     kind=1,
+        ...     tags=[],
+        ...     content="Hello from my new identity!"
+        ... )
+        >>> event = Event.from_dict(event_dict)
+
+        Convert to bech32 format:
+
+        >>> priv, pub = generate_keypair()
+        >>> nsec = to_bech32('nsec', priv)
+        >>> npub = to_bech32('npub', pub)
+        >>> print(f"Public key (npub): {npub}")
+        >>> print(f"Private key (nsec): {nsec}")
+
+        Validate generated keypair:
+
+        >>> priv, pub = generate_keypair()
+        >>> assert validate_keypair(priv, pub)  # Always True for fresh keys
+
+        Store securely:
+
+        >>> priv, pub = generate_keypair()
+        >>> # IMPORTANT: Store private key securely!
+        >>> # Never share or expose private_key
+        >>> save_to_secure_storage(priv)
+        >>> # Public key can be shared freely
+        >>> publish_public_key(pub)
     """
     private_key = os.urandom(32)
     private_key_obj = secp256k1.PrivateKey(private_key)

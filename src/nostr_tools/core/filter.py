@@ -14,20 +14,84 @@ from ..exceptions import FilterValidationError
 @dataclass
 class Filter:
     """
-    Simple Nostr event filter following NIP-01 specification.
+    Nostr event filter following NIP-01 subscription specification.
 
-    This class creates filters for querying events from Nostr relays.
-    Filters can specify event IDs, authors, kinds, time ranges, limits,
-    and tag-based filtering.
+    This class creates filters for querying and subscribing to events from
+    Nostr relays. Filters support multiple criteria including event IDs, authors,
+    kinds, time ranges, result limits, and tag-based filtering. All filter
+    criteria are optional and use AND logic when combined.
 
     Attributes:
-        ids: List of event IDs (64-char hex strings)
-        authors: List of author pubkeys (64-char hex strings)
-        kinds: List of event kinds (0-65535)
-        since: Unix timestamp, events newer than this
-        until: Unix timestamp, events older than this
-        limit: Maximum number of events to return
-        tags: Tag filters dictionary
+        ids (Optional[list[str]]): List of event IDs to match (64-char lowercase
+            hex strings). Events matching any ID in the list will be returned.
+        authors (Optional[list[str]]): List of author public keys (64-char
+            lowercase hex strings). Events from any author in the list will be
+            returned.
+        kinds (Optional[list[int]]): List of event kinds to match (0-65535).
+            Events matching any kind in the list will be returned.
+            Common kinds: 0=metadata, 1=text note, 3=contacts, 7=reaction
+        since (Optional[int]): Unix timestamp (seconds). Only events created
+            at or after this time will be returned.
+        until (Optional[int]): Unix timestamp (seconds). Only events created
+            at or before this time will be returned.
+        limit (Optional[int]): Maximum number of events to return. Must be
+            positive. Relays may impose their own limits.
+        tags (Optional[dict[str, list[str]]]): Tag-based filters. Keys are
+            single alphabetic characters (a-z, A-Z), values are lists of strings.
+            Example: {"e": ["event_id1", "event_id2"], "p": ["pubkey1"]}
+            will match events with #e or #p tags containing specified values.
+
+    Examples:
+        Filter by event kind:
+
+        >>> # Get last 10 text notes
+        >>> filter = Filter(kinds=[1], limit=10)
+
+        Filter by author:
+
+        >>> # Get events from specific author
+        >>> filter = Filter(authors=["abc123..."])
+
+        Filter by time range:
+
+        >>> import time
+        >>> # Events from last hour
+        >>> filter = Filter(
+        ...     kinds=[1],
+        ...     since=int(time.time()) - 3600
+        ... )
+
+        Filter by tags:
+
+        >>> # Get replies to a specific event
+        >>> filter = Filter(
+        ...     kinds=[1],
+        ...     e=["original_event_id"]  # Tag filter using kwargs
+        ... )
+
+        Complex filter:
+
+        >>> # Reactions to my notes in last 24 hours
+        >>> filter = Filter(
+        ...     kinds=[7],  # Reactions
+        ...     e=["my_note_id1", "my_note_id2"],
+        ...     since=int(time.time()) - 86400,
+        ...     limit=100
+        ... )
+
+        Create from dictionary:
+
+        >>> filter_data = {
+        ...     "kinds": [1],
+        ...     "authors": ["abc123..."],
+        ...     "limit": 10
+        ... }
+        >>> filter = Filter.from_dict(filter_data)
+
+    Raises:
+        TypeError: If any attribute has an incorrect type.
+        FilterValidationError: If any attribute value is invalid (e.g.,
+            invalid hex strings, negative timestamps, invalid tag names).
     """
 
     ids: Optional[list[str]] = None
@@ -49,16 +113,43 @@ class Filter:
         **tags: list[str],
     ) -> None:
         """
-        Initialize Filter instance.
+        Initialize Filter instance with subscription criteria.
+
+        This constructor accepts standard filter parameters plus tag filters
+        as keyword arguments. Tag filters use single-letter keys corresponding
+        to tag names (e.g., e for event references, p for pubkey references).
 
         Args:
-            ids (Optional[list[str]]): List of event IDs (64-char hex strings)
-            authors (Optional[list[str]]): List of author pubkeys (64-char hex strings)
-            kinds (Optional[list[int]]): List of event kinds (0-65535)
-            since (Optional[int]): Unix timestamp, events newer than this
-            until (Optional[int]): Unix timestamp, events older than this
-            limit (Optional[int]): Maximum number of events to return
-            **tags: Tag filters as keyword arguments, e.g., a=['value1', 'value2']
+            ids (Optional[list[str]]): List of event IDs to match (64-char hex).
+            authors (Optional[list[str]]): List of author pubkeys (64-char hex).
+            kinds (Optional[list[int]]): List of event kinds (0-65535).
+            since (Optional[int]): Unix timestamp for minimum event age.
+            until (Optional[int]): Unix timestamp for maximum event age.
+            limit (Optional[int]): Maximum number of events to return.
+            **tags (list[str]): Tag filters as keyword arguments.
+                Single-letter keys only (a-z, A-Z).
+                Example: e=['event_id'], p=['pubkey'], t=['hashtag']
+
+        Examples:
+            Basic filter:
+
+            >>> filter = Filter(kinds=[1], limit=10)
+
+            With tag filters:
+
+            >>> filter = Filter(
+            ...     kinds=[1],
+            ...     e=['event_id_to_reply_to'],  # #e tag
+            ...     p=['mentioned_pubkey']       # #p tag
+            ... )
+
+            Time-based filter:
+
+            >>> filter = Filter(
+            ...     kinds=[1],
+            ...     since=1234567890,
+            ...     until=1234567999
+            ... )
         """
         self.ids = ids
         self.authors = authors
@@ -181,10 +272,35 @@ class Filter:
     @property
     def subscription_filter(self) -> dict[str, Any]:
         """
-        Build the subscription filter dictionary.
+        Build the subscription filter dictionary for relay communication.
+
+        Converts the Filter instance into a dictionary format suitable for
+        sending to Nostr relays in REQ messages. Tag filters are converted
+        to the #<tag_name> format required by the protocol.
 
         Returns:
-            dict[str, Any]: Dictionary suitable for Nostr subscription filtering
+            dict[str, Any]: Dictionary suitable for Nostr subscription filtering.
+                Only includes non-None filter criteria. Tag filters are prefixed
+                with # (e.g., {"#e": ["event_id"], "#p": ["pubkey"]}).
+
+        Examples:
+            Basic subscription filter:
+
+            >>> filter = Filter(kinds=[1], limit=10)
+            >>> print(filter.subscription_filter)
+            {"kinds": [1], "limit": 10}
+
+            With tag filters:
+
+            >>> filter = Filter(kinds=[1], e=["event_id"], p=["pubkey"])
+            >>> print(filter.subscription_filter)
+            {"kinds": [1], "#e": ["event_id"], "#p": ["pubkey"]}
+
+            Send to relay:
+
+            >>> sub_filter = filter.subscription_filter
+            >>> message = ["REQ", subscription_id, sub_filter]
+            >>> await ws.send_str(json.dumps(message))
         """
         subscription_filter: dict[str, Any] = {}
         if self.ids is not None:
