@@ -16,8 +16,6 @@ from nostr_tools import calc_event_id
 from nostr_tools import find_ws_urls
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
-from nostr_tools import parse_connection_response
-from nostr_tools import parse_nip11_response
 from nostr_tools import sanitize
 from nostr_tools import to_bech32
 from nostr_tools import to_hex
@@ -232,51 +230,6 @@ class TestUtilityPerformance:
         assert avg_time < 0.0005, f"Sanitization too slow: {avg_time:.4f}s per operation"
 
         print(f"Data sanitization: {1 / avg_time:.1f} operations/second")
-
-    def test_response_parsing_performance(self, performance_timer):
-        """Test response parsing performance."""
-        # Create test responses
-        nip11_response = {
-            "name": "Test Relay",
-            "description": "A test relay for performance testing",
-            "pubkey": "a" * 64,
-            "contact": "test@example.com",
-            "supported_nips": [1, 2, 9, 11, 12, 15, 16, 20],
-            "software": "test-relay",
-            "version": "1.0.0",
-            "limitation": {
-                "max_message_length": 16384,
-                "max_subscriptions": 20,
-                "max_filters": 100,
-                "auth_required": False,
-            },
-        }
-
-        connection_response = {
-            "nip66_success": True,
-            "rtt_open": 100,
-            "rtt_read": 150,
-            "rtt_write": 200,
-            "openable": True,
-            "writable": True,
-            "readable": True,
-        }
-
-        iterations = 1000
-
-        performance_timer.start()
-        for _ in range(iterations):
-            parse_nip11_response(nip11_response)
-            parse_connection_response(connection_response)
-        performance_timer.stop()
-
-        total_operations = iterations * 2  # Two parsing operations per iteration
-        avg_time = performance_timer.elapsed / total_operations
-
-        # Should parse at least 5000 responses per second
-        assert avg_time < 0.0002, f"Response parsing too slow: {avg_time:.4f}s per parse"
-
-        print(f"Response parsing: {1 / avg_time:.1f} parses/second")
 
 
 @pytest.mark.slow

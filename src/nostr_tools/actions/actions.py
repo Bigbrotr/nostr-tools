@@ -16,8 +16,8 @@ Relay Information:
     - check_connectivity: Test basic WebSocket connection capability
     - check_readability: Test ability to subscribe and receive events
     - check_writability: Test ability to publish events
-    - fetch_connection: Perform complete connection capability analysis
-    - compute_relay_metadata: Generate comprehensive relay metadata
+    - fetch_nip66: Retrieve comprehensive connection metrics
+    - fetch_relay_metadata: Generate comprehensive relay metadata
 
 All functions work with existing Client instances and handle errors gracefully.
 Connection testing functions automatically detect proof-of-work requirements
@@ -31,7 +31,7 @@ Example:
     >>> client = Client(relay)
 
     >>> # Test relay capabilities
-    >>> metadata = await compute_relay_metadata(client, private_key, public_key)
+    >>> metadata = await fetch_relay_metadata(client, private_key, public_key)
     >>> print(f"Relay is {'readable' if metadata.readable else 'not readable'}")
 
     >>> # Fetch events
@@ -47,11 +47,11 @@ Example:
     ...         print(f"New event: {event.content}")
 """
 
+import json
 import logging
 import time
 from asyncio import TimeoutError
 from collections.abc import AsyncGenerator
-from typing import Any
 from typing import Optional
 
 from aiohttp import ClientError
@@ -62,8 +62,6 @@ from ..core.filter import Filter
 from ..core.relay_metadata import RelayMetadata
 from ..exceptions.errors import RelayConnectionError
 from ..utils import generate_event
-from ..utils import parse_connection_response
-from ..utils import parse_nip11_response
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +146,7 @@ async def stream_events(
     await client.unsubscribe(subscription_id)
 
 
-async def fetch_nip11(client: Client) -> Optional[dict[str, Any]]:
+async def fetch_nip11(client: Client) -> Optional[RelayMetadata.Nip11]:
     """
     Fetch NIP-11 metadata from the relay.
 
@@ -160,7 +158,7 @@ async def fetch_nip11(client: Client) -> Optional[dict[str, Any]]:
         client (Client): An instance of Client (connection not required)
 
     Returns:
-        Optional[Dict[str, Any]]: Dictionary containing NIP-11 metadata or None if not available
+        Optional[RelayMetadata.Nip11]: NIP-11 metadata or None if not available
     """
     relay_id = client.relay.url.removeprefix("wss://")
     headers = {"Accept": "application/nostr+json"}
@@ -173,13 +171,102 @@ async def fetch_nip11(client: Client) -> Optional[dict[str, Any]]:
                 session.get(schema + relay_id, headers=headers, timeout=client.timeout) as response,
             ):
                 if response.status == 200:
-                    result = await response.json()
-                    return dict(result) if isinstance(result, dict) else result
+                    data = await response.json()
+                    if not isinstance(data, dict):
+                        return None
+
+                    data_processed = {
+                        "name": data.get("name"),
+                        "description": data.get("description"),
+                        "banner": data.get("banner"),
+                        "icon": data.get("icon"),
+                        "pubkey": data.get("pubkey"),
+                        "contact": data.get("contact"),
+                        "supported_nips": data.get("supported_nips"),
+                        "software": data.get("software"),
+                        "version": data.get("version"),
+                        "privacy_policy": data.get("privacy_policy"),
+                        "terms_of_service": data.get("terms_of_service"),
+                        "limitation": data.get("limitation"),
+                        "extra_fields": {
+                            key: value
+                            for key, value in data.items()
+                            if key
+                            not in [
+                                "name",
+                                "description",
+                                "banner",
+                                "icon",
+                                "pubkey",
+                                "contact",
+                                "supported_nips",
+                                "software",
+                                "version",
+                                "privacy_policy",
+                                "terms_of_service",
+                                "limitation",
+                            ]
+                        },
+                    }
+
+                    # Validate string fields
+                    string_fields = [
+                        "name",
+                        "description",
+                        "banner",
+                        "icon",
+                        "pubkey",
+                        "contact",
+                        "software",
+                        "version",
+                        "privacy_policy",
+                        "terms_of_service",
+                    ]
+                    for key in string_fields:
+                        if not (
+                            isinstance(data_processed[key], str) or data_processed[key] is None
+                        ):
+                            data_processed[key] = None
+
+                    # Validate supported_nips list
+                    if not isinstance(data_processed["supported_nips"], list):
+                        data_processed["supported_nips"] = None
+                    else:
+                        data_processed["supported_nips"] = [
+                            nip
+                            for nip in data_processed["supported_nips"]
+                            if isinstance(nip, (int, str))
+                        ]
+
+                    # Validate dictionary fields
+                    dict_fields = ["limitation", "extra_fields"]
+                    for key in dict_fields:
+                        field_value = data_processed[key]
+                        if not isinstance(field_value, dict):
+                            data_processed[key] = None
+                        else:
+                            tmp = {}
+                            for dict_key, value in field_value.items():
+                                if isinstance(dict_key, str):
+                                    try:
+                                        json.dumps(value)
+                                        tmp[dict_key] = value
+                                    except (TypeError, ValueError):
+                                        continue
+                            data_processed[key] = tmp
+
+                    for value in data_processed.values():
+                        if value is not None:
+                            return RelayMetadata.Nip11.from_dict(data_processed)
+                else:
+                    logger.debug(
+                        f"NIP-11 not found at {schema + relay_id} (status {response.status})"
+                    )
+                    return None
         except (ClientError, TimeoutError) as e:
             logger.debug(f"Failed to fetch NIP-11 from {schema + relay_id}: {e}")
         except Exception as e:
             logger.exception(f"Unexpected error fetching NIP-11: {e}")
-
     return None
 
 
@@ -334,13 +421,13 @@ async def check_writability(
     return rtt_write, writable
 
 
-async def fetch_connection(
+async def fetch_nip66(
     client: Client,
     sec: str,
     pub: str,
     target_difficulty: Optional[int] = None,
     event_creation_timeout: Optional[int] = None,
-) -> Optional[dict[str, Any]]:
+) -> Optional[RelayMetadata.Nip66]:
     """
     Fetch comprehensive connection metrics from the relay.
 
@@ -355,9 +442,7 @@ async def fetch_connection(
         event_creation_timeout (Optional[int]): Timeout for event creation
 
     Returns:
-        Optional[Dict[str, Any]]: Dictionary containing connection metrics with keys:
-                     rtt_open, rtt_read, rtt_write, openable, writable, readable
-                     Returns None if connection fails
+        Optional[RelayMetadata.Nip66]: NIP-66 metadata or None if not available
 
     Raises:
         RelayConnectionError: If client is already connected
@@ -385,7 +470,7 @@ async def fetch_connection(
                 client, sec, pub, target_difficulty, event_creation_timeout
             )
 
-        return {
+        data = {
             "rtt_open": rtt_open,
             "rtt_read": rtt_read,
             "rtt_write": rtt_write,
@@ -393,11 +478,15 @@ async def fetch_connection(
             "writable": writable,
             "readable": readable,
         }
-    except Exception:
-        return None
+        return RelayMetadata.Nip66.from_dict(data)
+    except RelayConnectionError as e:
+        logger.debug(f"Relay connection error: {e}")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching NIP-66: {e}")
+    return None
 
 
-async def compute_relay_metadata(
+async def fetch_relay_metadata(
     client: Client, sec: str, pub: str, event_creation_timeout: Optional[int] = None
 ) -> RelayMetadata:
     """
@@ -423,30 +512,28 @@ async def compute_relay_metadata(
         raise RelayConnectionError("Client is already connected")
 
     # Fetch NIP-11 metadata
-    nip11_response = await fetch_nip11(client)
-    nip11_metadata = parse_nip11_response(nip11_response)
+    nip11 = await fetch_nip11(client)
 
     # Extract proof-of-work difficulty from NIP-11 limitations
-    target_difficulty = nip11_metadata.get("limitation", {})
-    target_difficulty = (
-        None
-        if not isinstance(target_difficulty, dict)
-        else target_difficulty.get("min_pow_difficulty")
-    )
-    target_difficulty = target_difficulty if isinstance(target_difficulty, int) else None
+    if (
+        nip11 is not None
+        and nip11.limitation is not None
+        and "min_pow_difficulty" in nip11.limitation
+    ):
+        target_difficulty = nip11.limitation["min_pow_difficulty"]
+        target_difficulty = target_difficulty if isinstance(target_difficulty, int) else None
+    else:
+        target_difficulty = None
 
     # Test connection capabilities with detected PoW requirement
-    connection_response = await fetch_connection(
-        client, sec, pub, target_difficulty, event_creation_timeout
-    )
-    connection_metadata = parse_connection_response(connection_response)
+    nip66 = await fetch_nip66(client, sec, pub, target_difficulty, event_creation_timeout)
 
     # Combine all metadata into comprehensive object
-    metadata = {
+    data = {
         "relay": client.relay,
+        "nip11": nip11,
+        "nip66": nip66,
         "generated_at": int(time.time()),
-        **nip11_metadata,
-        **connection_metadata,
     }
 
-    return RelayMetadata.from_dict(metadata)
+    return RelayMetadata.from_dict(data)

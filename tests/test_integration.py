@@ -20,10 +20,10 @@ from nostr_tools import RelayConnectionError
 from nostr_tools import check_connectivity
 from nostr_tools import check_readability
 from nostr_tools import check_writability
-from nostr_tools import compute_relay_metadata
-from nostr_tools import fetch_connection
 from nostr_tools import fetch_events
 from nostr_tools import fetch_nip11
+from nostr_tools import fetch_nip66
+from nostr_tools import fetch_relay_metadata
 from nostr_tools import generate_event
 from nostr_tools import stream_events
 from tests import TEST_RELAY_URL
@@ -335,7 +335,7 @@ class TestRelayMetadata:
         private_key, public_key = sample_keypair
 
         try:
-            metadata = await compute_relay_metadata(sample_client, private_key, public_key)
+            metadata = await fetch_relay_metadata(sample_client, private_key, public_key)
 
             # Validate metadata structure
             assert hasattr(metadata, "nip66_success")
@@ -407,7 +407,7 @@ class TestRelayMetadata:
             await check_writability(client, private_key, public_key)
 
     @skip_integration
-    async def test_fetch_connection_comprehensive(self, sample_keypair):
+    async def test_fetch_nip66_comprehensive(self, sample_keypair):
         """Test comprehensive connection fetching."""
         private_key, public_key = sample_keypair
 
@@ -415,7 +415,7 @@ class TestRelayMetadata:
             relay = Relay(TEST_RELAY_URL)
             client = Client(relay, timeout=15)
 
-            result = await fetch_connection(client, private_key, public_key)
+            result = await fetch_nip66(client, private_key, public_key)
 
             if result:
                 # Should contain all expected keys
@@ -438,8 +438,8 @@ class TestRelayMetadata:
         except Exception:
             pytest.skip("Connection test failed")
 
-    async def test_fetch_connection_already_connected(self, sample_keypair):
-        """Test fetch_connection when client already connected."""
+    async def test_fetch_nip66_already_connected(self, sample_keypair):
+        """Test fetch_nip66 when client already connected."""
         private_key, public_key = sample_keypair
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
@@ -449,10 +449,10 @@ class TestRelayMetadata:
         client._ws.closed = False
 
         with pytest.raises(RelayConnectionError, match="Client is already connected"):
-            await fetch_connection(client, private_key, public_key)
+            await fetch_nip66(client, private_key, public_key)
 
-    async def test_compute_relay_metadata_already_connected(self, sample_keypair):
-        """Test compute_relay_metadata when client already connected."""
+    async def test_fetch_relay_metadata_already_connected(self, sample_keypair):
+        """Test fetch_relay_metadata when client already connected."""
         private_key, public_key = sample_keypair
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
@@ -462,7 +462,7 @@ class TestRelayMetadata:
         client._ws.closed = False
 
         with pytest.raises(RelayConnectionError, match="Client is already connected"):
-            await compute_relay_metadata(client, private_key, public_key)
+            await fetch_relay_metadata(client, private_key, public_key)
 
     async def test_check_connectivity_already_connected(self):
         """Test check_connectivity when client already connected."""
@@ -741,8 +741,8 @@ class TestActionsErrorHandling:
             pass
 
     @patch("nostr_tools.actions.actions.fetch_nip11")
-    async def test_compute_relay_metadata_nip11_error(self, mock_fetch_nip11, sample_keypair):
-        """Test compute_relay_metadata when NIP-11 fetch fails."""
+    async def test_fetch_relay_metadata_nip11_error(self, mock_fetch_nip11, sample_keypair):
+        """Test fetch_relay_metadata when NIP-11 fetch fails."""
         private_key, public_key = sample_keypair
 
         # Mock NIP-11 fetch to return None (failure)
@@ -751,18 +751,18 @@ class TestActionsErrorHandling:
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
 
-        with patch("nostr_tools.actions.actions.fetch_connection") as mock_fetch_conn:
+        with patch("nostr_tools.actions.actions.fetch_nip66") as mock_fetch_conn:
             mock_fetch_conn.return_value = None
 
-            metadata = await compute_relay_metadata(client, private_key, public_key)
+            metadata = await fetch_relay_metadata(client, private_key, public_key)
 
             # Should still return metadata object even if NIP-11 fails
             assert metadata.nip11_success is False
             assert metadata.nip66_success is False
 
-    @patch("nostr_tools.actions.actions.fetch_connection")
-    async def test_compute_relay_metadata_connection_error(self, mock_fetch_conn, sample_keypair):
-        """Test compute_relay_metadata when connection test fails."""
+    @patch("nostr_tools.actions.actions.fetch_nip66")
+    async def test_fetch_relay_metadata_connection_error(self, mock_fetch_conn, sample_keypair):
+        """Test fetch_relay_metadata when connection test fails."""
         private_key, public_key = sample_keypair
 
         # Mock connection fetch to return None (failure)
@@ -771,7 +771,7 @@ class TestActionsErrorHandling:
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
 
-        metadata = await compute_relay_metadata(client, private_key, public_key)
+        metadata = await fetch_relay_metadata(client, private_key, public_key)
 
         # Should still return metadata object even if connection fails
         assert metadata.nip66_success is False
@@ -954,8 +954,8 @@ class TestActionsMockScenarios:
             assert rtt_write is None
             assert writable is False
 
-    async def test_compute_relay_metadata_pow_detection(self, sample_keypair):
-        """Test compute_relay_metadata with proof-of-work detection."""
+    async def test_fetch_relay_metadata_pow_detection(self, sample_keypair):
+        """Test fetch_relay_metadata with proof-of-work detection."""
         private_key, public_key = sample_keypair
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
@@ -964,7 +964,7 @@ class TestActionsMockScenarios:
         nip11_response = {"name": "Test Relay", "limitation": {"min_pow_difficulty": 16}}
 
         with patch("nostr_tools.actions.actions.fetch_nip11", return_value=nip11_response):
-            with patch("nostr_tools.actions.actions.fetch_connection") as mock_fetch_conn:
+            with patch("nostr_tools.actions.actions.fetch_nip66") as mock_fetch_conn:
                 mock_fetch_conn.return_value = {
                     "rtt_open": 100,
                     "rtt_read": 150,
@@ -974,17 +974,17 @@ class TestActionsMockScenarios:
                     "readable": True,
                 }
 
-                _ = await compute_relay_metadata(client, private_key, public_key)
+                _ = await fetch_relay_metadata(client, private_key, public_key)
 
-                # Should have detected PoW requirement and passed it to fetch_connection
+                # Should have detected PoW requirement and passed it to fetch_nip66
                 mock_fetch_conn.assert_called_once()
                 call_args = mock_fetch_conn.call_args
 
                 # Check that target_difficulty=16 was passed
                 assert call_args[0][3] == 16  # target_difficulty parameter
 
-    async def test_compute_relay_metadata_invalid_pow(self, sample_keypair):
-        """Test compute_relay_metadata with invalid PoW specification."""
+    async def test_fetch_relay_metadata_invalid_pow(self, sample_keypair):
+        """Test fetch_relay_metadata with invalid PoW specification."""
         private_key, public_key = sample_keypair
         relay = Relay(TEST_RELAY_URL)
         client = Client(relay)
@@ -998,10 +998,10 @@ class TestActionsMockScenarios:
         }
 
         with patch("nostr_tools.actions.actions.fetch_nip11", return_value=nip11_response):
-            with patch("nostr_tools.actions.actions.fetch_connection") as mock_fetch_conn:
+            with patch("nostr_tools.actions.actions.fetch_nip66") as mock_fetch_conn:
                 mock_fetch_conn.return_value = None
 
-                _ = await compute_relay_metadata(client, private_key, public_key)
+                _ = await fetch_relay_metadata(client, private_key, public_key)
 
                 # Should pass None for target_difficulty due to invalid spec
                 mock_fetch_conn.assert_called_once()

@@ -57,10 +57,10 @@ if _BUILDING_DOCS:
     from .actions.actions import check_connectivity
     from .actions.actions import check_readability
     from .actions.actions import check_writability
-    from .actions.actions import compute_relay_metadata
-    from .actions.actions import fetch_connection
     from .actions.actions import fetch_events
     from .actions.actions import fetch_nip11
+    from .actions.actions import fetch_nip66
+    from .actions.actions import fetch_relay_metadata
     from .actions.actions import stream_events
     from .core.client import Client
     from .core.event import Event
@@ -73,8 +73,6 @@ if _BUILDING_DOCS:
     from .utils.utils import find_ws_urls
     from .utils.utils import generate_event
     from .utils.utils import generate_keypair
-    from .utils.utils import parse_connection_response
-    from .utils.utils import parse_nip11_response
     from .utils.utils import sanitize
     from .utils.utils import sig_event_id
     from .utils.utils import to_bech32
@@ -104,8 +102,6 @@ else:
         # Network and parsing utilities
         "find_ws_urls": ("nostr_tools.utils.utils", "find_ws_urls"),
         "sanitize": ("nostr_tools.utils.utils", "sanitize"),
-        "parse_nip11_response": ("nostr_tools.utils.utils", "parse_nip11_response"),
-        "parse_connection_response": ("nostr_tools.utils.utils", "parse_connection_response"),
         # Constants
         "TLDS": ("nostr_tools.utils.utils", "TLDS"),
         "URI_GENERIC_REGEX": ("nostr_tools.utils.utils", "URI_GENERIC_REGEX"),
@@ -116,8 +112,8 @@ else:
         "check_connectivity": ("nostr_tools.actions.actions", "check_connectivity"),
         "check_readability": ("nostr_tools.actions.actions", "check_readability"),
         "check_writability": ("nostr_tools.actions.actions", "check_writability"),
-        "fetch_connection": ("nostr_tools.actions.actions", "fetch_connection"),
-        "compute_relay_metadata": ("nostr_tools.actions.actions", "compute_relay_metadata"),
+        "fetch_nip66": ("nostr_tools.actions.actions", "fetch_nip66"),
+        "fetch_relay_metadata": ("nostr_tools.actions.actions", "fetch_relay_metadata"),
     }
 
     # Cache for loaded modules to avoid repeated imports
@@ -183,8 +179,6 @@ __all__ = [
     # Utility functions
     "find_ws_urls",
     "sanitize",
-    "parse_connection_response",
-    "parse_nip11_response",
     # Constants
     "TLDS",
     "URI_GENERIC_REGEX",
@@ -192,8 +186,8 @@ __all__ = [
     "check_connectivity",
     "check_readability",
     "check_writability",
-    "compute_relay_metadata",
-    "fetch_connection",
+    "fetch_relay_metadata",
+    "fetch_nip66",
     "fetch_events",
     "fetch_nip11",
     "stream_events",

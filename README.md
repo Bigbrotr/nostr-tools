@@ -220,7 +220,7 @@ filter = Filter(
 Get relay information and capabilities:
 
 ```python
-from nostr_tools import fetch_nip11, compute_relay_metadata
+from nostr_tools import fetch_nip11, fetch_relay_metadata
 
 # Fetch NIP-11 relay information
 async with client:
@@ -229,7 +229,7 @@ async with client:
     print(f"Software: {info.get('software')}")
 
     # Compute full relay metadata
-    metadata = await compute_relay_metadata(client, private_key, public_key)
+    metadata = await fetch_relay_metadata(client, private_key, public_key)
     print(f"Readable: {metadata.readable}")
     print(f"Writable: {metadata.writable}")
 ```

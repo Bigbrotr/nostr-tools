@@ -9,18 +9,18 @@ relay capabilities.
 from .actions import check_connectivity
 from .actions import check_readability
 from .actions import check_writability
-from .actions import compute_relay_metadata
-from .actions import fetch_connection
 from .actions import fetch_events
 from .actions import fetch_nip11
+from .actions import fetch_nip66
+from .actions import fetch_relay_metadata
 from .actions import stream_events
 
 __all__ = [
     "check_connectivity",
     "check_readability",
     "check_writability",
-    "compute_relay_metadata",
-    "fetch_connection",
+    "fetch_relay_metadata",
+    "fetch_nip66",
     "fetch_events",
     "fetch_nip11",
     "stream_events",

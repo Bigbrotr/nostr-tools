@@ -27,9 +27,9 @@ class RelayMetadata:
     """
 
     relay: Relay
-    nip11: "RelayMetadata.Nip11"
-    nip66: "RelayMetadata.Nip66"
     generated_at: int
+    nip11: Optional["RelayMetadata.Nip11"] = None
+    nip66: Optional["RelayMetadata.Nip66"] = None
 
     def __post_init__(self) -> None:
         """Validate RelayMetadata after initialization."""
@@ -43,11 +43,13 @@ class RelayMetadata:
             TypeError: If any attribute is of incorrect type
             ValueError: If any attribute has an invalid value
         """
+        if self.nip11 is not None:
+            self.nip11.validate()
+        if self.nip66 is not None:
+            self.nip66.validate()
 
         type_checks = [
             ("relay", self.relay, Relay),
-            ("nip11", self.nip11, RelayMetadata.Nip11),
-            ("nip66", self.nip66, RelayMetadata.Nip66),
             ("generated_at", self.generated_at, int),
         ]
         for field_name, field_value, expected_type in type_checks:
@@ -56,9 +58,6 @@ class RelayMetadata:
 
         if self.generated_at < 0:
             raise ValueError("generated_at must be non-negative")
-
-        self.nip11.validate()
-        self.nip66.validate()
 
     @property
     def is_valid(self) -> bool:
@@ -91,8 +90,8 @@ class RelayMetadata:
 
         return cls(
             relay=Relay.from_dict(data["relay"]),
-            nip11=cls.Nip11.from_dict(data["nip11"]),
-            nip66=cls.Nip66.from_dict(data["nip66"]),
+            nip11=cls.Nip11.from_dict(data["nip11"]) if "nip11" in data else None,
+            nip66=cls.Nip66.from_dict(data["nip66"]) if "nip66" in data else None,
             generated_at=data["generated_at"],
         )
 
@@ -105,8 +104,8 @@ class RelayMetadata:
         """
         return {
             "relay": self.relay.to_dict(),
-            "nip66": self.nip66.to_dict(),
-            "nip11": self.nip11.to_dict(),
+            "nip66": self.nip66.to_dict() if self.nip66 else None,
+            "nip11": self.nip11.to_dict() if self.nip11 else None,
             "generated_at": self.generated_at,
         }
 

@@ -17,8 +17,6 @@ from nostr_tools import calc_event_id
 from nostr_tools import find_ws_urls
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
-from nostr_tools import parse_connection_response
-from nostr_tools import parse_nip11_response
 from nostr_tools import sanitize
 from nostr_tools import to_bech32
 from nostr_tools import to_hex
@@ -242,111 +240,6 @@ class TestDataSanitization:
         data = {"number": 42, "boolean": True, "none": None, "list": [1, 2, 3]}
         clean = sanitize(data)
         assert clean == data  # Should be unchanged
-
-
-class TestResponseParsing:
-    """Test response parsing functions."""
-
-    def test_parse_nip11_response_valid(self):
-        """Test parsing valid NIP-11 response."""
-        nip11_data = {
-            "name": "Test Relay",
-            "description": "A test relay",
-            "pubkey": "a" * 64,
-            "contact": "test@example.com",
-            "supported_nips": [1, 2, 11],
-            "software": "test-relay",
-            "version": "1.0.0",
-            "limitation": {"max_message_length": 16384, "auth_required": False},
-        }
-
-        result = parse_nip11_response(nip11_data)
-        assert result["nip11_success"] is True
-        assert result["name"] == "Test Relay"
-        assert result["supported_nips"] == [1, 2, 11]
-        assert result["limitation"]["max_message_length"] == 16384
-
-    def test_parse_nip11_response_invalid_type(self):
-        """Test parsing invalid NIP-11 response type."""
-        result = parse_nip11_response("not a dict")
-        assert result["nip11_success"] is False
-
-    def test_parse_nip11_response_invalid_fields(self):
-        """Test parsing NIP-11 with invalid field types."""
-        nip11_data = {
-            "name": 123,  # Should be string
-            "supported_nips": "not a list",  # Should be list
-            "limitation": "not a dict",  # Should be dict
-        }
-
-        result = parse_nip11_response(nip11_data)
-        assert result["nip11_success"] is True
-        assert result["name"] is None  # Invalid string becomes None
-        assert result["supported_nips"] is None  # Invalid list becomes None
-        assert result["limitation"] is None  # Invalid dict becomes None
-
-    def test_parse_nip11_response_empty_data(self):
-        """Test parsing empty NIP-11 response."""
-        result = parse_nip11_response(None)
-        assert result["nip11_success"] is False
-
-    def test_parse_nip11_response_extra_fields(self):
-        """Test parsing NIP-11 with extra fields."""
-        nip11_data = {
-            "name": "Test Relay",
-            "custom_field": "custom_value",
-            "another_field": {"nested": "data"},
-        }
-
-        result = parse_nip11_response(nip11_data)
-        assert result["nip11_success"] is True
-        assert result["extra_fields"]["custom_field"] == "custom_value"
-        assert result["extra_fields"]["another_field"]["nested"] == "data"
-
-    def test_parse_nip11_response_supported_nips_filtering(self):
-        """Test filtering of supported_nips field."""
-        nip11_data = {"name": "Test Relay", "supported_nips": [1, "2", 3, None, "invalid", 4]}
-
-        result = parse_nip11_response(nip11_data)
-        assert result["supported_nips"] == [1, "2", 3, "invalid", 4]  # None filtered out
-
-    def test_parse_nip11_response_limitation_validation(self):
-        """Test limitation field validation."""
-        nip11_data = {
-            "name": "Test Relay",
-            "limitation": {
-                "valid_key": "valid_value",
-                123: "invalid_key",  # Non-string key
-                "json_invalid": object(),  # Non-JSON-serializable value
-            },
-        }
-
-        result = parse_nip11_response(nip11_data)
-        assert "valid_key" in result["limitation"]
-        assert 123 not in result["limitation"]
-        assert "json_invalid" not in result["limitation"]
-
-    def test_parse_connection_response_valid(self):
-        """Test parsing valid connection response."""
-        conn_data = {
-            "nip66_success": True,
-            "rtt_open": 100,
-            "rtt_read": 150,
-            "rtt_write": 200,
-            "openable": True,
-            "writable": True,
-            "readable": True,
-        }
-
-        result = parse_connection_response(conn_data)
-        assert result["nip66_success"] is True
-        assert result["rtt_open"] == 100
-        assert result["openable"] is True
-
-    def test_parse_connection_response_invalid(self):
-        """Test parsing invalid connection response."""
-        result = parse_connection_response("not a dict")
-        assert result["nip66_success"] is False
 
 
 class TestEventCreation:

@@ -12,8 +12,6 @@ from .utils import calc_event_id  # Event operations
 from .utils import find_ws_urls  # WebSocket URL discovery
 from .utils import generate_event  # Event generation
 from .utils import generate_keypair  # Keypair generation
-from .utils import parse_connection_response  # Connection response parsing
-from .utils import parse_nip11_response  # Response parsing
 from .utils import sanitize  # Data sanitization
 from .utils import sig_event_id  # Signature operations
 from .utils import to_bech32  # Encoding utilities
@@ -28,8 +26,6 @@ __all__ = [
     "find_ws_urls",
     "generate_event",
     "generate_keypair",
-    "parse_connection_response",
-    "parse_nip11_response",
     "sanitize",
     "sig_event_id",
     "to_bech32",

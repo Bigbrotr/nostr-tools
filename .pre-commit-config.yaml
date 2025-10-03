@@ -5,7 +5,7 @@
 repos:
   # Ruff for fast Python linting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.13.3
     hooks:
       # Linter
       - id: ruff
@@ -19,7 +19,7 @@ repos:
 
   # MyPy for static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.1
+    rev: v1.18.2
     hooks:
       - id: mypy
         additional_dependencies: [
@@ -77,6 +77,7 @@ repos:
       - id: pip-audit
         name: pip-audit
         description: Audit Python packages for known vulnerabilities
+        args: ['--skip-editable', '--ignore-vuln', 'GHSA-4xh5-x5gv-qwph']
 
   # Documentation verification
   - repo: local

@@ -20,9 +20,9 @@ from nostr_tools import Filter
 from nostr_tools import Relay
 from nostr_tools import RelayConnectionError
 from nostr_tools import check_connectivity
-from nostr_tools import compute_relay_metadata
 from nostr_tools import fetch_events
 from nostr_tools import fetch_nip11
+from nostr_tools import fetch_relay_metadata
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
 from nostr_tools import stream_events
@@ -49,7 +49,7 @@ async def relay_testing_example():
 
         try:
             # Get comprehensive metadata
-            metadata = await compute_relay_metadata(client, private_key, public_key)
+            metadata = await fetch_relay_metadata(client, private_key, public_key)
 
             print("  📊 Results:")
             print(f"    NIP-66: {'✅' if metadata.nip66_success else '❌'}")
