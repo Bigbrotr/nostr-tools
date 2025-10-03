@@ -5,6 +5,51 @@ All notable changes to nostr-tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-10-03
+
+### Fixed
+
+#### Documentation
+- **Sphinx Build Compatibility** - Removed `-W` flag from docs-check to allow builds with dataclass duplicate warnings
+- **Autosummary Template** - Added custom template with `:no-index:` directive to enable full autogeneration without errors
+- **Dataclass Documentation** - Fixed duplicate object description warnings by filtering dataclass fields from autosummary stubs
+
+#### Build & Distribution
+- **Setuptools Version Constraint** - Constrained setuptools to `<75.0` to use Metadata-Version 2.1 for better twine compatibility
+- **Package Metadata** - Fixed distribution check failures with older twine versions in CI environments
+
+### Changed
+- Documentation stubs now auto-generate cleanly without manual curation
+- Improved CI pipeline reliability with better dependency version management
+
+---
+
+## [1.1.0] - 2025-10-03
+
+### Added
+
+#### Core Features
+- **Enhanced Relay Metadata** - Separated NIP-11 and NIP-66 data structures for better organization
+- **Improved Exception System** - Enhanced error handling with more specific exception types
+- **Professional Development Infrastructure** - Comprehensive Makefile with 30+ development commands
+
+#### Testing & Quality
+- **Complete Test Suite Rewrite** - Professional test organization with 80%+ coverage
+- **Enhanced Test Reliability** - Improved corrupted signature test stability
+- **Security Scanning** - Added pip-audit with vulnerability ignore support
+
+### Changed
+- **Source Structure Refactoring** - Reorganized source code with dataclass-based relay metadata
+- **Documentation Improvements** - Fixed inconsistencies and enhanced API documentation
+- **CI/CD Pipeline** - Improved GitHub Actions workflow with better security scanning
+
+### Fixed
+- **Type Errors** - Resolved type checking issues across the codebase
+- **Documentation Build** - Fixed Sphinx configuration and badge display
+- **Codecov Integration** - Properly configured code coverage reporting
+
+---
+
 ## [1.0.0] - 2025-09-15
 
 ### 🎉 First Stable Release
@@ -81,6 +126,7 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
+| 1.1.x   | ✅ Active      | TBD            |
 | 1.0.x   | ✅ Active      | TBD            |
 | 0.x.x   | ❌ End of Life | 2025-09-14     |
 
