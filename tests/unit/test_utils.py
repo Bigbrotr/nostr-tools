@@ -244,8 +244,8 @@ class TestVerifySig:
     ) -> None:
         """Test verifying a corrupted signature."""
         event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
-        sig = sig_event_id(event_id, valid_private_key)
-        corrupted_sig = "a" + sig[1:]  # Corrupt first character
+        # Use a completely different signature (all zeros) to ensure it's invalid
+        corrupted_sig = "0" * 128
         assert verify_sig(event_id, valid_public_key, corrupted_sig) is False
 
 
