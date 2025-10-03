@@ -5,7 +5,7 @@
 # Run 'make help' for available commands
 # =====================================================
 
-.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-security test-performance \
+.PHONY: help install install-dev install-ci test test-cov test-unit test-integration test-performance \
         lint lint-fix format format-check clean build upload upload-test verify pre-commit \
         check check-all examples security-scan deps-check type-check \
         docs-build docs-serve docs-clean docs-watch docs-open docs-links-check docs-coverage-check docs-build-check \
@@ -57,7 +57,6 @@ help:
 	@echo "  test              Run all tests"
 	@echo "  test-unit         Run unit tests only (fast)"
 	@echo "  test-integration  Run integration tests (network required)"
-	@echo "  test-security     Run security-focused tests"
 	@echo "  test-performance  Run performance benchmarks"
 	@echo "  test-cov          Run tests with coverage report"
 	@echo ""
@@ -174,10 +173,6 @@ test-unit:
 test-integration:
 	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
 	$(PYTHON) -m pytest -m integration
-
-test-security:
-	@echo "$(BLUE)🧪 Running security tests...$(RESET)"
-	$(PYTHON) -m pytest -m security
 
 test-performance:
 	@echo "$(BLUE)🧪 Running performance benchmarks...$(RESET)"

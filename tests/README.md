@@ -103,8 +103,9 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 - Proof-of-work mining
 
 **test_exceptions.py** - Exception Tests
-- RelayConnectionError creation and usage
-- Exception inheritance
+- All custom exception classes (NostrToolsError, RelayConnectionError, EventValidationError, etc.)
+- Exception inheritance and hierarchy
+- Exception message handling
 
 ### Integration Tests (`tests/integration/`)
 

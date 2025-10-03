@@ -13,7 +13,7 @@ A comprehensive Python library for building applications on the Nostr protocol -
 
 - 🔗 **Complete Nostr Protocol Implementation** - Full support for the core Nostr protocol specification
 - 🔒 **Robust Cryptography** - Secure key generation, event signing, and signature verification using secp256k1
-- 🌐 **WebSocket Relay Management** - Efficient async client with automatic reconnection and connection pooling
+- 🌐 **WebSocket Relay Management** - Efficient async client with automatic connection handling
 - 📡 **Event Subscription & Publishing** - Simple APIs for subscribing to and publishing Nostr events
 - 🔍 **Advanced Filtering** - Powerful event filtering with support for all NIP-01 filter attributes
 - 🎯 **Type Safety** - Full type hints for excellent IDE support and early error detection
@@ -294,7 +294,7 @@ make test-cov
 # Run specific test categories
 make test-unit        # Unit tests only
 make test-integration # Integration tests
-make test-security    # Security tests
+make test-performance # Performance benchmarks
 ```
 
 ### Code Quality
@@ -324,11 +324,14 @@ make check
 - **Input Validation**: Comprehensive validation of all inputs and relay responses
 - **Secure Random Generation**: Uses `os.urandom()` for key generation
 - **No Private Key Storage**: Private keys are never stored or logged
-- **Connection Security**: Enforces secure WebSocket connections (wss://)
+- **Connection Security**: Supports secure WebSocket connections (wss://) with fallback to ws://
+- **Automated Security Scanning**: Continuous security analysis with Bandit, Safety, and pip-audit
 
 ### Reporting Security Issues
 
 Please report security vulnerabilities to **security@bigbrotr.com**. Do not file public issues for security vulnerabilities.
+
+See [SECURITY.md](SECURITY.md) for complete security documentation and best practices.
 
 ## 🤝 Contributing
 

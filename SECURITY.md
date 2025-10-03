@@ -69,27 +69,27 @@ Please provide as much information as possible:
 - **Key Generation**: Uses `os.urandom()` for cryptographically secure random numbers
 - **Signing**: Implements secp256k1 using the proven `secp256k1` library
 - **No Key Storage**: Private keys are never stored or logged by the library
-- **Constant-Time Operations**: Cryptographic operations avoid timing attacks
+- **Timing Attack Protection**: Relies on secp256k1 library's constant-time implementations
 
 ### Input Validation
 
-- **Event Validation**: All events are validated before processing
-- **URL Validation**: WebSocket URLs are strictly validated
-- **Filter Validation**: Subscription filters are sanitized
-- **Size Limits**: Enforced limits on message and event sizes
+- **Event Validation**: All events are validated before processing (signatures, IDs, format)
+- **URL Validation**: WebSocket URLs are strictly validated with regex patterns
+- **Filter Validation**: Subscription filters are type-checked and validated
+- **Null Character Prevention**: Events and tags are checked for null bytes
 
 ### Network Security
 
-- **TLS/SSL**: Enforces secure WebSocket connections (wss://)
-- **Certificate Validation**: Proper SSL certificate validation
-- **Timeout Protection**: Configurable timeouts to prevent DoS
-- **Connection Limits**: Rate limiting and connection pooling
+- **TLS/SSL Support**: Supports secure WebSocket connections (wss://) with fallback to ws://
+- **Certificate Validation**: Relies on aiohttp's default SSL certificate validation
+- **Timeout Protection**: Configurable connection and operation timeouts to prevent DoS
+- **Automatic Reconnection**: Connection management with proper cleanup
 
 ### Dependency Security
 
 - **Minimal Dependencies**: Only essential, well-maintained dependencies
 - **Regular Updates**: Dependencies updated regularly
-- **Security Scanning**: Automated scanning with Safety and pip-audit
+- **Security Scanning**: Automated scanning with Bandit, Safety and pip-audit
 - **Version Pinning**: Explicit version requirements for reproducibility
 
 ## 🔍 Security Testing
@@ -99,15 +99,15 @@ Please provide as much information as possible:
 Our CI/CD pipeline includes:
 
 ```bash
-# Static analysis
+# Static analysis for security issues
 bandit -r src/nostr_tools
 
-# Dependency scanning
-safety check
-pip-audit
+# Dependency vulnerability scanning
+safety check --json || true
+pip-audit || true
 
-# Security-focused tests
-pytest -m security
+# Comprehensive test suite
+pytest --cov=nostr_tools --cov-fail-under=80
 ```
 
 ### Manual Security Review
@@ -115,8 +115,8 @@ pytest -m security
 Regular security reviews include:
 
 - Code review for security issues
-- Penetration testing of network components
 - Cryptographic implementation review
+- Dependency audits and updates
 - Third-party security audits (planned)
 
 ## 📋 Security Best Practices for Users
@@ -144,15 +144,22 @@ private_key = get_private_key()
 
 ```python
 # ✅ GOOD: Use secure WebSocket connections
-relay = Relay("wss://relay.example.com")  # wss:// for TLS
+from nostr_tools import Relay
 
-# ❌ BAD: Avoid unencrypted connections
-relay = Relay("ws://relay.example.com")  # Insecure!
+relay = Relay("wss://relay.example.com")  # Secure TLS connection
 
-# ✅ GOOD: Validate relay URLs
-from nostr_tools import validate_relay_url
-if validate_relay_url(url):
-    relay = Relay(url)
+# ⚠️  WARNING: The client will fallback to ws:// if wss:// fails
+# For maximum security, verify relay URLs before use
+relay = Relay("wss://verified-relay.example.com")
+
+# ✅ GOOD: Validate relay configuration
+try:
+    relay = Relay(user_provided_url)
+    relay.validate()  # Raises error if invalid
+    if relay.is_valid:
+        client = Client(relay)
+except (TypeError, ValueError) as e:
+    print(f"Invalid relay: {e}")
 ```
 
 ### Error Handling
@@ -183,9 +190,9 @@ logger.error(f"Failed with key: {private_key}")  # NEVER DO THIS!
    - No cryptographic material in logs
 
 3. **Network Layer**
-   - TLS/SSL enforcement
-   - Connection validation
-   - Rate limiting
+   - TLS/SSL support with fallback handling
+   - Connection validation and timeout protection
+   - Proper error handling and cleanup
 
 4. **Application Layer**
    - Secure defaults
@@ -194,13 +201,13 @@ logger.error(f"Failed with key: {private_key}")  # NEVER DO THIS!
 
 ### Threat Model
 
-We protect against:
+We aim to protect against:
 
-- **Network Attacks**: Man-in-the-middle, eavesdropping
-- **Injection Attacks**: Event injection, filter manipulation
-- **Cryptographic Attacks**: Key extraction, signature forgery
-- **Denial of Service**: Resource exhaustion, connection flooding
-- **Information Disclosure**: Key leakage, metadata exposure
+- **Network Attacks**: TLS support to mitigate man-in-the-middle attacks
+- **Injection Attacks**: Event validation to prevent malformed data
+- **Cryptographic Attacks**: Signature verification and key validation
+- **Information Disclosure**: No logging of private keys or sensitive data
+- **Resource Issues**: Configurable timeouts to limit resource consumption
 
 ## 🔄 Security Updates
 

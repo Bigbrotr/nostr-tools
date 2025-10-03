@@ -8,6 +8,8 @@ from typing import Any
 from typing import Optional
 from typing import Union
 
+from ..exceptions import FilterValidationError
+
 
 @dataclass
 class Filter:
@@ -103,7 +105,7 @@ class Filter:
 
         Raises:
             TypeError: If any attribute is of incorrect type
-            ValueError: If any attribute has an invalid value
+            FilterValidationError: If any attribute has an invalid value
         """
         type_checks: list[tuple[str, Any, tuple[type, ...]]] = [
             ("ids", self.ids, (list, type(None))),
@@ -144,13 +146,13 @@ class Filter:
                 len(elem) == 64 and all(c in "0123456789abcdef" for c in elem)
                 for elem in field_value
             ):
-                raise ValueError(
+                raise FilterValidationError(
                     f"All elements in {field_name} must be lower 64-character hexadecimal strings"
                 )
 
         if self.kinds is not None:
             if not all(0 <= kind <= 65535 for kind in self.kinds):
-                raise ValueError("All elements in kinds must be between 0 and 65535")
+                raise FilterValidationError("All elements in kinds must be between 0 and 65535")
 
         int_checks: list[tuple[str, Optional[int]]] = [
             ("since", self.since),
@@ -159,16 +161,18 @@ class Filter:
         ]
         for field_name, field_value in int_checks:
             if field_value is not None and field_value <= 0:
-                raise ValueError(f"{field_name} must be a positive integer")
+                raise FilterValidationError(f"{field_name} must be a positive integer")
         if self.since is not None and self.until is not None and self.since > self.until:
-            raise ValueError("since must be less than or equal to until")
+            raise FilterValidationError("since must be less than or equal to until")
 
         if self.tags is not None:
             for tag_name, tag_values in self.tags.items():
                 if not isinstance(tag_name, str):
                     raise TypeError("Tag names must be strings")
                 if isinstance(tag_name, str) and (len(tag_name) != 1 or not tag_name.isalpha()):
-                    raise ValueError("Tag names must be single alphabetic characters a-z or A-Z")
+                    raise FilterValidationError(
+                        "Tag names must be single alphabetic characters a-z or A-Z"
+                    )
                 if not isinstance(tag_values, list) or not all(
                     isinstance(tag_value, str) for tag_value in tag_values
                 ):
@@ -211,7 +215,7 @@ class Filter:
         try:
             self.validate()
             return True
-        except (TypeError, ValueError):
+        except (TypeError, FilterValidationError):
             return False
 
     @classmethod

@@ -11,6 +11,7 @@ from dataclasses import field
 from typing import Any
 from typing import Optional
 
+from ..exceptions import RelayValidationError
 from ..utils import find_ws_urls
 
 
@@ -47,7 +48,7 @@ class Relay:
 
         Raises:
             TypeError: If any attribute is of incorrect type
-            ValueError: If any attribute has an invalid value
+            RelayValidationError: If any attribute has an invalid value
         """
         type_checks = [
             ("url", self.url, str),
@@ -59,10 +60,10 @@ class Relay:
 
         urls = find_ws_urls(self.url)
         if len(urls) != 1 or urls[0] != self.url:
-            raise ValueError(f"url must be a valid WebSocket URL, got {self.url}")
+            raise RelayValidationError(f"url must be a valid WebSocket URL, got {self.url}")
 
         if self.network != self.__network:
-            raise ValueError(
+            raise RelayValidationError(
                 f"network must be '{self.__network}' based on the url, got {self.network}"
             )
 
@@ -77,7 +78,7 @@ class Relay:
         try:
             self.validate()
             return True
-        except (TypeError, ValueError):
+        except (TypeError, RelayValidationError):
             return False
 
     @property

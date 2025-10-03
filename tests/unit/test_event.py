@@ -16,6 +16,7 @@ from typing import Any
 
 import pytest
 
+from nostr_tools import EventValidationError
 from nostr_tools import calc_event_id
 from nostr_tools import generate_event
 from nostr_tools import verify_sig
@@ -108,55 +109,55 @@ class TestEventValidation:
     def test_invalid_id_length_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid ID length raises ValueError."""
         valid_event_dict["id"] = "a" * 63  # Wrong length
-        with pytest.raises(ValueError, match="id must be a 64-character hex string"):
+        with pytest.raises(EventValidationError, match="id must be a 64-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_id_chars_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid ID characters raise ValueError."""
         valid_event_dict["id"] = "g" * 64  # Invalid hex char
-        with pytest.raises(ValueError, match="id must be a 64-character hex string"):
+        with pytest.raises(EventValidationError, match="id must be a 64-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_pubkey_length_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid pubkey length raises ValueError."""
         valid_event_dict["pubkey"] = "a" * 63
-        with pytest.raises(ValueError, match="pubkey must be a 64-character hex string"):
+        with pytest.raises(EventValidationError, match="pubkey must be a 64-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_pubkey_chars_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid pubkey characters raise ValueError."""
         valid_event_dict["pubkey"] = "Z" * 64  # Invalid hex char
-        with pytest.raises(ValueError, match="pubkey must be a 64-character hex string"):
+        with pytest.raises(EventValidationError, match="pubkey must be a 64-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_signature_length_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid signature length raises ValueError."""
         valid_event_dict["sig"] = "a" * 127
-        with pytest.raises(ValueError, match="sig must be a 128-character hex string"):
+        with pytest.raises(EventValidationError, match="sig must be a 128-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_signature_chars_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that invalid signature characters raise ValueError."""
         valid_event_dict["sig"] = "X" * 128  # Invalid hex char
-        with pytest.raises(ValueError, match="sig must be a 128-character hex string"):
+        with pytest.raises(EventValidationError, match="sig must be a 128-character hex string"):
             Event.from_dict(valid_event_dict)
 
     def test_negative_created_at_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that negative created_at raises ValueError."""
         valid_event_dict["created_at"] = -1
-        with pytest.raises(ValueError, match="created_at must be a non-negative integer"):
+        with pytest.raises(EventValidationError, match="created_at must be a non-negative integer"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_kind_below_range_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that kind below valid range raises ValueError."""
         valid_event_dict["kind"] = -1
-        with pytest.raises(ValueError, match="kind must be between 0 and 65535"):
+        with pytest.raises(EventValidationError, match="kind must be between 0 and 65535"):
             Event.from_dict(valid_event_dict)
 
     def test_invalid_kind_above_range_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
         """Test that kind above valid range raises ValueError."""
         valid_event_dict["kind"] = 65536
-        with pytest.raises(ValueError, match="kind must be between 0 and 65535"):
+        with pytest.raises(EventValidationError, match="kind must be between 0 and 65535"):
             Event.from_dict(valid_event_dict)
 
     def test_null_character_in_content_raises_error(
@@ -167,7 +168,7 @@ class TestEventValidation:
         event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         event_dict["content"] = "test\x00content"
         # ID and signature are now invalid due to changed content
-        with pytest.raises(ValueError):
+        with pytest.raises(EventValidationError):
             Event.from_dict(event_dict)
 
     def test_null_character_in_tags_raises_error(
@@ -178,7 +179,7 @@ class TestEventValidation:
         event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         event_dict["tags"] = [["test\x00tag"]]
         # ID and signature are now invalid due to changed tags
-        with pytest.raises(ValueError):
+        with pytest.raises(EventValidationError):
             Event.from_dict(event_dict)
 
     def test_wrong_event_id_raises_error(
@@ -187,7 +188,7 @@ class TestEventValidation:
         """Test that incorrect event ID raises ValueError."""
         event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         event_dict["id"] = "a" * 64  # Wrong ID
-        with pytest.raises(ValueError, match="id does not match the computed event id"):
+        with pytest.raises(EventValidationError, match="id does not match the computed event id"):
             Event.from_dict(event_dict)
 
     def test_invalid_signature_raises_error(
@@ -196,7 +197,9 @@ class TestEventValidation:
         """Test that invalid signature raises ValueError."""
         event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         event_dict["sig"] = "a" * 128  # Wrong signature
-        with pytest.raises(ValueError, match="sig is not a valid signature for the event"):
+        with pytest.raises(
+            EventValidationError, match="sig is not a valid signature for the event"
+        ):
             Event.from_dict(event_dict)
 
 

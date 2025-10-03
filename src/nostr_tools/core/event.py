@@ -10,6 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from ..exceptions import EventValidationError
 from ..utils import calc_event_id
 from ..utils import verify_sig
 
@@ -48,7 +49,7 @@ class Event:
         self.sig = self.sig.lower()
         try:
             self.validate()
-        except ValueError:
+        except EventValidationError:
             tags = []
             for tag in self.tags:
                 tag = [
@@ -80,7 +81,7 @@ class Event:
 
         Raises:
             TypeError: If any attribute is of incorrect type
-            ValueError: If any attribute has an invalid value
+            EventValidationError: If any attribute has an invalid value
         """
         # Type validation
         type_checks = [
@@ -143,18 +144,18 @@ class Event:
         ]
         for field_value, check, error_message in checks:
             if not check(field_value):
-                raise ValueError(error_message)
+                raise EventValidationError(error_message)
 
         # Verify event ID matches computed ID
         if (
             calc_event_id(self.pubkey, self.created_at, self.kind, self.tags, self.content)
             != self.id
         ):
-            raise ValueError("id does not match the computed event id")
+            raise EventValidationError("id does not match the computed event id")
 
         # Verify signature
         if not verify_sig(self.id, self.pubkey, self.sig):
-            raise ValueError("sig is not a valid signature for the event")
+            raise EventValidationError("sig is not a valid signature for the event")
 
     @property
     def is_valid(self) -> bool:
@@ -167,7 +168,7 @@ class Event:
         try:
             self.validate()
             return True
-        except (TypeError, ValueError):
+        except (TypeError, EventValidationError):
             return False
 
     @classmethod

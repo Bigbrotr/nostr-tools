@@ -18,7 +18,15 @@ import sys
 from typing import Any
 
 # Core exports that are always available
+from .exceptions.errors import EncodingError
+from .exceptions.errors import EventValidationError
+from .exceptions.errors import FilterValidationError
+from .exceptions.errors import KeyValidationError
+from .exceptions.errors import NostrToolsError
+from .exceptions.errors import PublishError
 from .exceptions.errors import RelayConnectionError
+from .exceptions.errors import RelayValidationError
+from .exceptions.errors import SubscriptionError
 
 __author__ = "Bigbrotr"
 __email__ = "hello@bigbrotr.com"
@@ -165,7 +173,15 @@ __all__ = [
     "Relay",
     "RelayMetadata",
     # Exceptions
+    "NostrToolsError",
     "RelayConnectionError",
+    "EventValidationError",
+    "KeyValidationError",
+    "FilterValidationError",
+    "RelayValidationError",
+    "SubscriptionError",
+    "PublishError",
+    "EncodingError",
     # Cryptographic functions
     "calc_event_id",
     "generate_event",

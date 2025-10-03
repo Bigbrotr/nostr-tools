@@ -39,11 +39,11 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 - **Logging** - Structured logging throughout the library
 
 #### Testing & Quality
-- **Test Suite** - Unit, integration, and security tests
+- **Test Suite** - Comprehensive unit and integration tests
 - **Code Coverage** - Over 80% test coverage
 - **Type Checking** - MyPy strict mode compliance
 - **Code Formatting** - Consistent formatting with Ruff
-- **Security Scanning** - Automated security checks with Bandit
+- **Security Scanning** - Automated security checks with Bandit, Safety, and pip-audit
 - **Pre-commit Hooks** - Automated quality checks before commits
 
 ### Infrastructure
@@ -57,7 +57,8 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 - **Secure Random Generation** - Uses os.urandom() for cryptographic operations
 - **Input Validation** - Comprehensive validation of all inputs
 - **No Key Storage** - Private keys never stored or logged
-- **Connection Security** - Enforces secure WebSocket connections
+- **Connection Security** - Supports secure WebSocket connections (wss://) with fallback
+- **Enhanced Exception Handling** - Specific exception types for better error handling
 
 ### Supported Python Versions
 - Python 3.9

@@ -37,7 +37,7 @@ Features
    Built-in support for secp256k1 signatures, key generation, and Bech32 encoding.
 
 🌐 **WebSocket Relay Management**
-   Efficient WebSocket client with connection pooling, automatic reconnection, and relay discovery.
+   Efficient WebSocket client with automatic connection handling and relay URL validation.
 
 🔄 **Async/Await Support**
    Fully asynchronous API designed for high-performance applications.
@@ -46,7 +46,7 @@ Features
    Full type annotation coverage for excellent IDE support and development experience.
 
 🧪 **Comprehensive Testing**
-   Extensive test suite with unit tests, integration tests, and security checks.
+   Extensive test suite with unit tests and integration tests covering 80%+ of the codebase.
 
 Quick Start
 -----------

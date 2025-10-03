@@ -14,7 +14,7 @@ Test Categories:
 - Unit tests: Test individual components in isolation
 - Integration tests: Test components working together
 - Performance tests: Benchmark critical operations
-- Security tests: Test cryptographic operations and edge cases
+- Cryptographic tests: Test cryptographic operations and edge cases
 
 Usage:
     python -m pytest                    # Run all tests
@@ -26,7 +26,7 @@ Test Markers:
 - unit: Unit tests (fast, no external dependencies)
 - integration: Integration tests (may require network access)
 - slow: Slow tests (proof-of-work, network operations)
-- security: Security-focused tests
+- benchmark: Performance benchmark tests
 
 Example Usage:
     # Run only unit tests
@@ -35,8 +35,8 @@ Example Usage:
     # Skip slow tests
     python -m pytest -m "not slow"
 
-    # Run security tests
-    python -m pytest -m security
+    # Run benchmarks
+    python -m pytest -m benchmark
 
     # Run with coverage
     python -m pytest --cov=nostr_tools --cov-report=html

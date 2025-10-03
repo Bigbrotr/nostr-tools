@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 
+from nostr_tools import FilterValidationError
 from nostr_tools.core.filter import Filter
 
 # ============================================================================
@@ -123,67 +124,69 @@ class TestFilterValidation:
 
     def test_invalid_ids_length_raises_error(self) -> None:
         """Test that invalid ID length raises ValueError."""
-        with pytest.raises(ValueError, match="64-character hexadecimal"):
+        with pytest.raises(FilterValidationError, match="64-character hexadecimal"):
             Filter(ids=["a" * 63])
 
     def test_invalid_ids_chars_raises_error(self) -> None:
         """Test that invalid ID characters raise ValueError."""
-        with pytest.raises(ValueError, match="64-character hexadecimal"):
+        with pytest.raises(FilterValidationError, match="64-character hexadecimal"):
             Filter(ids=["g" * 64])
 
     def test_invalid_authors_length_raises_error(self) -> None:
         """Test that invalid author length raises ValueError."""
-        with pytest.raises(ValueError, match="64-character hexadecimal"):
+        with pytest.raises(FilterValidationError, match="64-character hexadecimal"):
             Filter(authors=["a" * 63])
 
     def test_invalid_authors_chars_raises_error(self) -> None:
         """Test that invalid author characters raise ValueError."""
-        with pytest.raises(ValueError, match="64-character hexadecimal"):
+        with pytest.raises(FilterValidationError, match="64-character hexadecimal"):
             Filter(authors=["Z" * 64])
 
     def test_invalid_kind_below_range_raises_error(self) -> None:
         """Test that kind below valid range raises ValueError."""
-        with pytest.raises(ValueError, match="must be between 0 and 65535"):
+        with pytest.raises(FilterValidationError, match="must be between 0 and 65535"):
             Filter(kinds=[-1])
 
     def test_invalid_kind_above_range_raises_error(self) -> None:
         """Test that kind above valid range raises ValueError."""
-        with pytest.raises(ValueError, match="must be between 0 and 65535"):
+        with pytest.raises(FilterValidationError, match="must be between 0 and 65535"):
             Filter(kinds=[65536])
 
     def test_negative_since_raises_error(self) -> None:
         """Test that negative since raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(since=-1)
 
     def test_zero_since_raises_error(self) -> None:
         """Test that zero since raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(since=0)
 
     def test_negative_until_raises_error(self) -> None:
         """Test that negative until raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(until=-1)
 
     def test_zero_until_raises_error(self) -> None:
         """Test that zero until raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(until=0)
 
     def test_negative_limit_raises_error(self) -> None:
         """Test that negative limit raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(limit=-1)
 
     def test_zero_limit_raises_error(self) -> None:
         """Test that zero limit raises ValueError."""
-        with pytest.raises(ValueError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a positive integer"):
             Filter(limit=0)
 
     def test_since_greater_than_until_raises_error(self) -> None:
         """Test that since > until raises ValueError."""
-        with pytest.raises(ValueError, match="since must be less than or equal to until"):
+        with pytest.raises(
+            FilterValidationError, match="since must be less than or equal to until"
+        ):
             Filter(since=2000000, until=1000000)
 
     def test_since_equal_to_until_is_valid(self) -> None:

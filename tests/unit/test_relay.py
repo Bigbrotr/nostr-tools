@@ -11,6 +11,7 @@ This module tests all functionality of the Relay class including:
 
 import pytest
 
+from nostr_tools import RelayValidationError
 from nostr_tools.core.relay import Relay
 
 # ============================================================================
@@ -84,17 +85,17 @@ class TestRelayUrlValidation:
 
     def test_invalid_url_format_raises_error(self) -> None:
         """Test that invalid URL format raises ValueError."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="invalid_url")
 
     def test_http_url_raises_error(self) -> None:
         """Test that HTTP URL raises ValueError."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="http://relay.example.com")
 
     def test_https_url_raises_error(self) -> None:
         """Test that HTTPS URL raises ValueError."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="https://relay.example.com")
 
     def test_ws_url_is_normalized_to_wss(self) -> None:
@@ -105,17 +106,17 @@ class TestRelayUrlValidation:
 
     def test_url_with_multiple_slashes_raises_error(self) -> None:
         """Test that URL with multiple slashes raises error."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="wss:////relay.example.com")
 
     def test_url_without_domain_raises_error(self) -> None:
         """Test that URL without domain raises error."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="wss://")
 
     def test_url_with_invalid_onion_length_raises_error(self) -> None:
         """Test that invalid onion address length raises error."""
-        with pytest.raises(ValueError, match="must be a valid WebSocket URL"):
+        with pytest.raises(RelayValidationError, match="must be a valid WebSocket URL"):
             Relay(url="wss://invalidonion.onion")  # Not 16 or 56 chars
 
 
@@ -156,13 +157,13 @@ class TestRelayNetworkDetection:
 
     def test_wrong_network_specification_raises_error(self) -> None:
         """Test that wrong network specification raises error."""
-        with pytest.raises(ValueError, match="network must be"):
+        with pytest.raises(RelayValidationError, match="network must be"):
             Relay(url="wss://relay.damus.io", network="tor")  # Wrong network
 
     def test_wrong_network_for_onion_raises_error(self) -> None:
         """Test that wrong network for .onion raises error."""
         onion_url = "wss://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion"
-        with pytest.raises(ValueError, match="network must be"):
+        with pytest.raises(RelayValidationError, match="network must be"):
             Relay(url=onion_url, network="clearnet")  # Wrong network
 
 
@@ -318,7 +319,7 @@ class TestRelayEdgeCases:
         try:
             relay = Relay(url="wss://relay.münchen.de")
             assert relay.network == "clearnet"
-        except ValueError:
+        except RelayValidationError:
             # If IDN is not supported, that's also valid
             pass
 
