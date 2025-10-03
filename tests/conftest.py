@@ -215,6 +215,3 @@ def mock_session(mock_websocket: AsyncMock) -> AsyncMock:
 def pytest_configure(config):
     """Configure custom markers."""
     config.addinivalue_line("markers", "unit: mark test as a unit test")
-    config.addinivalue_line("markers", "integration: mark test as an integration test")
-    config.addinivalue_line("markers", "slow: mark test as slow running")
-    config.addinivalue_line("markers", "benchmark: mark test as a performance benchmark")

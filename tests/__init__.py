@@ -1,70 +1,54 @@
 """
 Test package for nostr-tools library.
 
-This package contains unit tests and integration tests for the
-nostr-tools library components.
+This package contains unit tests for the nostr-tools library components.
 
 Test Structure:
-- test_basic.py: Core functionality tests (events, keys, relays, filters)
-- test_integration.py: Integration tests with real relays (if added)
-- test_performance.py: Performance and benchmark tests (if added)
-- conftest.py: Pytest configuration and fixtures (if added)
+- unit/: Unit tests for individual components
+  - test_client.py: Client functionality tests
+  - test_event.py: Event creation and validation tests
+  - test_filter.py: Filter creation and validation tests
+  - test_relay.py: Relay validation tests
+  - test_relay_metadata.py: Relay metadata tests
+  - test_utils.py: Utility function tests
+  - test_actions.py: High-level action function tests
+  - test_exceptions.py: Exception handling tests
+  - test_coverage_boost.py: Additional coverage tests
+- test_package.py: Package structure and import tests
+- conftest.py: Pytest configuration and shared fixtures
 
 Test Categories:
-- Unit tests: Test individual components in isolation
-- Integration tests: Test components working together
-- Performance tests: Benchmark critical operations
-- Cryptographic tests: Test cryptographic operations and edge cases
+- Unit tests: Test individual components in isolation with mocking
 
 Usage:
+    make test              # Run all tests with coverage
+    make test-unit         # Run unit tests only
+    make test-cov          # Generate HTML coverage report
+    make test-quick        # Quick test run without coverage
+
+Or directly with pytest:
     python -m pytest                    # Run all tests
-    python -m pytest tests/test_basic.py # Run specific test file
+    python -m pytest tests/unit/        # Run unit tests only
     python -m pytest -v                 # Verbose output
     python -m pytest --cov=nostr_tools  # With coverage
 
 Test Markers:
 - unit: Unit tests (fast, no external dependencies)
-- integration: Integration tests (may require network access)
-- slow: Slow tests (proof-of-work, network operations)
-- benchmark: Performance benchmark tests
 
 Example Usage:
     # Run only unit tests
     python -m pytest -m unit
 
-    # Skip slow tests
-    python -m pytest -m "not slow"
-
-    # Run benchmarks
-    python -m pytest -m benchmark
-
-    # Run with coverage
+    # Run with coverage report
     python -m pytest --cov=nostr_tools --cov-report=html
 
 Requirements:
-- pytest>=7.0.0
-- pytest-asyncio>=0.21.0
-- pytest-cov>=4.0.0 (for coverage)
-- pytest-mock>=3.10.0 (for mocking)
-
-Environment Variables:
-- NOSTR_TEST_RELAY: Override default test relay URL
-- NOSTR_TEST_TIMEOUT: Override default test timeout
-- NOSTR_SKIP_INTEGRATION: Skip integration tests
+- pytest>=7.4.0
+- pytest-asyncio>=0.23.0
+- pytest-cov>=4.0.0
+- pytest-mock>=3.12.0
 """
 
-import os
+# Common test fixtures and utilities are imported from conftest.py
 
-# Test configuration
-TEST_RELAY_URL = os.getenv("NOSTR_TEST_RELAY", "wss://relay.damus.io")
-TEST_TIMEOUT = int(os.getenv("NOSTR_TEST_TIMEOUT", "30"))
-SKIP_INTEGRATION = os.getenv("NOSTR_SKIP_INTEGRATION", "false").lower() == "true"
-
-# Common test fixtures and utilities can be imported here
-# when added to conftest.py
-
-__all__ = [
-    "SKIP_INTEGRATION",
-    "TEST_RELAY_URL",
-    "TEST_TIMEOUT",
-]
+__all__: list[str] = []

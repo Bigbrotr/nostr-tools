@@ -7,7 +7,7 @@
 
 .PHONY: help install install-dev install-ci clean clean-all \
         format format-check lint lint-fix type-check \
-        test test-unit test-integration test-benchmark test-cov test-watch test-quick \
+        test test-unit test-cov test-watch test-quick \
         security security-bandit security-safety security-audit \
         docs docs-build docs-serve docs-clean docs-check docs-open \
         build build-check dist-check publish publish-test \
@@ -72,8 +72,6 @@ help:
 	@echo "$(BOLD)$(GREEN)🧪 Testing:$(RESET)"
 	@echo "  test              Run all tests with coverage"
 	@echo "  test-unit         Run unit tests only (fast)"
-	@echo "  test-integration  Run integration tests (requires network)"
-	@echo "  test-benchmark    Run performance benchmarks"
 	@echo "  test-cov          Run tests and generate HTML coverage report"
 	@echo "  test-quick        Quick test run without coverage"
 	@echo "  test-watch        Run tests in watch mode (re-run on changes)"
@@ -209,16 +207,6 @@ test-unit:
 	@echo "$(BLUE)🧪 Running unit tests...$(RESET)"
 	$(PYTHON) -m pytest -m unit -v
 	@echo "$(GREEN)✅ Unit tests passed!$(RESET)"
-
-test-integration:
-	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
-	$(PYTHON) -m pytest -m integration -v
-	@echo "$(GREEN)✅ Integration tests passed!$(RESET)"
-
-test-benchmark:
-	@echo "$(BLUE)🧪 Running performance benchmarks...$(RESET)"
-	$(PYTHON) -m pytest -m benchmark --benchmark-only
-	@echo "$(GREEN)✅ Benchmarks complete!$(RESET)"
 
 test-cov:
 	@echo "$(BLUE)🧪 Running tests with HTML coverage report...$(RESET)"

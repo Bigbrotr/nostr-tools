@@ -10,15 +10,15 @@ This is a comprehensive, professional test suite for the nostr-tools Python pack
 tests/
 ├── conftest.py              # Shared fixtures and configuration
 ├── unit/                    # Unit tests (isolated, no external dependencies)
+│   ├── test_actions.py      # Action function tests
+│   ├── test_client.py       # Client class tests
+│   ├── test_coverage_boost.py  # Additional coverage tests
 │   ├── test_event.py        # Event class tests
+│   ├── test_exceptions.py   # Exception classes tests
 │   ├── test_filter.py       # Filter class tests
 │   ├── test_relay.py        # Relay class tests
-│   ├── test_client.py       # Client class tests
 │   ├── test_relay_metadata.py  # RelayMetadata, Nip11, Nip66 tests
-│   ├── test_utils.py        # Utility functions tests
-│   └── test_exceptions.py   # Exception classes tests
-├── integration/             # Integration tests (may require network)
-│   └── test_actions.py      # High-level action functions tests
+│   └── test_utils.py        # Utility functions tests
 └── test_package.py          # Package-level tests
 ```
 
@@ -27,21 +27,27 @@ tests/
 ### Run All Tests
 ```bash
 pytest tests/
+# or
+make test
 ```
 
 ### Run Unit Tests Only
 ```bash
 pytest tests/unit/ -m unit
-```
-
-### Run Integration Tests Only
-```bash
-pytest tests/integration/ -m integration
+# or
+make test-unit
 ```
 
 ### Run With Coverage
 ```bash
 pytest tests/ --cov=nostr_tools --cov-report=html --cov-report=term-missing
+# or
+make test-cov
+```
+
+### Run Quick Tests (no coverage)
+```bash
+make test-quick
 ```
 
 ### Run Specific Test File
@@ -58,6 +64,27 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 
 ### Unit Tests (`tests/unit/`)
 
+**test_actions.py** - Action Functions Tests
+- fetch_events with mocked connections
+- stream_events functionality
+- fetch_nip11 with mocked HTTP
+- Connectivity, readability, and writability checks
+- Relay metadata fetching
+- NIP-66 metrics collection
+
+**test_client.py** - Client Class Tests
+- Client creation and configuration
+- Connection management (mocked)
+- Message sending
+- Subscription management
+- Event publishing
+- Async context manager
+
+**test_coverage_boost.py** - Additional Coverage Tests
+- Edge cases and corner scenarios
+- Additional code paths
+- Enhanced coverage for hard-to-test code
+
 **test_event.py** - Event Class Tests
 - Event creation and validation
 - Type checking
@@ -65,6 +92,11 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 - Event ID calculation
 - Dictionary conversion
 - Edge cases (Unicode, empty content, max values, etc.)
+
+**test_exceptions.py** - Exception Tests
+- All custom exception classes
+- Exception inheritance and hierarchy
+- Exception message handling
 
 **test_filter.py** - Filter Class Tests
 - Filter creation with various parameters
@@ -78,14 +110,6 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 - URL validation
 - Network type detection
 - Dictionary conversion
-
-**test_client.py** - Client Class Tests
-- Client creation and configuration
-- Connection management (mocked)
-- Message sending
-- Subscription management
-- Event publishing
-- Async context manager
 
 **test_relay_metadata.py** - RelayMetadata Tests
 - RelayMetadata creation
@@ -102,20 +126,6 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 - Keypair generation and validation
 - Proof-of-work mining
 
-**test_exceptions.py** - Exception Tests
-- All custom exception classes (NostrToolsError, RelayConnectionError, EventValidationError, etc.)
-- Exception inheritance and hierarchy
-- Exception message handling
-
-### Integration Tests (`tests/integration/`)
-
-**test_actions.py** - Action Functions Tests
-- fetch_events with mocked connections
-- stream_events functionality
-- fetch_nip11 with mocked HTTP
-- Connectivity checks
-- Relay metadata fetching
-
 ### Package Tests (`test_package.py`)
 
 - Package imports
@@ -129,8 +139,6 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 Tests are marked with pytest markers for easy filtering:
 
 - `@pytest.mark.unit` - Unit tests (fast, isolated)
-- `@pytest.mark.integration` - Integration tests (may require network)
-- `@pytest.mark.slow` - Slow-running tests
 - `@pytest.mark.asyncio` - Async tests
 
 ## Fixtures
@@ -150,6 +158,8 @@ Common fixtures are defined in `conftest.py`:
 - `tor_relay` - Tor Relay instance
 - `valid_client` - Valid Client instance
 - `tor_client` - Tor Client instance
+- `valid_nip11_dict` - Valid NIP-11 metadata
+- `valid_nip66_dict` - Valid NIP-66 metadata
 
 ### Mock Fixtures
 - `mock_websocket` - Mocked WebSocket connection
@@ -157,7 +167,7 @@ Common fixtures are defined in `conftest.py`:
 
 ## Code Coverage
 
-Current coverage: **83%**
+Current coverage: **88%**
 
 Coverage breakdown by module:
 - `core/event.py` - 100%
@@ -165,9 +175,9 @@ Coverage breakdown by module:
 - `core/filter.py` - 98%
 - `core/relay.py` - 97%
 - `utils/utils.py` - 93%
-- `core/relay_metadata.py` - 92%
-- `actions/actions.py` - 76%
-- `core/client.py` - 62% (async/network code is harder to test)
+- `core/relay_metadata.py` - 93%
+- `actions/actions.py` - 80%
+- `core/client.py` - 77%
 
 ## Adding New Tests
 
@@ -182,11 +192,11 @@ Coverage breakdown by module:
            pass
    ```
 
-2. **Integration Tests**: Add to `tests/integration/test_actions.py`
+2. **For async functions**: Use `@pytest.mark.asyncio`
    ```python
-   @pytest.mark.integration
+   @pytest.mark.unit
    @pytest.mark.asyncio
-   async def test_new_action(self):
+   async def test_async_feature(self):
        # Test implementation
        pass
    ```
@@ -235,7 +245,7 @@ Tests are configured to run in CI with:
 
 ### Test Timeouts
 - Use `@pytest.mark.timeout(seconds)` for long-running tests
-- Increase timeout in pytest.ini if needed
+- Increase timeout in pyproject.toml if needed
 
 ## Maintenance
 
@@ -244,7 +254,7 @@ Tests are configured to run in CI with:
 2. Add tests for new features before merging
 3. Keep coverage above 80%
 4. Remove obsolete tests
-5. Update mocks when external APIs change
+5. Update mocks when APIs change
 
 ### Test Health Checks
 ```bash
@@ -265,7 +275,7 @@ pytest tests/ --durations=10
 
 When contributing tests:
 1. Follow the existing structure and naming conventions
-2. Add appropriate markers
+2. Add appropriate markers (`@pytest.mark.unit`)
 3. Include docstrings
 4. Ensure tests pass locally
 5. Check coverage doesn't decrease

@@ -155,11 +155,11 @@ make test-cov  # Opens htmlcov/index.html
 # Unit tests only (fast)
 make test-unit
 
-# Integration tests (requires network)
-make test-integration
+# Coverage report
+make test-cov
 
-# Performance benchmarks
-make test-benchmark
+# Quick tests (no coverage)
+make test-quick
 ```
 
 ### Writing Tests
@@ -190,18 +190,11 @@ class TestFeature:
     def test_unit_specific(self):
         """Unit test example."""
         pass
-
-    @pytest.mark.integration
-    async def test_integration_specific(self):
-        """Integration test example."""
-        pass
 ```
 
 ### Test Markers
 
-- `@pytest.mark.unit` - Fast unit tests
-- `@pytest.mark.integration` - Tests requiring network
-- `@pytest.mark.benchmark` - Performance tests
+- `@pytest.mark.unit` - Fast unit tests (no external dependencies)
 
 ## 🔒 Security
 
@@ -428,8 +421,8 @@ make dist-check
 ### Testing
 - `make test` - All tests
 - `make test-unit` - Unit tests
-- `make test-integration` - Integration tests
 - `make test-cov` - Coverage report
+- `make test-quick` - Quick tests without coverage
 
 ### Security
 - `make security` - All security scans

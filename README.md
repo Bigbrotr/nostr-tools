@@ -296,8 +296,8 @@ make test
 
 # Run specific test types
 make test-unit        # Fast unit tests
-make test-integration # Integration tests  
-make test-benchmark   # Performance tests
+make test-cov         # Coverage report
+make test-quick       # Quick tests without coverage
 
 # Security scans
 make security

@@ -1,11 +1,8 @@
 """
-Integration tests for the actions module.
+Unit tests for the actions module.
 
-This module tests high-level action functions that require
+This module tests high-level action functions that use
 mocked network interactions and async operations.
-
-Note: These are integration tests that use mocking for external dependencies.
-Real network tests should be run separately with actual relay connections.
 """
 
 from typing import Any
@@ -35,7 +32,7 @@ from nostr_tools.exceptions import RelayConnectionError
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestFetchEvents:
     """Test fetch_events action."""
 
@@ -97,7 +94,7 @@ class TestFetchEvents:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestStreamEvents:
     """Test stream_events action."""
 
@@ -140,7 +137,7 @@ class TestStreamEvents:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestFetchNip11:
     """Test fetch_nip11 action."""
 
@@ -204,7 +201,7 @@ class TestFetchNip11:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestCheckConnectivity:
     """Test check_connectivity action."""
 
@@ -235,7 +232,7 @@ class TestCheckConnectivity:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestCheckReadability:
     """Test check_readability action."""
 
@@ -269,7 +266,7 @@ class TestCheckReadability:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestCheckWritability:
     """Test check_writability action."""
 
@@ -306,7 +303,7 @@ class TestCheckWritability:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestFetchNip66:
     """Test fetch_nip66 action."""
 
@@ -357,7 +354,7 @@ class TestFetchNip66:
 # ============================================================================
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestFetchRelayMetadata:
     """Test fetch_relay_metadata action."""
 

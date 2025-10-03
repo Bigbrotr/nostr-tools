@@ -302,13 +302,13 @@ class TestConstants:
 
 
 # ============================================================================
-# Integration Tests
+# Package Component Integration Tests
 # ============================================================================
 
 
 @pytest.mark.unit
 class TestPackageIntegration:
-    """Test package integration."""
+    """Test integration between package components."""
 
     def test_create_event_flow(self) -> None:
         """Test complete event creation flow using package imports."""

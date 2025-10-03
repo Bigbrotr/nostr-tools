@@ -107,10 +107,6 @@ dev = [
     "sphinxext-opengraph>=0.8.0,<1.0.0",
     "sphinx-design>=0.4.0,<1.0.0",
     "furo>=2025.7.19",
-
-    # Performance profiling tools
-    "pytest-benchmark>=4.0.0,<6.0.0",       # Performance benchmarking
-    "memory-profiler>=0.60.0,<1.0.0",       # Memory usage profiling
 ]
 
 # Minimal testing dependencies - for CI environments and quick testing
@@ -300,8 +296,6 @@ addopts = [
 # Test markers for categorization
 markers = [
     "unit: Unit tests - fast, no external dependencies",
-    "integration: Integration tests - may require network access",
-    "benchmark: Performance benchmark tests",
 ]
 
 # Async test configuration

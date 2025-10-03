@@ -46,7 +46,7 @@ Features
    Full type annotation coverage for excellent IDE support and development experience.
 
 🧪 **Comprehensive Testing**
-   Extensive test suite with unit tests and integration tests covering 80%+ of the codebase.
+   Extensive test suite with comprehensive unit tests covering 80%+ of the codebase.
 
 Quick Start
 -----------
