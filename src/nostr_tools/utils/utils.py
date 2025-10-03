@@ -2188,6 +2188,7 @@ def generate_keypair() -> tuple[str, str]:
         tuple[str, str]: Tuple of (private_key_hex, public_key_hex).
             - private_key_hex: 64-character lowercase hexadecimal string
             - public_key_hex: 64-character lowercase hexadecimal string (x-only pubkey)
+
             Both keys are suitable for Nostr protocol use.
 
     Examples:

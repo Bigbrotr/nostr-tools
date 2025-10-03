@@ -85,7 +85,7 @@ autodoc_typehints = "description"
 autodoc_typehints_description_target = "all"
 autodoc_class_signature = "separated"
 autodoc_member_order = "bysource"
-autoclass_content = "class"
+autoclass_content = "both"
 autodoc_module_first = True
 
 # -- Autosummary configuration -----------------------------------------------
