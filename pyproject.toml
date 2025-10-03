@@ -3,7 +3,8 @@
 
 [build-system]
 # Build backend configuration - uses setuptools with dynamic versioning
-requires = ["setuptools>=68.0", "wheel", "setuptools-scm>=7.0"]
+# Constrain setuptools to avoid Metadata-Version 2.4 compatibility issues with older twine
+requires = ["setuptools>=68.0,<75.0", "wheel", "setuptools-scm>=7.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
