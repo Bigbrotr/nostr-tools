@@ -89,7 +89,8 @@ autodoc_default_flags = ["members"]
 # Generate stubs automatically
 autosummary_generate = True
 autosummary_imported_members = False
-autosummary_generate_overwrite = True
+# Don't overwrite manually curated stubs
+autosummary_generate_overwrite = False
 
 # MyST settings (Markdown parser)
 myst_enable_extensions = [
