@@ -68,7 +68,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-# docs/_autosummary/  # Keep stubs in version control to prevent regeneration issues
+docs/_autosummary/
 
 # PyBuilder
 .pybuilder/
