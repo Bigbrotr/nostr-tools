@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from dataclasses import field
-from inspect import Traceback
+from types import TracebackType
 from typing import Any
 from typing import Optional
 from typing import Union
@@ -136,7 +136,7 @@ class Client:
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type: type, exc_val: Exception, exc_tb: Traceback) -> None:
+    async def __aexit__(self, exc_type: type, exc_val: Exception, exc_tb: TracebackType) -> None:
         """
         Async context manager exit.
 
