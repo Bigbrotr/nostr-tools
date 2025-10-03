@@ -73,24 +73,36 @@ coverage_ignore_functions = [
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
-    "undoc-members": True,
-    "exclude-members": "__weakref__",
+    "undoc-members": False,  # Don't auto-document undocumented members
+    "private-members": False,
+    "special-members": "__init__, __call__",
+    "exclude-members": "__weakref__, __dict__, __module__, __annotations__",
+    "show-inheritance": True,
+    "inherited-members": False,
 }
 
 autodoc_typehints = "description"
-autodoc_typehints_description_target = "documented"
-autodoc_class_signature = "mixed"
-
-# Prevent duplicate object warnings by not documenting special members
-autodoc_default_flags = ["members"]
+autodoc_typehints_description_target = "all"
+autodoc_class_signature = "separated"
+autodoc_member_order = "bysource"
+autoclass_content = "class"
+autodoc_module_first = True
 
 # -- Autosummary configuration -----------------------------------------------
 
 # Generate stubs automatically
 autosummary_generate = True
-autosummary_imported_members = False
+autosummary_imported_members = True
 # Allow regeneration with custom templates
 autosummary_generate_overwrite = True
+# Include all members by default
+autosummary_ignore_module_all = False
+# Use custom templates
+autosummary_context = {
+    "show_inherited_members": True,
+}
+# Automatically document all items in __all__
+autosummary_mock_imports = []
 
 # MyST settings (Markdown parser)
 myst_enable_extensions = [

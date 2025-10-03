@@ -18,17 +18,13 @@ class RelayMetadata:
 
     This class stores metadata about a relay, including information
     from NIP-11 and NIP-66 standards.
-
-    Attributes:
-        relay: The relay object this metadata describes
-        nip11: NIP-11 relay information document data
-        nip66: NIP-66 connection and performance data
-        generated_at: Timestamp when the metadata was generated
     """
 
-    relay: Relay
-    generated_at: int
+    relay: Relay  #: The relay object this metadata describes
+    generated_at: int  #: Timestamp when the metadata was generated
+    #: NIP-11 relay information document data
     nip11: Optional["RelayMetadata.Nip11"] = None
+    #: NIP-66 connection and performance data
     nip66: Optional["RelayMetadata.Nip66"] = None
 
     def __post_init__(self) -> None:
@@ -119,36 +115,21 @@ class RelayMetadata:
         This module defines the Nip11 class for handling relay information documents
         as specified in NIP-11. It includes validation, normalization, and conversion
         to/from dictionary representations.
-
-        Attributes:
-            name: Relay name
-            description: Relay description
-            banner: URL to banner image
-            icon: URL to icon image
-            pubkey: Relay public key
-            contact: Contact information
-            supported_nips: List of supported NIPs
-            software: Software name
-            version: Software version
-            privacy_policy: URL to privacy policy
-            terms_of_service: URL to terms of service
-            limitation: Limitation information
-            extra_fields: Additional fields
         """
 
-        name: Optional[str] = None
-        description: Optional[str] = None
-        banner: Optional[str] = None
-        icon: Optional[str] = None
-        pubkey: Optional[str] = None
-        contact: Optional[str] = None
-        supported_nips: Optional[list[Union[int, str]]] = None
-        software: Optional[str] = None
-        version: Optional[str] = None
-        privacy_policy: Optional[str] = None
-        terms_of_service: Optional[str] = None
-        limitation: Optional[dict[str, Any]] = None
-        extra_fields: Optional[dict[str, Any]] = None
+        name: Optional[str] = None  #: Relay name
+        description: Optional[str] = None  #: Relay description
+        banner: Optional[str] = None  #: URL to banner image
+        icon: Optional[str] = None  #: URL to icon image
+        pubkey: Optional[str] = None  #: Relay public key
+        contact: Optional[str] = None  #: Contact information
+        supported_nips: Optional[list[Union[int, str]]] = None  #: List of supported NIPs
+        software: Optional[str] = None  #: Software name
+        version: Optional[str] = None  #: Software version
+        privacy_policy: Optional[str] = None  #: URL to privacy policy
+        terms_of_service: Optional[str] = None  #: URL to terms of service
+        limitation: Optional[dict[str, Any]] = None  #: Limitation information
+        extra_fields: Optional[dict[str, Any]] = None  #: Additional fields
 
         def __post_init__(self) -> None:
             """Normalize and validate data after initialization."""
@@ -289,22 +270,15 @@ class RelayMetadata:
         This module defines the Nip66 class for handling relay connection and performance
         data as specified in NIP-66. It includes validation, conversion to/from dictionary
         representations, and a property to check data validity.
-
-        Attributes:
-            openable: Whether the relay is openable
-            readable: Whether the relay is readable
-            writable: Whether the relay is writable
-            rtt_open: Round-trip time to open connection in ms
-            rtt_read: Round-trip time to read data in ms
-            rtt_write: Round-trip time to write data in ms
         """
 
-        openable: bool = False
-        readable: bool = False
-        writable: bool = False
+        openable: bool = False  #: Whether the relay is openable
+        readable: bool = False  #: Whether the relay is readable
+        writable: bool = False  #: Whether the relay is writable
+        #: Round-trip time to open connection in ms
         rtt_open: Optional[int] = None
-        rtt_read: Optional[int] = None
-        rtt_write: Optional[int] = None
+        rtt_read: Optional[int] = None  #: Round-trip time to read data in ms
+        rtt_write: Optional[int] = None  #: Round-trip time to write data in ms
 
         def __post_init__(self) -> None:
             """Validate data after initialization."""

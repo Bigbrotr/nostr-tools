@@ -21,26 +21,6 @@ class Filter:
     kinds, time ranges, result limits, and tag-based filtering. All filter
     criteria are optional and use AND logic when combined.
 
-    Attributes:
-        ids (Optional[list[str]]): List of event IDs to match (64-char lowercase
-            hex strings). Events matching any ID in the list will be returned.
-        authors (Optional[list[str]]): List of author public keys (64-char
-            lowercase hex strings). Events from any author in the list will be
-            returned.
-        kinds (Optional[list[int]]): List of event kinds to match (0-65535).
-            Events matching any kind in the list will be returned.
-            Common kinds: 0=metadata, 1=text note, 3=contacts, 7=reaction
-        since (Optional[int]): Unix timestamp (seconds). Only events created
-            at or after this time will be returned.
-        until (Optional[int]): Unix timestamp (seconds). Only events created
-            at or before this time will be returned.
-        limit (Optional[int]): Maximum number of events to return. Must be
-            positive. Relays may impose their own limits.
-        tags (Optional[dict[str, list[str]]]): Tag-based filters. Keys are
-            single alphabetic characters (a-z, A-Z), values are lists of strings.
-            Example: {"e": ["event_id1", "event_id2"], "p": ["pubkey1"]}
-            will match events with #e or #p tags containing specified values.
-
     Examples:
         Filter by event kind:
 
@@ -94,12 +74,19 @@ class Filter:
             invalid hex strings, negative timestamps, invalid tag names).
     """
 
+    #: List of event IDs to match (64-char lowercase hex strings). Events matching any ID in the list will be returned.
     ids: Optional[list[str]] = None
+    #: List of author public keys (64-char lowercase hex strings). Events from any author in the list will be returned.
     authors: Optional[list[str]] = None
+    #: List of event kinds to match (0-65535). Events matching any kind in the list will be returned. Common kinds: 0=metadata, 1=text note, 3=contacts, 7=reaction
     kinds: Optional[list[int]] = None
+    #: Unix timestamp (seconds). Only events created at or after this time will be returned.
     since: Optional[int] = None
+    #: Unix timestamp (seconds). Only events created at or before this time will be returned.
     until: Optional[int] = None
+    #: Maximum number of events to return. Must be positive. Relays may impose their own limits.
     limit: Optional[int] = None
+    #: Tag-based filters. Keys are single alphabetic characters (a-z, A-Z), values are lists of strings. Example: {"e": ["event_id1", "event_id2"], "p": ["pubkey1"]}
     tags: Optional[dict[str, list[str]]] = field(default_factory=dict)
 
     def __init__(

@@ -2,8 +2,11 @@
 
 .. currentmodule:: {{ module }}
 
-.. autoclass:: {{ objname }}
-   :no-index:
+.. autoclass:: {{ fullname }}
+   :members:
+   :show-inheritance:
+   :special-members: __init__, __call__, __aenter__, __aexit__
+   :exclude-members: __weakref__, __dict__, __module__, __annotations__
 
    {% block methods %}
    {% if methods %}
@@ -22,11 +25,7 @@
 
    .. autosummary::
    {% for item in attributes %}
-      {# Only include @property decorated attributes, not dataclass fields #}
-      {# Properties typically start with is_ or are computed like subscription_filter #}
-      {% if item in ['is_valid', 'is_connected', 'subscription_filter', 'active_subscriptions'] %}
       ~{{ name }}.{{ item }}
-      {% endif %}
    {%- endfor %}
    {% endif %}
    {% endblock %}

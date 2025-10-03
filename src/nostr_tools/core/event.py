@@ -26,23 +26,6 @@ class Event:
     automatically validated upon creation and escape sequences in content/tags
     are properly handled.
 
-    Attributes:
-        id (str): Event ID as a 64-character lowercase hexadecimal string.
-            This is the SHA-256 hash of the serialized event data.
-        pubkey (str): Public key of the event author as a 64-character
-            lowercase hexadecimal string.
-        created_at (int): Unix timestamp (seconds since epoch) of when the
-            event was created. Must be non-negative.
-        kind (int): Event kind number (0-65535) defining the event type.
-            Common kinds: 0=metadata, 1=text note, 3=contacts, 4=DM, etc.
-        tags (list[list[str]]): List of event tags. Each tag is a list of
-            strings where the first element is the tag name.
-            Example: [["e", "event_id"], ["p", "pubkey"]]
-        content (str): The event content/message as a string.
-            Cannot contain null bytes.
-        sig (str): Schnorr signature of the event as a 128-character
-            lowercase hexadecimal string.
-
     Examples:
         Create an event from a dictionary:
 
@@ -76,12 +59,19 @@ class Event:
             match computed hash, or signature verification fails.
     """
 
+    #: Event ID as a 64-character lowercase hexadecimal string. This is the SHA-256 hash of the serialized event data.
     id: str
+    #: Public key of the event author as a 64-character lowercase hexadecimal string.
     pubkey: str
+    #: Unix timestamp (seconds since epoch) of when the event was created. Must be non-negative.
     created_at: int
+    #: Event kind number (0-65535) defining the event type. Common kinds: 0=metadata, 1=text note, 3=contacts, 4=DM, etc.
     kind: int
+    #: List of event tags. Each tag is a list of strings where the first element is the tag name. Example: [["e", "event_id"], ["p", "pubkey"]]
     tags: list[list[str]]
+    #: The event content/message as a string. Cannot contain null bytes.
     content: str
+    #: Schnorr signature of the event as a 128-character lowercase hexadecimal string.
     sig: str
 
     def __post_init__(self) -> None:

@@ -25,15 +25,6 @@ class Relay:
     (clearnet or Tor) based on the WebSocket URL format. The URL is
     validated and normalized upon initialization.
 
-    Attributes:
-        url (str): WebSocket URL of the relay (wss:// or ws://).
-            Must be a valid WebSocket URL. Automatically normalized.
-            Examples: "wss://relay.damus.io", "wss://nostr.wine"
-        network (Optional[str]): Network type, automatically detected from URL.
-            - "clearnet" for standard internet relays
-            - "tor" for .onion Tor hidden service relays
-            Detected automatically if not provided.
-
     Examples:
         Create a clearnet relay:
 
@@ -72,7 +63,9 @@ class Relay:
             network type doesn't match the URL.
     """
 
+    #: WebSocket URL of the relay (wss:// or ws://). Must be a valid WebSocket URL. Automatically normalized. Examples: "wss://relay.damus.io", "wss://nostr.wine"
     url: str
+    #: Network type, automatically detected from URL. "clearnet" for standard internet relays, "tor" for .onion Tor hidden service relays.
     network: Optional[str] = field(default=None)
 
     def __post_init__(self) -> None:

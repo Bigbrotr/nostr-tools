@@ -39,15 +39,6 @@ class Client:
     It supports both clearnet and Tor relays via SOCKS5 proxy. The client implements
     async context manager protocol for automatic connection management.
 
-    Attributes:
-        relay (Relay): The Nostr relay to connect to. Must be a valid Relay instance
-            with properly formatted WebSocket URL.
-        timeout (Optional[int]): Connection and operation timeout in seconds.
-            Default is 10 seconds. Set to None for no timeout.
-        socks5_proxy_url (Optional[str]): SOCKS5 proxy URL for Tor relays.
-            Required when connecting to .onion relays. Format: "socks5://host:port"
-            Example: "socks5://127.0.0.1:9050"
-
     Examples:
         Basic usage with context manager:
 
@@ -103,8 +94,11 @@ class Client:
         RelayConnectionError: If connection to relay fails.
     """
 
+    #: The Nostr relay to connect to. Must be a valid Relay instance with properly formatted WebSocket URL.
     relay: Relay
+    #: Connection and operation timeout in seconds. Default is 10 seconds. Set to None for no timeout.
     timeout: Optional[int] = 10
+    #: SOCKS5 proxy URL for Tor relays. Required when connecting to .onion relays. Format: "socks5://host:port"
     socks5_proxy_url: Optional[str] = None
     _session: Optional[ClientSession] = field(default=None, init=False)
     _ws: Optional[ClientWebSocketResponse] = field(default=None, init=False)
