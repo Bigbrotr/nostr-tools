@@ -300,7 +300,6 @@ addopts = [
 markers = [
     "unit: Unit tests - fast, no external dependencies",
     "integration: Integration tests - may require network access",
-    "slow: Slow tests - long running or resource intensive",
     "benchmark: Performance benchmark tests",
 ]
 

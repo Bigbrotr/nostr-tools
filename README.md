@@ -267,54 +267,46 @@ client = Client(
 ### Setting Up Development Environment
 
 ```bash
-# Clone the repository
+# Clone and setup
 git clone https://github.com/bigbrotr/nostr-tools.git
 cd nostr-tools
-
-# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install in development mode
-pip install -e ".[dev]"
+# Install with development dependencies
+make install-dev
 
-# Set up pre-commit hooks
+# Set up pre-commit hooks  
 pre-commit install
+
+# Verify setup
+make info
 ```
 
-### Running Tests
+**📖 For detailed development guide, see [DEVELOPMENT.md](DEVELOPMENT.md)**
+
+### Quick Commands
 
 ```bash
-# Run all tests
+# Run all quality checks
+make check-all
+
+# Run tests with coverage
 make test
 
-# Run with coverage
-make test-cov
+# Run specific test types
+make test-unit        # Fast unit tests
+make test-integration # Integration tests  
+make test-benchmark   # Performance tests
 
-# Run specific test categories
-make test-unit        # Unit tests only
-make test-integration # Integration tests
-make test-performance # Performance benchmarks
+# Security scans
+make security
+
+# Build documentation
+make docs-serve
 ```
 
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Run linters
-make lint
-
-# Type checking
-make type-check
-
-# Security scan
-make security-scan
-
-# Run all checks
-make check
-```
+Run `make help` to see all available commands.
 
 ## 🔒 Security
 

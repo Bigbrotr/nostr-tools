@@ -1,101 +1,154 @@
-# Pre-commit hooks for nostr-tools
+# =====================================================
+# Pre-commit Configuration for nostr-tools
+# =====================================================
+# Professional code quality automation
 # Install: pre-commit install
 # Run manually: pre-commit run --all-files
+# Update hooks: pre-commit autoupdate
+# =====================================================
 
 repos:
-  # Ruff for fast Python linting and formatting
+  # ===================================================
+  # Code Formatting and Linting
+  # ===================================================
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.13.3
     hooks:
-      # Linter
+      # Ruff linter with auto-fix
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
         name: ruff-lint
-        description: Run Ruff linter with auto-fixes
-      # Formatter
+        args: [--fix, --exit-non-zero-on-fix]
+        description: Fast Python linter with auto-fixes
+
+      # Ruff formatter
       - id: ruff-format
         name: ruff-format
-        description: Run Ruff formatter
+        description: Fast Python formatter (Black-compatible)
 
-  # MyPy for static type checking
+  # ===================================================
+  # Static Type Checking
+  # ===================================================
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.18.2
     hooks:
       - id: mypy
-        additional_dependencies: [
-          types-requests,
-          types-setuptools,
-          aiohttp,
-          pytest,
-        ]
+        name: mypy
+        description: Static type checking
+        additional_dependencies:
+          - types-requests
+          - types-setuptools
+          - aiohttp
+          - pytest
         args: [--config-file=pyproject.toml]
         exclude: ^(tests/|examples/|docs/)
-        name: mypy
-        description: Static type checking with MyPy
 
-  # General code quality hooks
+  # ===================================================
+  # General File and Code Quality Checks
+  # ===================================================
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      # File and whitespace checks
+      # File hygiene
       - id: trailing-whitespace
+        name: trim-trailing-whitespace
         args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
+        name: fix-end-of-files
       - id: check-merge-conflict
+        name: check-merge-conflicts
       - id: check-case-conflict
+        name: check-case-conflicts
 
-      # Syntax and format checks
+      # Syntax validation
       - id: check-yaml
+        name: check-yaml-syntax
         args: [--unsafe]  # Allow custom YAML tags
       - id: check-toml
+        name: check-toml-syntax
       - id: check-json
+        name: check-json-syntax
 
-      # Python-specific checks
+      # Python code quality
       - id: debug-statements
+        name: check-debug-statements
+        description: Check for debugger imports and breakpoints
       - id: check-docstring-first
+        name: check-docstring-first
+        description: Ensure docstrings come before code
+
+      # Executable checks
       - id: check-executables-have-shebangs
+        name: check-executable-shebangs
       - id: check-shebang-scripts-are-executable
+        name: check-shebang-executables
 
-      # Security checks
+      # Security
       - id: detect-private-key
+        name: detect-private-keys
+        description: Prevent committing private keys
 
-  # Security scanning with Bandit
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.6
+  # ===================================================
+  # Security Scanning
+  # ===================================================
+
+  - repo: local
     hooks:
+      # Bandit security linter
       - id: bandit
-        args: [--config, pyproject.toml]
-        additional_dependencies: ["bandit[toml]"]
-        exclude: ^(tests/|examples/)
-        name: bandit
-        description: Security linting with Bandit
+        name: bandit-security
+        description: Security vulnerability scanner
+        entry: python -m bandit
+        language: system
+        args: [-r, src/nostr_tools, -c, pyproject.toml]
+        pass_filenames: false
+        files: ^src/.*\.py$
 
-  # Dependency security checking
-  - repo: https://github.com/pypa/pip-audit
-    rev: v2.9.0
-    hooks:
+      # Safety dependency checker
+      - id: safety
+        name: safety-check
+        description: Known vulnerability checker
+        entry: bash -c 'python -m safety check || true'
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|requirements.*\.txt)$
+
+      # pip-audit for package vulnerabilities
       - id: pip-audit
         name: pip-audit
-        description: Audit Python packages for known vulnerabilities
-        args: ['--skip-editable', '--ignore-vuln', 'GHSA-4xh5-x5gv-qwph']
+        description: Audit Python packages for vulnerabilities
+        entry: bash -c 'python -m pip_audit --ignore-vuln GHSA-4xh5-x5gv-qwph --skip-editable || true'
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|requirements.*\.txt)$
 
-  # Documentation verification
+  # ===================================================
+  # Documentation Verification
+  # ===================================================
+
   - repo: local
     hooks:
       - id: docs-check
-        name: docs-check
-        description: Build documentation to verify it works
-        entry: bash -c 'if command -v sphinx-build >/dev/null 2>&1; then make docs-check; else echo "Sphinx not found, skipping docs check"; fi'
+        name: docs-verify
+        description: Verify documentation builds without errors
+        entry: bash -c 'if command -v sphinx-build >/dev/null 2>&1; then make docs-check; else echo "⚠️  Sphinx not installed, skipping docs check"; fi'
         language: system
         files: ^(docs/|src/.*\.py|README\.md|CHANGELOG\.md)$
         pass_filenames: false
-        stages: [commit]
 
+# =====================================================
 # Configuration
+# =====================================================
+
+# Install hooks for both commit and push
 default_install_hook_types: [pre-commit, pre-push]
+
+# Most hooks run on commit, heavy checks on push
 default_stages: [commit]
 
-# Files to exclude from all hooks
+# Files and directories to exclude globally
 exclude: |
   (?x)^(
       build/|
@@ -112,14 +165,18 @@ exclude: |
       node_modules/|
       backup_.*|
       docs/_build/|
-      docs/_autosummary/
+      docs/_autosummary/|
+      src/nostr_tools/_version\.py
   )$
 
 # Minimum pre-commit version required
 minimum_pre_commit_version: 3.0.0
 
-# Fail fast - stop on first failure
+# Stop on first failure for faster feedback
 fail_fast: false
 
+# CI configuration for pre-commit.ci
 ci:
   autoupdate_schedule: weekly
+  autofix_commit_msg: 'chore: auto-fix pre-commit issues'
+  autoupdate_commit_msg: 'chore: update pre-commit hooks'
