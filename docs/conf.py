@@ -89,6 +89,23 @@ autodoc_class_signature = "separated"
 autodoc_member_order = "bysource"
 autoclass_content = "both"
 autodoc_module_first = True
+autodoc_preserve_defaults = True
+
+# Enable autodoc to recognize #: comments for variables
+autodoc_default_options.update(
+    {
+        "members": True,
+        "undoc-members": False,
+        "private-members": False,
+        "special-members": "__init__, __call__",
+        "exclude-members": "__weakref__, __dict__, __module__, __annotations__",
+        "show-inheritance": True,
+        "inherited-members": False,
+    }
+)
+
+# Enable autodoc to process module-level variables
+autodoc_mock_imports = []
 
 # -- Autosummary configuration -----------------------------------------------
 
@@ -105,6 +122,12 @@ autosummary_context = {
 }
 # Automatically document all items in __all__
 autosummary_mock_imports = []
+
+
+def setup(app):
+    """Setup function for Sphinx extensions."""
+    return {"version": "1.0", "parallel_read_safe": True}
+
 
 # MyST settings (Markdown parser)
 myst_enable_extensions = [
@@ -163,59 +186,6 @@ html_sidebars = {
     ]
 }
 
-# Custom sidebar organization
-html_context = {
-    "sidebar_groups": {
-        "Core Module": [
-            "nostr_tools.Client",
-            "nostr_tools.Event",
-            "nostr_tools.Filter",
-            "nostr_tools.Relay",
-            "nostr_tools.RelayMetadata",
-        ],
-        "Utils Module": [
-            "nostr_tools.generate_keypair",
-            "nostr_tools.validate_keypair",
-            "nostr_tools.generate_event",
-            "nostr_tools.calc_event_id",
-            "nostr_tools.verify_sig",
-            "nostr_tools.sig_event_id",
-            "nostr_tools.to_bech32",
-            "nostr_tools.to_hex",
-            "nostr_tools.find_ws_urls",
-            "nostr_tools.sanitize",
-        ],
-        "Actions Module": [
-            "nostr_tools.fetch_events",
-            "nostr_tools.stream_events",
-            "nostr_tools.fetch_nip11",
-            "nostr_tools.fetch_nip66",
-            "nostr_tools.fetch_relay_metadata",
-            "nostr_tools.check_connectivity",
-            "nostr_tools.check_readability",
-            "nostr_tools.check_writability",
-        ],
-        "Exceptions Module": [
-            "nostr_tools.NostrToolsError",
-            "nostr_tools.RelayConnectionError",
-            "nostr_tools.EventValidationError",
-            "nostr_tools.KeyValidationError",
-            "nostr_tools.FilterValidationError",
-            "nostr_tools.RelayValidationError",
-            "nostr_tools.SubscriptionError",
-            "nostr_tools.PublishError",
-            "nostr_tools.EncodingError",
-        ],
-        "Examples": [
-            "examples/01_getting_started",
-            "examples/02_events_and_filters",
-            "examples/03_publishing_and_subscribing",
-            "examples/04_relay_capabilities",
-            "examples/05_proof_of_work",
-            "examples/06_streaming_and_advanced",
-        ],
-    }
-}
 
 # Table of contents configuration
 html_use_index = True

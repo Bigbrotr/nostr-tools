@@ -64,11 +64,30 @@ Exceptions
    :recursive:
 
    nostr_tools.NostrToolsError
+   nostr_tools.EventError
+   nostr_tools.FilterError
+   nostr_tools.RelayError
+   nostr_tools.ClientError
+   nostr_tools.RelayMetadataError
+   nostr_tools.Nip11Error
+   nostr_tools.Nip66Error
+   nostr_tools.ClientConnectionError
+   nostr_tools.ClientPublicationError
+   nostr_tools.ClientSubscriptionError
+   nostr_tools.ClientValidationError
    nostr_tools.EventValidationError
    nostr_tools.FilterValidationError
    nostr_tools.RelayValidationError
-   nostr_tools.KeyValidationError
-   nostr_tools.EncodingError
-   nostr_tools.RelayConnectionError
-   nostr_tools.PublishError
-   nostr_tools.SubscriptionError
+   nostr_tools.RelayMetadataValidationError
+   nostr_tools.Nip11ValidationError
+   nostr_tools.Nip66ValidationError
+
+Constants
+~~~~~~~~~
+
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   nostr_tools.TLDS
+   nostr_tools.URI_GENERIC_REGEX
