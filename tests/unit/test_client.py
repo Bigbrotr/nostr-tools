@@ -10,9 +10,12 @@ This module tests all functionality of the Client class including:
 - Async context management
 """
 
+import json
+from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import patch
 
+import aiohttp
 import pytest
 
 from nostr_tools.core.client import Client
@@ -540,3 +543,496 @@ class TestClientAdditionalCoverage:
         sub_id = await client.subscribe(valid_filter)
         assert sub_id is not None
         assert len(sub_id) > 0
+
+    @pytest.mark.asyncio
+    async def test_client_connect_success(self, valid_relay: Relay) -> None:
+        """Test successful client connection."""
+        client = Client(relay=valid_relay)
+
+        # Mock successful connection
+        mock_ws = AsyncMock()
+        mock_ws.closed = False
+        mock_session = AsyncMock()
+        mock_session.ws_connect = AsyncMock(return_value=mock_ws)
+
+        with patch.object(client, "session", return_value=mock_session):
+            await client.connect()
+
+        assert client.is_connected is True
+        assert client._ws is not None
+
+    @pytest.mark.asyncio
+    async def test_client_connect_failure(self, valid_relay: Relay) -> None:
+        """Test client connection failure."""
+        client = Client(relay=valid_relay)
+
+        # Mock connection failure
+        mock_session = AsyncMock()
+        mock_session.ws_connect = AsyncMock(side_effect=Exception("Connection failed"))
+
+        with patch.object(client, "session", return_value=mock_session):
+            with pytest.raises(ClientConnectionError):
+                await client.connect()
+
+    @pytest.mark.asyncio
+    async def test_client_connect_already_connected(self, valid_client: Client) -> None:
+        """Test connecting when already connected."""
+        # Set up client as already connected
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._is_connected = True
+
+        # Should not raise an error - connect is idempotent
+        await valid_client.connect()
+
+        # Verify client is still connected
+        assert valid_client._is_connected is True
+
+    @pytest.mark.asyncio
+    async def test_client_disconnect_success(self, valid_client: Client) -> None:
+        """Test successful client disconnection."""
+        # Set up client as connected
+        mock_ws = AsyncMock()
+        mock_ws.closed = False
+        mock_ws.close = AsyncMock()
+        valid_client._ws = mock_ws
+        valid_client._is_connected = True
+
+        await valid_client.disconnect()
+
+        assert valid_client.is_connected is False
+        mock_ws.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_success(self, valid_client: Client) -> None:
+        """Test listening to events successfully."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method directly to return the expected message
+        async def mock_listen():
+            yield [
+                "EVENT",
+                "sub_id",
+                {
+                    "id": "a" * 64,
+                    "pubkey": "a" * 64,
+                    "created_at": 1234567890,
+                    "kind": 1,
+                    "tags": [],
+                    "content": "test",
+                    "sig": "b" * 128,
+                },
+            ]
+
+        with patch.object(valid_client, "listen", mock_listen):
+            messages = []
+            async for message in valid_client.listen_events("sub_id"):
+                messages.append(message)
+                break  # Only get first message
+
+        assert len(messages) == 1
+        assert messages[0][0] == "EVENT"  # Message type
+        assert messages[0][1] == "sub_id"  # Subscription ID
+        assert messages[0][2]["id"] == "a" * 64  # Event ID
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_connection_closed(self, valid_relay: Any) -> None:
+        """Test listening to events when connection is closed."""
+        # Create a fresh client instance for this test
+        client = Client(relay=valid_relay, timeout=10)
+
+        # Test that the method raises the expected exception
+        # The exception is raised when trying to iterate the async generator
+        gen = client.listen_events("sub_id")
+        with pytest.raises(ClientConnectionError):
+            await gen.__anext__()
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_websocket_closed(self, valid_client: Client) -> None:
+        """Test listening to events when websocket is closed."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to raise an exception (simulating websocket close)
+        async def mock_listen():
+            raise ClientConnectionError("WebSocket closed")
+            yield  # This line will never be reached, but makes it an async generator
+
+        with patch.object(valid_client, "listen", mock_listen):
+            with pytest.raises(ClientConnectionError):
+                # The exception is raised when iterating the async generator
+                async for _ in valid_client.listen_events("sub_id"):
+                    pass
+
+    @pytest.mark.asyncio
+    async def test_client_publish_success(self, valid_client: Client, valid_event: Event) -> None:
+        """Test successful event publishing."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.send_str = AsyncMock()
+
+        # Mock the listen method to return an OK message
+        async def mock_listen():
+            yield ["OK", valid_event.id, True, ""]
+
+        with patch.object(valid_client, "listen", mock_listen):
+            result = await valid_client.publish(valid_event)
+
+        assert result is None  # publish returns None on success
+        valid_client._ws.send_str.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_publish_connection_required(
+        self, valid_relay: Relay, valid_event: Event
+    ) -> None:
+        """Test publishing requires connection."""
+        client = Client(relay=valid_relay)
+
+        with pytest.raises(ClientConnectionError):
+            await client.publish(valid_event)
+
+    @pytest.mark.asyncio
+    async def test_client_authenticate_success(self, valid_client: Client) -> None:
+        """Test successful authentication."""
+        from nostr_tools import generate_event
+
+        # Create auth event (kind 22242) with valid keys
+        from nostr_tools import generate_keypair
+
+        private_key, public_key = generate_keypair()
+        auth_event_dict = generate_event(private_key, public_key, 22242, [], "test")
+        auth_event = Event.from_dict(auth_event_dict)
+
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.send_str = AsyncMock()
+
+        # Mock the listen method to return an OK message
+        async def mock_listen():
+            yield ["OK", auth_event.id, True, ""]
+
+        with patch.object(valid_client, "listen", mock_listen):
+            result = await valid_client.authenticate(auth_event)
+
+        assert result is True
+        valid_client._ws.send_str.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_authenticate_wrong_kind(
+        self, valid_client: Client, valid_event: Event
+    ) -> None:
+        """Test authentication with wrong event kind."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        with pytest.raises(ValueError, match="Event kind must be 22242"):
+            await valid_client.authenticate(valid_event)
+
+    @pytest.mark.asyncio
+    async def test_client_subscribe_success(
+        self, valid_client: Client, valid_filter: Filter
+    ) -> None:
+        """Test successful subscription."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.send_str = AsyncMock()
+
+        sub_id = await valid_client.subscribe(valid_filter)
+
+        assert isinstance(sub_id, str)
+        assert len(sub_id) > 0
+        valid_client._ws.send_str.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_subscribe_connection_required(
+        self, valid_relay: Relay, valid_filter: Filter
+    ) -> None:
+        """Test subscription requires connection."""
+        client = Client(relay=valid_relay)
+
+        with pytest.raises(ClientConnectionError):
+            await client.subscribe(valid_filter)
+
+    @pytest.mark.asyncio
+    async def test_client_unsubscribe_success(self, valid_client: Client) -> None:
+        """Test successful unsubscription."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.send_str = AsyncMock()
+
+        # Add subscription to active subscriptions
+        valid_client._subscriptions = {"test_sub": {"active": True}}
+
+        await valid_client.unsubscribe("test_sub")
+
+        valid_client._ws.send_str.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_unsubscribe_not_found(self, valid_relay: Any) -> None:
+        """Test unsubscription of non-existent subscription."""
+        # Create a fresh client instance for this test
+        client = Client(relay=valid_relay, timeout=10)
+        client._ws = AsyncMock()
+        client._ws.closed = False
+        client._is_connected = True
+
+        # Test that the method raises the expected exception
+        with pytest.raises(ClientSubscriptionError):
+            await client.unsubscribe("nonexistent")
+
+    @pytest.mark.asyncio
+    async def test_client_unsubscribe_connection_required(self, valid_relay: Relay) -> None:
+        """Test unsubscription requires connection."""
+        client = Client(relay=valid_relay)
+
+        with pytest.raises(ClientSubscriptionError):
+            await client.unsubscribe("test_sub")
+
+    @pytest.mark.asyncio
+    async def test_client_send_message_success(self, valid_client: Client) -> None:
+        """Test successful message sending."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.send_str = AsyncMock()
+
+        message = ["REQ", "sub_id", {"kinds": [1]}]
+        await valid_client.send_message(message)
+
+        valid_client._ws.send_str.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_send_message_connection_required(self, valid_relay: Relay) -> None:
+        """Test message sending requires connection."""
+        client = Client(relay=valid_relay)
+
+        with pytest.raises(ClientConnectionError):
+            await client.send_message(["REQ", "sub_id", {}])
+
+    @pytest.mark.asyncio
+    async def test_client_listen_success(
+        self, valid_client: Client, valid_private_key: str, valid_public_key: str
+    ) -> None:
+        """Test listening to all messages successfully."""
+        from nostr_tools import generate_event
+
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Generate a valid event
+        event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
+
+        # Mock message reception with proper JSON message
+        mock_message = AsyncMock()
+        mock_message.type = aiohttp.WSMsgType.TEXT
+        mock_message.data = f'["EVENT", "sub_id", {json.dumps(event_dict)}]'
+
+        # Create a mock that returns the message once and then a CLOSED message
+        call_count = 0
+
+        async def mock_receive():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return mock_message
+            else:
+                # Return a CLOSED message to end the loop
+                closed_message = AsyncMock()
+                closed_message.type = aiohttp.WSMsgType.CLOSED
+                closed_message.data = ""
+                return closed_message
+
+        valid_client._ws.receive = mock_receive
+
+        messages = []
+        async for message in valid_client.listen():
+            messages.append(message)
+            break  # Only get first message
+
+        assert len(messages) == 1
+
+    @pytest.mark.asyncio
+    async def test_client_listen_connection_required(self, valid_relay: Relay) -> None:
+        """Test listening requires connection."""
+        client = Client(relay=valid_relay)
+
+        with pytest.raises(ClientConnectionError):
+            async for _ in client.listen():
+                pass
+
+    @pytest.mark.asyncio
+    async def test_client_listen_websocket_timeout(self, valid_client: Client) -> None:
+        """Test listening with websocket timeout."""
+        import asyncio
+
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+        valid_client._ws.receive = AsyncMock(side_effect=asyncio.TimeoutError("Timeout"))
+
+        messages = []
+        async for message in valid_client.listen():
+            messages.append(message)
+
+        # Should handle timeout gracefully
+        assert len(messages) == 0
+
+    def test_client_str_representation(self, valid_client: Client) -> None:
+        """Test client string representation."""
+        client_str = str(valid_client)
+        assert "Client" in client_str
+        assert valid_client.relay.url in client_str
+
+    def test_client_repr_representation(self, valid_client: Client) -> None:
+        """Test client repr representation."""
+        client_repr = repr(valid_client)
+        assert "Client" in client_repr
+        assert valid_client.relay.url in client_repr
+
+    @pytest.mark.asyncio
+    async def test_client_context_manager_exception_handling(self, valid_relay: Relay) -> None:
+        """Test client context manager handles exceptions."""
+        client = Client(relay=valid_relay)
+
+        with patch.object(client, "connect", new_callable=AsyncMock):
+            with patch.object(client, "disconnect", new_callable=AsyncMock):
+                try:
+                    async with client:
+                        raise Exception("Test exception")
+                except Exception:
+                    pass
+
+                # Should still call disconnect even if exception occurs
+                client.disconnect.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_client_connector_with_custom_timeout(self, valid_relay: Relay) -> None:
+        """Test client connector with custom timeout."""
+        client = Client(relay=valid_relay, timeout=30)
+        connector = client.connector()
+
+        # Should create connector with custom timeout
+        assert connector is not None
+        await connector.close()
+
+    def test_client_validation_with_invalid_relay_type(self) -> None:
+        """Test client validation with invalid relay type."""
+        with pytest.raises(ClientValidationError):
+            Client(relay="not_a_relay")  # type: ignore
+
+    def test_client_validation_with_invalid_timeout_type(self, valid_relay: Relay) -> None:
+        """Test client validation with invalid timeout type."""
+        with pytest.raises(ClientValidationError):
+            Client(relay=valid_relay, timeout="not_an_int")  # type: ignore
+
+    def test_client_validation_with_invalid_proxy_type(self, tor_relay: Relay) -> None:
+        """Test client validation with invalid proxy type."""
+        with pytest.raises(ClientValidationError):
+            Client(relay=tor_relay, socks5_proxy_url=123)  # type: ignore
+
+    def test_client_validation_with_negative_timeout(self, valid_relay: Relay) -> None:
+        """Test client validation with negative timeout."""
+        with pytest.raises(ClientValidationError, match="timeout must be non-negative"):
+            Client(relay=valid_relay, timeout=-1)
+
+    def test_client_validation_tor_without_proxy(self, tor_relay: Relay) -> None:
+        """Test client validation for Tor relay without proxy."""
+        with pytest.raises(ClientValidationError, match="socks5_proxy_url is required"):
+            Client(relay=tor_relay)
+
+    def test_client_validation_clearnet_with_proxy(self, valid_relay: Relay) -> None:
+        """Test client validation for clearnet relay with proxy."""
+        # This should be valid - clearnet can have proxy
+        client = Client(relay=valid_relay, socks5_proxy_url="socks5://localhost:9050")
+        assert client.is_valid
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_with_invalid_json(self, valid_client: Client) -> None:
+        """Test listening to events with invalid JSON."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to return invalid JSON
+        async def mock_listen():
+            yield "invalid json"
+
+        with patch.object(valid_client, "listen", mock_listen):
+            events = []
+            async for event in valid_client.listen_events("sub_id"):
+                events.append(event)
+
+        # Should handle invalid JSON gracefully
+        assert len(events) == 0
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_with_wrong_subscription_id(
+        self, valid_client: Client
+    ) -> None:
+        """Test listening to events with wrong subscription ID."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to return message for different subscription
+        async def mock_listen():
+            yield '["EVENT", "other_sub", {"id": "test"}]'
+
+        with patch.object(valid_client, "listen", mock_listen):
+            events = []
+            async for event in valid_client.listen_events("sub_id"):
+                events.append(event)
+
+        # Should not receive events for wrong subscription
+        assert len(events) == 0
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_with_eose_message(self, valid_client: Client) -> None:
+        """Test listening to events with EOSE message."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to return EOSE message
+        async def mock_listen():
+            yield '["EOSE", "sub_id"]'
+
+        with patch.object(valid_client, "listen", mock_listen):
+            events = []
+            async for event in valid_client.listen_events("sub_id"):
+                events.append(event)
+
+        # Should not receive events from EOSE message
+        assert len(events) == 0
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_with_notice_message(self, valid_client: Client) -> None:
+        """Test listening to events with NOTICE message."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to return NOTICE message
+        async def mock_listen():
+            yield '["NOTICE", "test notice"]'
+
+        with patch.object(valid_client, "listen", mock_listen):
+            events = []
+            async for event in valid_client.listen_events("sub_id"):
+                events.append(event)
+
+        # Should not receive events from NOTICE message
+        assert len(events) == 0
+
+    @pytest.mark.asyncio
+    async def test_client_listen_events_with_ok_message(self, valid_client: Client) -> None:
+        """Test listening to events with OK message."""
+        valid_client._ws = AsyncMock()
+        valid_client._ws.closed = False
+
+        # Mock the listen method to return OK message
+        async def mock_listen():
+            yield '["OK", "event_id", true, "stored"]'
+
+        with patch.object(valid_client, "listen", mock_listen):
+            events = []
+            async for event in valid_client.listen_events("sub_id"):
+                events.append(event)
+
+        # Should not receive events from OK message
+        assert len(events) == 0

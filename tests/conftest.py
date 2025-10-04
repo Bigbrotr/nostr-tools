@@ -116,7 +116,7 @@ def socks5_proxy_url() -> str:
     return "socks5://localhost:9050"
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def valid_client(valid_relay: Any) -> Any:
     """Create a valid Client instance for testing."""
     from nostr_tools.core.client import Client
