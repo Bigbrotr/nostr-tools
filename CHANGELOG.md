@@ -5,22 +5,78 @@ All notable changes to nostr-tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-15
+
+### Added
+
+#### Documentation & Release Management
+- **Comprehensive Release Documentation** - Detailed release notes for all versions (v1.0.0, v1.1.0, v1.1.1, v1.2.0)
+- **Enhanced Release Organization** - Professional release management with detailed migration guides
+- **Version Support Policy** - Clear support timeline with v1.2.0 as the single supported version
+- **Releases Folder Structure** - Organized release notes with comprehensive README
+
+#### Quality Assurance
+- **Accurate Documentation** - All release notes based on actual code analysis and diff verification
+- **Professional Standards** - Release management following industry best practices
+- **Clear Communication** - Transparent documentation of changes and migration paths
+- **User-Friendly Documentation** - Easy-to-understand release notes and migration guides
+
+### Changed
+
+#### Release Management
+- **Clean Tag Structure** - Removed backup tags, keeping only official releases (v1.0.0, v1.1.0, v1.1.1, v1.2.0)
+- **Version Consolidation** - v1.2.0 established as the single supported version
+- **Documentation Accuracy** - Updated CHANGELOG.md with precise information based on actual code diffs
+- **Support Policy** - Clear end-of-life timeline for all previous versions
+
+#### Documentation Structure
+- **Enhanced Changelog** - Updated with accurate information and detailed breaking changes
+- **Release Notes Organization** - Professional structure with comprehensive migration guides
+- **Version Support Timeline** - Clear documentation of support status for all versions
+- **Migration Documentation** - Detailed upgrade paths between all versions
+
+### Fixed
+- **Documentation Accuracy** - Corrected inaccurate information in release notes
+- **Changelog Precision** - Updated with actual changes based on code analysis
+- **Release Management** - Professional release documentation and organization
+- **Version Support Clarity** - Clear communication of support status and migration paths
+
+---
+
 ## [1.1.1] - 2025-10-03
 
 ### Fixed
 
 #### Documentation
-- **Sphinx Build Compatibility** - Removed `-W` flag from docs-check to allow builds with dataclass duplicate warnings
-- **Autosummary Template** - Added custom template with `:no-index:` directive to enable full autogeneration without errors
+- **Enhanced Sphinx Configuration** - Improved autodoc settings with better member filtering and exclusion of internal members
+- **Custom Autosummary Templates** - Added custom templates for class and module documentation with better inheritance display
 - **Dataclass Documentation** - Fixed duplicate object description warnings by filtering dataclass fields from autosummary stubs
+- **Member Filtering** - Better exclusion of internal members, annotations, and improved inheritance display
 
 #### Build & Distribution
-- **Setuptools Version Constraint** - Constrained setuptools to `<75.0` to use Metadata-Version 2.1 for better twine compatibility
+- **Setuptools Version Constraint** - Constrained setuptools to `<75.0` to avoid Metadata-Version 2.4 compatibility issues with older twine
 - **Package Metadata** - Fixed distribution check failures with older twine versions in CI environments
+- **Dependency Cleanup** - Removed performance profiling tools from dev dependencies for cleaner builds
+
+#### CI/CD Pipeline
+- **Enhanced CI Workflow** - Improved GitHub Actions workflow with better organization and error handling
+- **Better Error Reporting** - Enhanced error reporting and build artifact handling
+- **Dependency Management** - Better version constraints and dependency resolution
+- **Workflow Optimization** - Streamlined CI pipeline with better caching and organization
+
+### Added
+
+#### Development Experience
+- **DEVELOPMENT.md** - Comprehensive development guide with 490+ lines of documentation
+- **Enhanced Makefile** - Improved development commands with better organization and color-coded output
+- **Better Test Organization** - Moved integration tests to unit tests for better organization
+- **Professional Workflow** - Complete development workflow with quality assurance standards
 
 ### Changed
-- Documentation stubs now auto-generate cleanly without manual curation
+- Documentation stubs now auto-generate cleanly with custom templates
 - Improved CI pipeline reliability with better dependency version management
+- Enhanced development experience with comprehensive documentation
+- Better test organization and structure
 
 ---
 
@@ -29,24 +85,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Features
-- **Enhanced Relay Metadata** - Separated NIP-11 and NIP-66 data structures for better organization
-- **Improved Exception System** - Enhanced error handling with more specific exception types
-- **Professional Development Infrastructure** - Comprehensive Makefile with 30+ development commands
+- **Complete RelayMetadata Rewrite** - Converted from class-based to dataclass-based implementation with separated NIP-11 and NIP-66 data structures
+- **Enhanced Exception System** - New base exception class `NostrToolsError` with specific exception types for better error handling
+- **Professional Development Infrastructure** - Comprehensive Makefile with 30+ development commands and organized help system
 
 #### Testing & Quality
-- **Complete Test Suite Rewrite** - Professional test organization with 80%+ coverage
-- **Enhanced Test Reliability** - Improved corrupted signature test stability
+- **Complete Test Suite Rewrite** - Professional test organization with unit/integration separation and 80%+ coverage
+- **Enhanced Test Structure** - New test organization with `tests/unit/` and `tests/integration/` directories
+- **Test Documentation** - Comprehensive test README with usage guidelines and best practices
 - **Security Scanning** - Added pip-audit with vulnerability ignore support
 
 ### Changed
-- **Source Structure Refactoring** - Reorganized source code with dataclass-based relay metadata
-- **Documentation Improvements** - Fixed inconsistencies and enhanced API documentation
-- **CI/CD Pipeline** - Improved GitHub Actions workflow with better security scanning
+
+#### Breaking Changes
+- **RelayMetadata API** - Complete rewrite from class-based to dataclass-based implementation
+- **Exception Hierarchy** - New base exception class with specific exception types
+- **Test Structure** - Moved from flat test structure to organized unit/integration separation
+
+#### Source Code Refactoring
+- **RelayMetadata Complete Rewrite** - From class-based to dataclass-based implementation
+- **Better Separation of Concerns** - Clear separation between NIP-11 and NIP-66 data
+- **Enhanced Type Safety** - Improved type hints and validation throughout
+- **Simplified API** - Cleaner, more intuitive interface for relay metadata
+
+#### Development Infrastructure
+- **Enhanced Makefile** - Comprehensive development commands with organized help system
+- **Better CI/CD Pipeline** - Improved GitHub Actions workflows with better security scanning
+- **Enhanced Documentation** - Better Sphinx configuration and documentation generation
+- **Improved Project Structure** - Better organization of development files
 
 ### Fixed
 - **Type Errors** - Resolved type checking issues across the codebase
 - **Documentation Build** - Fixed Sphinx configuration and badge display
 - **Codecov Integration** - Properly configured code coverage reporting
+- **Test Organization** - Professional test structure with better fixtures and setup
 
 ---
 
