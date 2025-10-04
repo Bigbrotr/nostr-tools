@@ -10,6 +10,7 @@
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md
+include DEVELOPMENT.md
 include SECURITY.md
 include LICENSE
 
@@ -45,6 +46,20 @@ recursive-include docs *.md
 recursive-include docs *.txt
 recursive-include docs *.py
 include docs/requirements.txt
+include docs/conf.py
+
+# Sphinx template files
+recursive-include docs/_templates *.rst
+recursive-include docs/_templates *.html
+recursive-include docs/_templates *.jinja2
+
+# =====================================================
+# Release Documentation
+# =====================================================
+
+# Release notes and documentation
+recursive-include releases *.md
+recursive-include releases *.txt
 
 # =====================================================
 # Testing Files (EXCLUDED from distribution)
@@ -105,6 +120,10 @@ prune htmlcov
 prune .mypy_cache
 prune .ruff_cache
 prune .pytest_cache
+
+# Documentation build artifacts
+prune docs/_build
+prune docs/_autosummary
 
 # =====================================================
 # System and Temporary Files (EXCLUDED)
