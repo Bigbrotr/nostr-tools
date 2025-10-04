@@ -11,7 +11,7 @@
 
 nostr-tools provides a complete implementation of the Nostr protocol with an elegant async API, featuring robust WebSocket communication, cryptographic operations, event handling, and relay management. Built with modern Python best practices and extensive test coverage.
 
-## ✨ Features
+## Features ✨
 
 ### Core Protocol
 - 🔗 **Complete NIP-01 Implementation** - Full support for the core Nostr protocol specification
@@ -39,7 +39,7 @@ nostr-tools provides a complete implementation of the Nostr protocol with an ele
 - 🧪 **Well Tested** - Extensive test suite with >80% code coverage
 - 🛡️ **Production Ready** - Battle-tested error handling and connection management
 
-## 📦 Installation
+## Installation 📦
 
 ### From PyPI (Recommended)
 
@@ -70,7 +70,7 @@ pre-commit install
   - `secp256k1` - Cryptographic operations
   - `bech32` - Bech32 encoding/decoding
 
-## 🚀 Quick Start
+## Quick Start 🚀
 
 ### Generate Keys and Connect
 
@@ -169,7 +169,7 @@ async def stream_notes():
 asyncio.run(stream_notes())
 ```
 
-## 📚 Core Components
+## Core Components 📚
 
 ### Event - The Fundamental Data Structure
 
@@ -310,7 +310,7 @@ relay_dict = relay1.to_dict()
 relay_restored = Relay.from_dict(relay_dict)
 ```
 
-## 🔧 Advanced Features
+## Advanced Features 🔧
 
 ### Relay Capabilities Testing
 
@@ -473,7 +473,7 @@ async with client:
     # Use normally...
 ```
 
-## 📖 Examples
+## Examples 📖
 
 The [`examples/`](https://github.com/bigbrotr/nostr-tools/tree/main/examples) directory contains comprehensive, runnable examples:
 
@@ -491,7 +491,7 @@ python examples/01_getting_started.py
 
 For more details, see the [Examples README](https://github.com/bigbrotr/nostr-tools/blob/main/examples/README.md).
 
-## 🏗️ Development
+## Development 🏗️
 
 ### Setup Development Environment
 
@@ -528,15 +528,15 @@ make test-quick    # Fast tests without coverage
 # Code quality
 make lint          # Run ruff linter
 make format        # Format code with ruff
-make typecheck     # Run mypy type checker
+make type-check    # Run mypy type checker
 
 # Security
 make security      # Run all security checks
-make bandit        # Security linting
-make safety        # Dependency vulnerability check
+make security-bandit # Security linting
+make security-safety # Dependency vulnerability check
 
 # Documentation
-make docs          # Build documentation
+make docs-build    # Build documentation
 make docs-serve    # Build and serve locally
 
 # Cleanup
@@ -546,7 +546,7 @@ make clean-all     # Deep clean including caches
 
 See the [Development Guide](https://github.com/bigbrotr/nostr-tools/blob/main/DEVELOPMENT.md) for detailed information.
 
-## 🔒 Security
+## Security 🔒
 
 ### Security Features
 
@@ -574,7 +574,7 @@ Report security issues privately to: **security@bigbrotr.com**
 
 See [SECURITY.md](https://github.com/bigbrotr/nostr-tools/blob/main/SECURITY.md) for our security policy and disclosure process.
 
-## 🤝 Contributing
+## Contributing 🤝
 
 We welcome contributions! Here's how you can help:
 
@@ -592,11 +592,11 @@ Please read our [Contributing Guide](https://github.com/bigbrotr/nostr-tools/blo
 
 This project follows a Code of Conduct. By participating, you agree to uphold this code. Report unacceptable behavior to hello@bigbrotr.com.
 
-## 📄 License
+## License 📄
 
 This project is licensed under the **MIT License** - see the [LICENSE](https://github.com/bigbrotr/nostr-tools/blob/main/LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments 🙏
 
 - **Nostr Protocol** - Thanks to [fiatjaf](https://github.com/fiatjaf) and the [Nostr community](https://github.com/nostr-protocol)
 - **Contributors** - All [contributors](https://github.com/bigbrotr/nostr-tools/graphs/contributors) to this project
@@ -606,14 +606,14 @@ This project is licensed under the **MIT License** - see the [LICENSE](https://g
   - [secp256k1](https://github.com/ludbb/secp256k1-py) - Python bindings for Bitcoin's secp256k1 library
   - [bech32](https://github.com/sipa/bech32) - Bech32 encoding/decoding implementation
 
-## 📞 Support & Resources
+## Support & Resources 📞
 
 - 📚 **Documentation** - [Full API Documentation](https://bigbrotr.github.io/nostr-tools/)
 - 🐛 **Issues & Discussions** - [GitHub Issues](https://github.com/bigbrotr/nostr-tools/issues)
 - 📧 **Email** - hello@bigbrotr.com
 - 🔗 **Nostr Protocol** - [nostr.com](https://nostr.com/) | [NIPs Repository](https://github.com/nostr-protocol/nips)
 
-## 📊 Project Status
+## Project Status 📊
 
 **Status:** ✅ Active Development & Maintenance
 
