@@ -161,6 +161,15 @@ class Filter:
 
         # Normalize strings to lowercase
         def normalize(lst: Optional[list[str]]) -> Optional[list[str]]:
+            """
+            Normalize a list of strings by converting to lowercase and removing duplicates.
+
+            Args:
+                lst: List of strings to normalize, or None
+
+            Returns:
+                Normalized list with lowercase strings and duplicates removed, or None
+            """
             if isinstance(lst, list):
                 return list({item.lower() if isinstance(item, str) else item for item in lst})
             return lst

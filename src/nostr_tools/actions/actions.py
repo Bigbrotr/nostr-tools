@@ -60,7 +60,8 @@ from ..core.client import Client
 from ..core.event import Event
 from ..core.filter import Filter
 from ..core.relay_metadata import RelayMetadata
-from ..exceptions.errors import RelayConnectionError
+from ..exceptions.errors import ClientConnectionError
+from ..exceptions.errors import ClientPublicationError
 from ..utils import generate_event
 
 logger = logging.getLogger(__name__)
@@ -85,10 +86,25 @@ async def fetch_events(
         List[Event]: A list of Event instances matching the filter
 
     Raises:
-        RelayConnectionError: If client is not connected
+        ClientConnectionError: If client is not connected
+
+    Examples:
+        Fetch recent text notes:
+
+        >>> async with Client(relay) as client:
+        ...     filter = Filter(kinds=[1], limit=10)
+        ...     events = await fetch_events(client, filter)
+        ...     print(f"Found {len(events)} events")
+
+        Fetch events from specific author:
+
+        >>> filter = Filter(authors=["abc123..."], kinds=[1, 3])
+        >>> events = await fetch_events(client, filter)
+        >>> for event in events:
+        ...     print(f"Event {event.id}: {event.content[:50]}...")
     """
     if not client.is_connected:
-        raise RelayConnectionError("Client is not connected")
+        raise ClientConnectionError("Client is not connected")
 
     events = []
     subscription_id = await client.subscribe(filter)
@@ -126,10 +142,26 @@ async def stream_events(
         Event: Event instances matching the filter as they arrive
 
     Raises:
-        RelayConnectionError: If client is not connected
+        ClientConnectionError: If client is not connected
+
+    Examples:
+        Stream text notes in real-time:
+
+        >>> async with Client(relay) as client:
+        ...     filter = Filter(kinds=[1], limit=10)
+        ...     async for event in stream_events(client, filter):
+        ...         print(f"New note: {event.content}")
+        ...         if event.content.startswith("STOP"):
+        ...             break
+
+        Stream events from specific authors:
+
+        >>> filter = Filter(authors=["abc123..."], kinds=[1])
+        >>> async for event in stream_events(client, filter):
+        ...     process_event(event)
     """
     if not client.is_connected:
-        raise RelayConnectionError("Client is not connected")
+        raise ClientConnectionError("Client is not connected")
 
     subscription_id = await client.subscribe(filter)
 
@@ -283,12 +315,32 @@ async def check_connectivity(client: Client) -> tuple[Optional[int], bool]:
 
     Returns:
         Tuple[Optional[int], bool]: (rtt_open in ms or None, openable as bool)
+            - rtt_open: Connection time in milliseconds, or None if failed
+            - openable: True if connection succeeded, False otherwise
 
     Raises:
-        RelayConnectionError: If client is already connected
+        ClientConnectionError: If client is already connected
+
+    Examples:
+        Test relay connectivity:
+
+        >>> client = Client(relay)
+        >>> rtt, is_openable = await check_connectivity(client)
+        >>> if is_openable:
+        ...     print(f"Relay is reachable in {rtt}ms")
+        ... else:
+        ...     print("Relay is not reachable")
+
+        Use in relay testing:
+
+        >>> for relay_url in relay_list:
+        ...     client = Client(Relay(relay_url))
+        ...     rtt, openable = await check_connectivity(client)
+        ...     if openable:
+        ...         print(f"{relay_url}: {rtt}ms")
     """
     if client.is_connected:
-        raise RelayConnectionError("Client is already connected")
+        raise ClientConnectionError("Client is already connected")
 
     rtt_open = None
     openable = False
@@ -299,7 +351,7 @@ async def check_connectivity(client: Client) -> tuple[Optional[int], bool]:
             time_end = time.perf_counter()
             rtt_open = int((time_end - time_start) * 1000)
             openable = True
-    except RelayConnectionError as e:
+    except ClientConnectionError as e:
         logger.debug(f"Relay connection error: {e}")
     except Exception as e:
         logger.exception(f"Unexpected error during connectivity check: {e}")
@@ -321,10 +373,10 @@ async def check_readability(client: Client) -> tuple[Optional[int], bool]:
         Tuple[Optional[int], bool]: (rtt_read in ms or None, readable as bool)
 
     Raises:
-        RelayConnectionError: If client is not connected
+        ClientConnectionError: If client is not connected
     """
     if not client.is_connected:
-        raise RelayConnectionError("Client is not connected")
+        raise ClientConnectionError("Client is not connected")
 
     rtt_read = None
     readable = False
@@ -352,7 +404,7 @@ async def check_readability(client: Client) -> tuple[Optional[int], bool]:
                 continue  # Ignore notices
 
         await client.unsubscribe(subscription_id)
-    except RelayConnectionError as e:
+    except ClientConnectionError as e:
         logger.debug(f"Relay connection error: {e}")
     except Exception as e:
         logger.exception(f"Unexpected error during readability check: {e}")
@@ -384,10 +436,10 @@ async def check_writability(
         Tuple[Optional[int], bool]: (rtt_write in ms or None, writable as bool)
 
     Raises:
-        RelayConnectionError: If client is not connected
+        ClientConnectionError: If client is not connected
     """
     if not client.is_connected:
-        raise RelayConnectionError("Client is not connected")
+        raise ClientConnectionError("Client is not connected")
 
     rtt_write = None
     writable = False
@@ -411,10 +463,15 @@ async def check_writability(
 
         # Measure publish response time
         time_start = time.perf_counter()
-        writable = await client.publish(event)
+        # Now raises ClientPublicationError on failure
+        await client.publish(event)
         time_end = time.perf_counter()
         rtt_write = int((time_end - time_start) * 1000)
-    except RelayConnectionError as e:
+        writable = True  # If we get here, publish succeeded
+    except ClientPublicationError as e:
+        logger.debug(f"Publish error: {e}")
+        writable = False
+    except ClientConnectionError as e:
         logger.debug(f"Relay connection error: {e}")
     except Exception as e:
         logger.exception(f"Unexpected error during writability check: {e}")
@@ -446,10 +503,10 @@ async def fetch_nip66(
         Optional[RelayMetadata.Nip66]: NIP-66 metadata or None if not available
 
     Raises:
-        RelayConnectionError: If client is already connected
+        ClientConnectionError: If client is already connected
     """
     if client.is_connected:
-        raise RelayConnectionError("Client is already connected")
+        raise ClientConnectionError("Client is already connected")
 
     rtt_open = None
     rtt_read = None
@@ -480,7 +537,7 @@ async def fetch_nip66(
             "readable": readable,
         }
         return RelayMetadata.Nip66.from_dict(data)
-    except RelayConnectionError as e:
+    except ClientConnectionError as e:
         logger.debug(f"Relay connection error: {e}")
     except Exception as e:
         logger.exception(f"Unexpected error fetching NIP-66: {e}")
@@ -507,10 +564,10 @@ async def fetch_relay_metadata(
         RelayMetadata: Complete metadata object for the relay
 
     Raises:
-        RelayConnectionError: If client is already connected
+        ClientConnectionError: If client is already connected
     """
     if client.is_connected:
-        raise RelayConnectionError("Client is already connected")
+        raise ClientConnectionError("Client is already connected")
 
     # Fetch NIP-11 metadata
     nip11 = await fetch_nip11(client)

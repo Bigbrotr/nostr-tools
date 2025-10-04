@@ -3,6 +3,10 @@ Custom exceptions for nostr_tools library.
 
 This module defines custom exception classes used throughout the nostr-tools
 library to provide specific error handling for Nostr protocol operations.
+
+These exceptions are used exclusively by Core and Actions modules. The Utils
+module uses standard Python exceptions (ValueError, TypeError, etc.) to maintain
+independence and reusability.
 """
 
 
@@ -17,9 +21,87 @@ class NostrToolsError(Exception):
     pass
 
 
-class RelayConnectionError(NostrToolsError):
+# Generic error classes for different modules
+class EventError(NostrToolsError):
     """
-    Exception raised for relay connection errors.
+    Base exception for event-related errors.
+
+    This is the base class for all errors related to event creation,
+    validation, and processing in the nostr-tools library.
+    """
+
+    pass
+
+
+class FilterError(NostrToolsError):
+    """
+    Base exception for filter-related errors.
+
+    This is the base class for all errors related to subscription filter
+    creation, validation, and processing in the nostr-tools library.
+    """
+
+    pass
+
+
+class RelayError(NostrToolsError):
+    """
+    Base exception for relay-related errors.
+
+    This is the base class for all errors related to relay configuration,
+    validation, and processing in the nostr-tools library.
+    """
+
+    pass
+
+
+class ClientError(NostrToolsError):
+    """
+    Base exception for client-related errors.
+
+    This is the base class for all errors related to client operations,
+    connections, subscriptions, and publications in the nostr-tools library.
+    """
+
+    pass
+
+
+class RelayMetadataError(NostrToolsError):
+    """
+    Base exception for relay metadata-related errors.
+
+    This is the base class for all errors related to relay metadata
+    fetching, validation, and processing in the nostr-tools library.
+    """
+
+    pass
+
+
+class Nip11Error(RelayMetadataError):
+    """
+    Base exception for NIP-11 related errors.
+
+    This is the base class for all errors related to NIP-11 relay
+    information fetching and validation in the nostr-tools library.
+    """
+
+    pass
+
+
+class Nip66Error(RelayMetadataError):
+    """
+    Base exception for NIP-66 related errors.
+
+    This is the base class for all errors related to NIP-66 relay
+    monitoring data fetching and validation in the nostr-tools library.
+    """
+
+    pass
+
+
+class ClientConnectionError(ClientError):
+    """
+    Exception raised for client connection errors.
 
     Raised when there are issues connecting to, communicating with, or
     maintaining connections to Nostr relays.
@@ -28,13 +110,13 @@ class RelayConnectionError(NostrToolsError):
         message (str): Description of the connection error
 
     Examples:
-        >>> raise RelayConnectionError("Failed to connect to wss://relay.example.com")
+        >>> raise ClientConnectionError("Failed to connect to wss://relay.example.com")
     """
 
     pass
 
 
-class EventValidationError(NostrToolsError):
+class EventValidationError(EventError):
     """
     Exception raised when event validation fails.
 
@@ -54,26 +136,7 @@ class EventValidationError(NostrToolsError):
     pass
 
 
-class KeyValidationError(NostrToolsError):
-    """
-    Exception raised when cryptographic key validation fails.
-
-    Raised when:
-    - Key format is invalid
-    - Key pair doesn't match
-    - Key length is incorrect
-
-    Args:
-        message (str): Description of the key validation error
-
-    Examples:
-        >>> raise KeyValidationError("private_key must be a 64-character hex string")
-    """
-
-    pass
-
-
-class FilterValidationError(NostrToolsError):
+class FilterValidationError(FilterError):
     """
     Exception raised when filter validation fails.
 
@@ -90,7 +153,7 @@ class FilterValidationError(NostrToolsError):
     pass
 
 
-class RelayValidationError(NostrToolsError):
+class RelayValidationError(RelayError):
     """
     Exception raised when relay configuration validation fails.
 
@@ -109,9 +172,88 @@ class RelayValidationError(NostrToolsError):
     pass
 
 
-class SubscriptionError(NostrToolsError):
+class ClientValidationError(ClientError):
     """
-    Exception raised for subscription-related errors.
+    Exception raised when client configuration validation fails.
+
+    Raised when:
+    - Invalid relay instance
+    - Invalid timeout value
+    - Missing SOCKS5 proxy for Tor relays
+    - Type mismatches in client configuration
+
+    Args:
+        message (str): Description of the client validation error
+
+    Examples:
+        >>> raise ClientValidationError("timeout must be non-negative")
+    """
+
+    pass
+
+
+class RelayMetadataValidationError(RelayMetadataError):
+    """
+    Exception raised when relay metadata validation fails.
+
+    Raised when:
+    - Invalid relay instance
+    - Invalid timestamp
+    - Type mismatches in metadata fields
+
+    Args:
+        message (str): Description of the metadata validation error
+
+    Examples:
+        >>> raise RelayMetadataValidationError("generated_at must be non-negative")
+    """
+
+    pass
+
+
+class Nip11ValidationError(Nip11Error):
+    """
+    Exception raised when NIP-11 relay information validation fails.
+
+    Raised when:
+    - Invalid supported NIPs format
+    - Invalid limitation fields
+    - Non-JSON serializable extra fields
+    - Type mismatches in NIP-11 fields
+
+    Args:
+        message (str): Description of the NIP-11 validation error
+
+    Examples:
+        >>> raise Nip11ValidationError("supported_nips must be a list of integers")
+    """
+
+    pass
+
+
+class Nip66ValidationError(Nip66Error):
+    """
+    Exception raised when NIP-66 relay monitoring validation fails.
+
+    Raised when:
+    - Invalid boolean flags
+    - Invalid RTT values
+    - Inconsistent flag and RTT combinations
+    - Type mismatches in NIP-66 fields
+
+    Args:
+        message (str): Description of the NIP-66 validation error
+
+    Examples:
+        >>> raise Nip66ValidationError("rtt_open must be provided when openable is True")
+    """
+
+    pass
+
+
+class ClientSubscriptionError(ClientError):
+    """
+    Exception raised for client subscription-related errors.
 
     Raised when:
     - Subscription creation fails
@@ -122,15 +264,15 @@ class SubscriptionError(NostrToolsError):
         message (str): Description of the subscription error
 
     Examples:
-        >>> raise SubscriptionError("Subscription not found: sub_123")
+        >>> raise ClientSubscriptionError("Subscription not found: sub_123")
     """
 
     pass
 
 
-class PublishError(NostrToolsError):
+class ClientPublicationError(ClientError):
     """
-    Exception raised when event publishing fails.
+    Exception raised when client event publishing fails.
 
     Raised when an event cannot be published to a relay due to:
     - Connection issues
@@ -138,29 +280,10 @@ class PublishError(NostrToolsError):
     - Timeout
 
     Args:
-        message (str): Description of the publish error
+        message (str): Description of the publication error
 
     Examples:
-        >>> raise PublishError("Failed to publish event to relay")
-    """
-
-    pass
-
-
-class EncodingError(NostrToolsError):
-    """
-    Exception raised for encoding/decoding errors.
-
-    Raised when:
-    - Bech32 encoding/decoding fails
-    - Invalid hex string conversion
-    - Unsupported encoding format
-
-    Args:
-        message (str): Description of the encoding error
-
-    Examples:
-        >>> raise EncodingError("Invalid bech32 string format")
+        >>> raise ClientPublicationError("Failed to publish event to relay")
     """
 
     pass

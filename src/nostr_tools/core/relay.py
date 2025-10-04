@@ -154,6 +154,18 @@ class Relay:
 
     @property
     def __network(self) -> str:
+        """
+        Determine network type based on URL format.
+
+        Automatically detects whether the relay URL is for clearnet or Tor
+        based on the domain format. Tor relays use .onion domains.
+
+        Returns:
+            str: Network type - "tor" for .onion domains, "clearnet" for others
+
+        Raises:
+            TypeError: If url is not a string
+        """
         if not isinstance(self.url, str):
             raise TypeError(f"url must be str, got {type(self.url)}")
         if self.url.removeprefix("wss://").partition(":")[0].endswith(".onion"):

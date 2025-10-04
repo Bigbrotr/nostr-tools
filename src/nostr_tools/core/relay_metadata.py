@@ -8,6 +8,9 @@ from typing import Any
 from typing import Optional
 from typing import Union
 
+from ..exceptions import Nip11ValidationError
+from ..exceptions import Nip66ValidationError
+from ..exceptions import RelayMetadataValidationError
 from .relay import Relay
 
 
@@ -20,15 +23,27 @@ class RelayMetadata:
     from NIP-11 and NIP-66 standards.
     """
 
-    relay: Relay  #: The relay object this metadata describes
-    generated_at: int  #: Timestamp when the metadata was generated
+    #: The relay object this metadata describes
+    relay: Relay
+    #: Timestamp when the metadata was generated
+    generated_at: int
     #: NIP-11 relay information document data
     nip11: Optional["RelayMetadata.Nip11"] = None
     #: NIP-66 connection and performance data
     nip66: Optional["RelayMetadata.Nip66"] = None
 
     def __post_init__(self) -> None:
-        """Validate RelayMetadata after initialization."""
+        """
+        Validate RelayMetadata after initialization.
+
+        This method is automatically called after the dataclass is created.
+        It performs validation to ensure all metadata is properly formatted.
+
+        Raises:
+            RelayMetadataValidationError: If metadata validation fails
+            Nip11ValidationError: If NIP-11 data is invalid
+            Nip66ValidationError: If NIP-66 data is invalid
+        """
         self.validate()
 
     def validate(self) -> None:
@@ -36,8 +51,9 @@ class RelayMetadata:
         Validate the RelayMetadata instance.
 
         Raises:
-            TypeError: If any attribute is of incorrect type
-            ValueError: If any attribute has an invalid value
+            RelayMetadataValidationError: If relay metadata is invalid
+            Nip11ValidationError: If NIP-11 data is invalid
+            Nip66ValidationError: If NIP-66 data is invalid
         """
         if self.nip11 is not None:
             self.nip11.validate()
@@ -46,12 +62,14 @@ class RelayMetadata:
 
         # Type validation - use class name comparison for compatibility with lazy loading
         if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
-            raise TypeError(f"relay must be Relay, got {type(self.relay)}")
+            raise RelayMetadataValidationError(f"relay must be Relay, got {type(self.relay)}")
         if not isinstance(self.generated_at, int):
-            raise TypeError(f"generated_at must be int, got {type(self.generated_at)}")
+            raise RelayMetadataValidationError(
+                f"generated_at must be int, got {type(self.generated_at)}"
+            )
 
         if self.generated_at < 0:
-            raise ValueError("generated_at must be non-negative")
+            raise RelayMetadataValidationError("generated_at must be non-negative")
 
     @property
     def is_valid(self) -> bool:
@@ -64,7 +82,7 @@ class RelayMetadata:
         try:
             self.validate()
             return True
-        except (TypeError, ValueError):
+        except (RelayMetadataValidationError, Nip11ValidationError, Nip66ValidationError):
             return False
 
     @classmethod
@@ -117,22 +135,43 @@ class RelayMetadata:
         to/from dictionary representations.
         """
 
-        name: Optional[str] = None  #: Relay name
-        description: Optional[str] = None  #: Relay description
-        banner: Optional[str] = None  #: URL to banner image
-        icon: Optional[str] = None  #: URL to icon image
-        pubkey: Optional[str] = None  #: Relay public key
-        contact: Optional[str] = None  #: Contact information
-        supported_nips: Optional[list[Union[int, str]]] = None  #: List of supported NIPs
-        software: Optional[str] = None  #: Software name
-        version: Optional[str] = None  #: Software version
-        privacy_policy: Optional[str] = None  #: URL to privacy policy
-        terms_of_service: Optional[str] = None  #: URL to terms of service
-        limitation: Optional[dict[str, Any]] = None  #: Limitation information
-        extra_fields: Optional[dict[str, Any]] = None  #: Additional fields
+        #: Relay name
+        name: Optional[str] = None
+        #: Relay description
+        description: Optional[str] = None
+        #: URL to banner image
+        banner: Optional[str] = None
+        #: URL to icon image
+        icon: Optional[str] = None
+        #: Relay public key
+        pubkey: Optional[str] = None
+        #: Contact information
+        contact: Optional[str] = None
+        #: List of supported NIPs
+        supported_nips: Optional[list[Union[int, str]]] = None
+        #: Software name
+        software: Optional[str] = None
+        #: Software version
+        version: Optional[str] = None
+        #: URL to privacy policy
+        privacy_policy: Optional[str] = None
+        #: URL to terms of service
+        terms_of_service: Optional[str] = None
+        #: Limitation information
+        limitation: Optional[dict[str, Any]] = None
+        #: Additional fields
+        extra_fields: Optional[dict[str, Any]] = None
 
         def __post_init__(self) -> None:
-            """Normalize and validate data after initialization."""
+            """
+            Normalize and validate data after initialization.
+
+            This method is automatically called after the dataclass is created.
+            It normalizes empty collections to None and validates the NIP-11 data.
+
+            Raises:
+                Nip11ValidationError: If NIP-11 data validation fails
+            """
             # Normalize empty collections to None
             if self.supported_nips is not None and self.supported_nips == []:
                 self.supported_nips = None
@@ -148,8 +187,7 @@ class RelayMetadata:
             Validate NIP-11 data.
 
             Raises:
-                TypeError: If any attribute is of incorrect type
-                ValueError: If any attribute has an invalid value
+                Nip11ValidationError: If NIP-11 data is invalid
             """
             # Type validation for string fields
             type_checks: list[tuple[str, Any, Union[type[str], tuple[type, ...]]]] = [
@@ -169,15 +207,15 @@ class RelayMetadata:
             ]
             for field_name, field_value, expected_type in type_checks:
                 if field_value is not None and not isinstance(field_value, expected_type):
-                    raise TypeError(
+                    raise Nip11ValidationError(
                         f"{field_name} must be {expected_type} or None, got {type(field_value)}"
                     )
 
             if self.supported_nips is not None:
                 if len(self.supported_nips) == 0:
-                    raise ValueError("supported_nips must not be an empty list")
+                    raise Nip11ValidationError("supported_nips must not be an empty list")
                 if not any(isinstance(nip, (int, str)) for nip in self.supported_nips or []):
-                    raise TypeError("supported_nips must be a list of int or str")
+                    raise Nip11ValidationError("supported_nips must be a list of int or str")
 
             checks = [
                 ("limitation", self.limitation),
@@ -186,13 +224,15 @@ class RelayMetadata:
             for field_name, field_value in checks:
                 if field_value is not None:
                     if len(field_value) == 0:
-                        raise ValueError(f"{field_name} must not be an empty dict")
+                        raise Nip11ValidationError(f"{field_name} must not be an empty dict")
                     if not all(isinstance(key, str) for key in field_value.keys()):
-                        raise TypeError(f"All keys in {field_name} must be strings")
+                        raise Nip11ValidationError(f"All keys in {field_name} must be strings")
                     try:
                         json.dumps(field_value)
                     except (TypeError, ValueError) as e:
-                        raise ValueError(f"{field_name} must be JSON serializable: {e}") from e
+                        raise Nip11ValidationError(
+                            f"{field_name} must be JSON serializable: {e}"
+                        ) from e
 
         @property
         def is_valid(self) -> bool:
@@ -205,7 +245,7 @@ class RelayMetadata:
             try:
                 self.validate()
                 return True
-            except (TypeError, ValueError):
+            except Nip11ValidationError:
                 return False
 
         @classmethod
@@ -272,16 +312,29 @@ class RelayMetadata:
         representations, and a property to check data validity.
         """
 
-        openable: bool = False  #: Whether the relay is openable
-        readable: bool = False  #: Whether the relay is readable
-        writable: bool = False  #: Whether the relay is writable
+        #: Whether the relay is openable
+        openable: bool = False
+        #: Whether the relay is readable
+        readable: bool = False
+        #: Whether the relay is writable
+        writable: bool = False
         #: Round-trip time to open connection in ms
         rtt_open: Optional[int] = None
-        rtt_read: Optional[int] = None  #: Round-trip time to read data in ms
-        rtt_write: Optional[int] = None  #: Round-trip time to write data in ms
+        #: Round-trip time to read data in ms
+        rtt_read: Optional[int] = None
+        #: Round-trip time to write data in ms
+        rtt_write: Optional[int] = None
 
         def __post_init__(self) -> None:
-            """Validate data after initialization."""
+            """
+            Validate data after initialization.
+
+            This method is automatically called after the dataclass is created.
+            It validates the NIP-66 connection and performance data.
+
+            Raises:
+                Nip66ValidationError: If NIP-66 data validation fails
+            """
             self.validate()
 
         def validate(self) -> None:
@@ -289,8 +342,7 @@ class RelayMetadata:
             Validate NIP-66 data.
 
             Raises:
-                TypeError: If any attribute is of incorrect type
-                ValueError: If any attribute has an invalid value
+                Nip66ValidationError: If NIP-66 data is invalid
             """
             type_checks: list[tuple[str, Any, Union[type[bool], tuple[type, ...]]]] = [
                 ("openable", self.openable, bool),
@@ -303,12 +355,12 @@ class RelayMetadata:
 
             for field_name, field_value, expected_type in type_checks:
                 if not isinstance(field_value, expected_type):
-                    raise TypeError(
+                    raise Nip66ValidationError(
                         f"{field_name} must be {expected_type}, got {type(field_value)}"
                     )
 
             if (self.readable or self.writable) and not self.openable:
-                raise ValueError("If readable or writable is True, openable must be True")
+                raise Nip66ValidationError("If readable or writable is True, openable must be True")
 
             checks = [
                 ("openable", "rtt_open", self.openable, self.rtt_open),
@@ -318,11 +370,15 @@ class RelayMetadata:
 
             for flag_name, rtt_name, flag_value, rtt_value in checks:
                 if flag_value and rtt_value is None:
-                    raise ValueError(f"{rtt_name} must be provided when {flag_name} is True")
+                    raise Nip66ValidationError(
+                        f"{rtt_name} must be provided when {flag_name} is True"
+                    )
                 if not flag_value and rtt_value is not None:
-                    raise ValueError(f"{rtt_name} must be None when {flag_name} is False")
+                    raise Nip66ValidationError(f"{rtt_name} must be None when {flag_name} is False")
                 if flag_value and rtt_value is not None and rtt_value < 0:
-                    raise ValueError(f"{rtt_name} must be non-negative when {flag_name} is True")
+                    raise Nip66ValidationError(
+                        f"{rtt_name} must be non-negative when {flag_name} is True"
+                    )
 
         @property
         def is_valid(self) -> bool:
@@ -335,7 +391,7 @@ class RelayMetadata:
             try:
                 self.validate()
                 return True
-            except (TypeError, ValueError):
+            except Nip66ValidationError:
                 return False
 
         @classmethod

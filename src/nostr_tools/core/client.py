@@ -21,7 +21,10 @@ from aiohttp import TCPConnector
 from aiohttp import WSMsgType
 from aiohttp_socks import ProxyConnector
 
-from ..exceptions import RelayConnectionError
+from ..exceptions import ClientConnectionError
+from ..exceptions import ClientPublicationError
+from ..exceptions import ClientSubscriptionError
+from ..exceptions import ClientValidationError
 from .event import Event
 from .filter import Filter
 from .relay import Relay
@@ -89,9 +92,8 @@ class Client:
         ...     await client.unsubscribe(sub_id)
 
     Raises:
-        TypeError: If relay is not a Relay instance or timeout/proxy URL types are invalid.
-        ValueError: If timeout is negative or SOCKS5 proxy is missing for Tor relays.
-        RelayConnectionError: If connection to relay fails.
+        ClientValidationError: If client configuration is invalid (relay type, timeout, proxy).
+        ClientConnectionError: If connection to relay fails.
     """
 
     #: The Nostr relay to connect to. Must be a valid Relay instance with properly formatted WebSocket URL.
@@ -113,8 +115,7 @@ class Client:
         properly configured before use.
 
         Raises:
-            TypeError: If any attribute has an incorrect type.
-            ValueError: If configuration is invalid (negative timeout, missing proxy, etc.).
+            ClientValidationError: If configuration is invalid (negative timeout, missing proxy, etc.).
         """
         self.validate()
 
@@ -128,12 +129,10 @@ class Client:
         - SOCKS5 proxy requirement check for Tor relays
 
         Raises:
-            TypeError: If any attribute is of incorrect type:
+            ClientValidationError: If any attribute is invalid:
                 - relay must be a Relay instance
-                - timeout must be int or None
+                - timeout must be int or None and non-negative
                 - socks5_proxy_url must be str or None
-            ValueError: If any attribute has an invalid value:
-                - timeout cannot be negative
                 - SOCKS5 proxy URL is required for Tor relays
 
         Examples:
@@ -141,22 +140,22 @@ class Client:
             >>> client.validate()  # Passes validation
 
             >>> invalid_client = Client(relay, timeout=-5)
-            >>> invalid_client.validate()  # Raises ValueError
+            >>> invalid_client.validate()  # Raises ClientValidationError
         """
         # Type validation - use class name comparison for compatibility with lazy loading
         if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
-            raise TypeError(f"relay must be Relay, got {type(self.relay)}")
+            raise ClientValidationError(f"relay must be Relay, got {type(self.relay)}")
         if self.timeout is not None and not isinstance(self.timeout, int):
-            raise TypeError(f"timeout must be int or None, got {type(self.timeout)}")
+            raise ClientValidationError(f"timeout must be int or None, got {type(self.timeout)}")
         if self.socks5_proxy_url is not None and not isinstance(self.socks5_proxy_url, str):
-            raise TypeError(
+            raise ClientValidationError(
                 f"socks5_proxy_url must be str or None, got {type(self.socks5_proxy_url)}"
             )
 
         if self.timeout is not None and self.timeout < 0:
-            raise ValueError("timeout must be non-negative")
+            raise ClientValidationError("timeout must be non-negative")
         if self.relay.network == "tor" and not self.socks5_proxy_url:
-            raise ValueError("socks5_proxy_url is required for Tor relays")
+            raise ClientValidationError("socks5_proxy_url is required for Tor relays")
 
     @property
     def is_valid(self) -> bool:
@@ -198,7 +197,16 @@ class Client:
         Convert Client to dictionary.
 
         Returns:
-            dict[str, Any]: Dictionary representation of Client
+            dict[str, Any]: Dictionary representation of Client with keys:
+                - relay: Relay configuration dictionary
+                - timeout: Connection timeout in seconds
+                - socks5_proxy_url: SOCKS5 proxy URL for Tor relays
+
+        Examples:
+            >>> client = Client(relay, timeout=10)
+            >>> client_dict = client.to_dict()
+            >>> print(client_dict['timeout'])
+            10
         """
         return {
             "relay": self.relay.to_dict(),
@@ -210,8 +218,16 @@ class Client:
         """
         Async context manager entry.
 
+        Automatically connects to the relay when entering the context.
+        This method is called when using the client in an async with statement.
+
         Returns:
             Client: Self for use in async with statement
+
+        Examples:
+            >>> async with Client(relay) as client:
+            ...     # Client is automatically connected
+            ...     await client.publish(event)
         """
         await self.connect()
         return self
@@ -220,10 +236,19 @@ class Client:
         """
         Async context manager exit.
 
+        Automatically disconnects from the relay when exiting the context.
+        This method is called when leaving the async with statement.
+
         Args:
             exc_type: Exception type if an exception occurred
             exc_val: Exception value if an exception occurred
             exc_tb: Exception traceback if an exception occurred
+
+        Examples:
+            >>> async with Client(relay) as client:
+            ...     # Client is automatically connected
+            ...     pass
+            >>> # Client is automatically disconnected here
         """
         await self.disconnect()
 
@@ -235,11 +260,11 @@ class Client:
             Union[TCPConnector, ProxyConnector]: TCPConnector for clearnet or ProxyConnector for Tor
 
         Raises:
-            RelayConnectionError: If SOCKS5 proxy URL required for Tor but not provided
+            ClientConnectionError: If SOCKS5 proxy URL required for Tor but not provided
         """
         if self.relay.network == "tor":
             if not self.socks5_proxy_url:
-                raise RelayConnectionError("SOCKS5 proxy URL required for Tor relays")
+                raise ClientConnectionError("SOCKS5 proxy URL required for Tor relays")
             return ProxyConnector.from_url(self.socks5_proxy_url, force_close=True)
         else:
             return TCPConnector(force_close=True)
@@ -273,7 +298,7 @@ class Client:
         simply return without error.
 
         Raises:
-            RelayConnectionError: If connection fails for any reason:
+            ClientConnectionError: If connection fails for any reason:
                 - Network unreachable
                 - Invalid relay URL
                 - Timeout exceeded
@@ -288,7 +313,7 @@ class Client:
             >>> # With timeout handling
             >>> try:
             ...     await client.connect()
-            ... except RelayConnectionError as e:
+            ... except ClientConnectionError as e:
             ...     print(f"Connection failed: {e}")
         """
         if self.is_connected:
@@ -320,7 +345,7 @@ class Client:
             if self._session:
                 await self._session.close()
                 self._session = None
-            raise RelayConnectionError(f"Failed to connect to {self.relay.url}: {e}") from e
+            raise ClientConnectionError(f"Failed to connect to {self.relay.url}: {e}") from e
 
     async def disconnect(self) -> None:
         """
@@ -361,19 +386,19 @@ class Client:
             message (list[Any]): Message to send as a list (will be JSON encoded)
 
         Raises:
-            RelayConnectionError: If not connected or send fails
+            ClientConnectionError: If not connected or send fails
             TypeError: If message is not a list
         """
         if not isinstance(message, list):
             raise TypeError(f"message must be a list, got {type(message)}")
 
         if not self._ws:
-            raise RelayConnectionError("Not connected to relay")
+            raise ClientConnectionError("Not connected to relay")
 
         try:
             await self._ws.send_str(json.dumps(message))
         except Exception as e:
-            raise RelayConnectionError(f"Failed to send message: {e}") from e
+            raise ClientConnectionError(f"Failed to send message: {e}") from e
 
     async def subscribe(self, filter: Filter, subscription_id: Optional[str] = None) -> str:
         """
@@ -396,8 +421,9 @@ class Client:
                 Use this ID with listen_events() and unsubscribe().
 
         Raises:
-            RelayConnectionError: If not connected or subscription fails.
+            ClientConnectionError: If not connected or subscription fails.
             TypeError: If filter is not a Filter instance.
+            ClientSubscriptionError: If subscription_id already exists and is active.
 
         Examples:
             Subscribe with auto-generated ID:
@@ -425,6 +451,16 @@ class Client:
         if subscription_id is None:
             subscription_id = str(uuid.uuid4())
 
+        # Check for duplicate active subscription
+        if (
+            subscription_id in self._subscriptions
+            and self._subscriptions[subscription_id]["active"]
+        ):
+            raise ClientSubscriptionError(
+                f"Subscription '{subscription_id}' already exists and is active. "
+                "Use unsubscribe() first or choose a different subscription ID."
+            )
+
         request = ["REQ", subscription_id, filter.subscription_filter]
         await self.send_message(request)
 
@@ -441,38 +477,51 @@ class Client:
 
         Raises:
             TypeError: If subscription_id is not a string
+            ClientSubscriptionError: If subscription doesn't exist or is not active
         """
         if not isinstance(subscription_id, str):
             raise TypeError(f"subscription_id must be str, got {type(subscription_id)}")
 
-        if subscription_id in self._subscriptions:
-            request = ["CLOSE", subscription_id]
-            await self.send_message(request)
-            self._subscriptions[subscription_id]["active"] = False
+        if subscription_id not in self._subscriptions:
+            raise ClientSubscriptionError(
+                f"Subscription '{subscription_id}' not found. "
+                "Cannot unsubscribe from a non-existent subscription."
+            )
 
-    async def publish(self, event: Event) -> bool:
+        if not self._subscriptions[subscription_id]["active"]:
+            raise ClientSubscriptionError(
+                f"Subscription '{subscription_id}' is not active. It may have already been closed."
+            )
+
+        request = ["CLOSE", subscription_id]
+        await self.send_message(request)
+        self._subscriptions[subscription_id]["active"] = False
+
+    async def publish(self, event: Event) -> None:
         """
         Publish an event to the relay.
 
         Sends an EVENT message to the relay with the provided event. Waits
         for an OK response from the relay to determine if the event was
         accepted. The event must be properly signed and validated before
-        publishing.
+        publishing. Returns on success or raises ClientPublicationError on failure.
 
         Args:
             event (Event): Event to publish. Must be a valid, signed Event
                 instance. The event will be validated by the relay.
 
         Returns:
-            bool: True if the relay accepted the event, False if rejected.
+            None: Returns nothing on success. Raises ClientPublicationError on failure.
+
+        Raises:
+            ClientPublicationError: If the relay rejects the event or no OK response is received.
                 Rejection can occur due to:
                 - Invalid signature
                 - Spam/rate limiting
                 - Relay policy violations
                 - Duplicate event
-
-        Raises:
-            RelayConnectionError: If not connected or communication fails.
+                - No response from relay
+            ClientConnectionError: If not connected or communication fails.
             TypeError: If event is not an Event instance.
 
         Examples:
@@ -484,20 +533,21 @@ class Client:
             ...     kind=1, tags=[], content="Hello Nostr!"
             ... )
             >>> event = Event.from_dict(event_dict)
-            >>> success = await client.publish(event)
-            >>> if success:
+            >>> try:
+            ...     await client.publish(event)
             ...     print("Event published successfully!")
-            ... else:
-            ...     print("Event rejected by relay")
+            ... except ClientPublicationError as e:
+            ...     print(f"Event rejected: {e}")
 
             Publish with error handling:
 
             >>> try:
-            ...     success = await client.publish(event)
-            ...     if not success:
-            ...         print("Relay rejected the event")
-            ... except RelayConnectionError as e:
-            ...     print(f"Failed to publish: {e}")
+            ...     await client.publish(event)
+            ...     print("Success!")
+            ... except ClientPublicationError as e:
+            ...     print(f"Publish failed: {e}")
+            ... except ClientConnectionError as e:
+            ...     print(f"Connection error: {e}")
         """
         if not (isinstance(event, Event) or type(event).__name__ == "Event"):
             raise TypeError(f"event must be Event, got {type(event)}")
@@ -508,11 +558,17 @@ class Client:
         # Wait for OK response
         async for message in self.listen():
             if message[0] == "OK" and message[1] == event.id:
-                return bool(message[2])  # Explicit bool conversion
+                accepted = bool(message[2])
+                if not accepted:
+                    # Relay rejected the event, get reason if available
+                    reason = message[3] if len(message) > 3 else "No reason provided"
+                    raise ClientPublicationError(f"Relay rejected event: {reason}")
+                return  # Success!
             elif message[0] == "NOTICE":
                 continue  # Ignore notices
 
-        return False
+        # No OK response received
+        raise ClientPublicationError("No OK response received from relay")
 
     async def authenticate(self, event: Event) -> bool:
         """
@@ -567,7 +623,7 @@ class Client:
                 message type (see above).
 
         Raises:
-            RelayConnectionError: If not connected, connection fails, or
+            ClientConnectionError: If not connected, connection fails, or
                 encounters WebSocket errors.
 
         Examples:
@@ -593,7 +649,7 @@ class Client:
             ...     print("No messages received within timeout")
         """
         if not self._ws:
-            raise RelayConnectionError("Not connected to relay")
+            raise ClientConnectionError("Not connected to relay")
 
         try:
             while True:
@@ -609,16 +665,16 @@ class Client:
                     except json.JSONDecodeError:
                         continue
                 elif msg.type == WSMsgType.ERROR:
-                    raise RelayConnectionError(f"WebSocket error: {msg.data}")
+                    raise ClientConnectionError(f"WebSocket error: {msg.data}")
                 elif msg.type == WSMsgType.CLOSED:
                     break
                 else:
-                    raise RelayConnectionError(f"Unexpected message type: {msg.type}")
+                    raise ClientConnectionError(f"Unexpected message type: {msg.type}")
 
         except asyncio.TimeoutError:
             pass
         except Exception as e:
-            raise RelayConnectionError(f"Error listening to relay: {e}") from e
+            raise ClientConnectionError(f"Error listening to relay: {e}") from e
 
     async def listen_events(
         self,

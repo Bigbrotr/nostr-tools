@@ -18,15 +18,24 @@ import sys
 from typing import Any
 
 # Core exports that are always available
-from .exceptions.errors import EncodingError
+from .exceptions.errors import ClientConnectionError
+from .exceptions.errors import ClientError
+from .exceptions.errors import ClientPublicationError
+from .exceptions.errors import ClientSubscriptionError
+from .exceptions.errors import ClientValidationError
+from .exceptions.errors import EventError
 from .exceptions.errors import EventValidationError
+from .exceptions.errors import FilterError
 from .exceptions.errors import FilterValidationError
-from .exceptions.errors import KeyValidationError
+from .exceptions.errors import Nip11Error
+from .exceptions.errors import Nip11ValidationError
+from .exceptions.errors import Nip66Error
+from .exceptions.errors import Nip66ValidationError
 from .exceptions.errors import NostrToolsError
-from .exceptions.errors import PublishError
-from .exceptions.errors import RelayConnectionError
+from .exceptions.errors import RelayError
+from .exceptions.errors import RelayMetadataError
+from .exceptions.errors import RelayMetadataValidationError
 from .exceptions.errors import RelayValidationError
-from .exceptions.errors import SubscriptionError
 
 __author__ = "Bigbrotr"
 __email__ = "hello@bigbrotr.com"
@@ -135,7 +144,18 @@ else:
             self.attr_name = attr_name
 
         def _get_attr(self) -> Any:
-            """Import the module and get the attribute."""
+            """
+            Import the module and get the attribute.
+
+            This method implements lazy loading by importing the module only when
+            the attribute is accessed. It uses caching to avoid repeated imports.
+
+            Returns:
+                Any: The requested attribute from the module
+
+            Raises:
+                ImportError: If the module or attribute cannot be imported
+            """
             cache_key = f"{self.module_path}.{self.attr_name}"
 
             if cache_key in _module_cache:
@@ -152,7 +172,22 @@ else:
                 ) from e
 
     def __getattr__(name: str) -> Any:
-        """Provide lazy loading for module attributes."""
+        """
+        Provide lazy loading for module attributes.
+
+        This function implements lazy loading by only importing modules when
+        their attributes are accessed. This improves startup performance
+        by deferring imports until they're actually needed.
+
+        Args:
+            name: Name of the attribute to load
+
+        Returns:
+            Any: The requested attribute from the appropriate module
+
+        Raises:
+            AttributeError: If the attribute is not found in any module
+        """
         if name in _LAZY_IMPORTS:
             module_path, attr_name = _LAZY_IMPORTS[name]
             return _LazyLoader(module_path, attr_name)._get_attr()
@@ -174,14 +209,25 @@ __all__ = [
     "RelayMetadata",
     # Exceptions
     "NostrToolsError",
-    "RelayConnectionError",
+    # Generic error classes
+    "EventError",
+    "FilterError",
+    "RelayError",
+    "ClientError",
+    "RelayMetadataError",
+    "Nip11Error",
+    "Nip66Error",
+    # Specific error classes
+    "ClientConnectionError",
+    "ClientPublicationError",
+    "ClientSubscriptionError",
+    "ClientValidationError",
     "EventValidationError",
-    "KeyValidationError",
     "FilterValidationError",
     "RelayValidationError",
-    "SubscriptionError",
-    "PublishError",
-    "EncodingError",
+    "RelayMetadataValidationError",
+    "Nip11ValidationError",
+    "Nip66ValidationError",
     # Cryptographic functions
     "calc_event_id",
     "generate_event",
