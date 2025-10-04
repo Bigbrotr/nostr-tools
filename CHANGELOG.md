@@ -5,6 +5,10 @@ All notable changes to nostr-tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## ⚠️ Important Notice
+
+**Only v1.2.0 is currently supported.** All previous versions (v1.1.x, v1.0.x, v0.x.x) are end-of-life as of January 15, 2025. Users must upgrade to v1.2.0 for continued support.
+
 ## [1.2.0] - 2025-01-15
 
 ### Added
@@ -198,15 +202,16 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
-| 1.1.x   | ✅ Active      | TBD            |
-| 1.0.x   | ✅ Active      | TBD            |
+| 1.2.x   | ✅ **Only Supported** | TBD            |
+| 1.1.x   | ❌ End of Life | 2025-01-15     |
+| 1.0.x   | ❌ End of Life | 2025-01-15     |
 | 0.x.x   | ❌ End of Life | 2025-09-14     |
 
 ### Support Timeline
 
-- **Active Support**: Bug fixes, security updates, and new features
-- **Security Support**: Security updates only
-- **End of Life**: No further updates
+- **Active Support**: v1.2.0 only - bug fixes, security updates, and new features
+- **End of Life**: All previous versions (v1.1.x, v1.0.x, v0.x.x) - no further updates or support
+- **Migration Required**: Users must upgrade to v1.2.0 for continued support
 
 We follow semantic versioning and maintain backward compatibility within major versions.
 
