@@ -16,7 +16,9 @@ Run this first if you're new to nostr-tools!
 import asyncio
 
 from nostr_tools import Client
+from nostr_tools import ClientPublicationError
 from nostr_tools import Relay
+from nostr_tools import ClientConnectionError
 from nostr_tools import generate_keypair
 from nostr_tools import to_bech32
 from nostr_tools import to_hex
@@ -48,7 +50,8 @@ async def generate_keys():
     hex_public = to_hex(npub)
 
     print("\nRound-trip conversion:")
-    print(f"  Match: {private_key == hex_private and public_key == hex_public}")
+    print(
+        f"  Match: {private_key == hex_private and public_key == hex_public}")
 
     return private_key, public_key
 
@@ -142,16 +145,17 @@ async def publish_event(private_key, public_key):
     try:
         async with client:
             print(f"Publishing event {event.id[:16]}...")
-            success = await client.publish(event)
+            await client.publish(event)
 
-            if success:
-                print("✅ Event published successfully!")
-                print(f"   View on explorers using ID: {event.id}")
-            else:
-                print("❌ Event rejected by relay")
+            print("✅ Event published successfully!")
+            print(f"   View on explorers using ID: {event.id}")
 
+    except ClientPublicationError as e:
+        print(f"❌ Event rejected by relay: {e}")
+    except ClientConnectionError as e:
+        print(f"❌ Connection error: {e}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Unexpected error: {e}")
 
 
 async def main():

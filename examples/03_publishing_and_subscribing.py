@@ -18,7 +18,9 @@ import asyncio
 from nostr_tools import Client
 from nostr_tools import Event
 from nostr_tools import Filter
+from nostr_tools import ClientPublicationError
 from nostr_tools import Relay
+from nostr_tools import ClientConnectionError
 from nostr_tools import fetch_events
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
@@ -34,6 +36,9 @@ async def publish_events():
     relay = Relay("wss://relay.damus.io")
     client = Client(relay, timeout=15)
 
+    import json
+    published_count = 0
+
     try:
         async with client:
             # Publish a simple text note
@@ -47,12 +52,14 @@ async def publish_events():
             event1 = Event.from_dict(event1_data)
 
             print("\nPublishing event 1...")
-            success1 = await client.publish(event1)
-            print(f"  Result: {'✅ Accepted' if success1 else '❌ Rejected'}")
+            try:
+                await client.publish(event1)
+                print(f"  Result: ✅ Accepted")
+                published_count += 1
+            except ClientPublicationError as e:
+                print(f"  Result: ❌ Rejected - {e}")
 
             # Publish a metadata event
-            import json
-
             metadata = {
                 "name": "TestUser",
                 "about": "Testing nostr-tools",
@@ -68,14 +75,20 @@ async def publish_events():
             event2 = Event.from_dict(event2_data)
 
             print("\nPublishing event 2 (metadata)...")
-            success2 = await client.publish(event2)
-            print(f"  Result: {'✅ Accepted' if success2 else '❌ Rejected'}")
+            try:
+                await client.publish(event2)
+                print(f"  Result: ✅ Accepted")
+                published_count += 1
+            except ClientPublicationError as e:
+                print(f"  Result: ❌ Rejected - {e}")
 
             print("\nPublishing summary:")
-            print(f"  Total published: {sum([success1, success2])}/2")
+            print(f"  Total published: {published_count}/2")
 
+    except ClientConnectionError as e:
+        print(f"❌ Connection error: {e}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Unexpected error: {e}")
 
 
 async def subscribe_to_events():
@@ -163,10 +176,12 @@ async def multiple_subscriptions():
 
                         if sub_id == sub_text:
                             text_count += 1
-                            print(f"  📝 Text note {text_count}: {event.content[:40]}...")
+                            print(
+                                f"  📝 Text note {text_count}: {event.content[:40]}...")
                         elif sub_id == sub_metadata:
                             metadata_count += 1
-                            print(f"  👤 Metadata {metadata_count}: from {event.pubkey[:16]}...")
+                            print(
+                                f"  👤 Metadata {metadata_count}: from {event.pubkey[:16]}...")
 
                         # Break when we have enough events
                         if text_count >= 3 and metadata_count >= 2:
@@ -226,7 +241,8 @@ async def fetch_vs_stream():
                 stream_count += 1
                 elapsed = time.time() - start_time
 
-                print(f"     {stream_count}. ({elapsed:.1f}s) {event.content[:40]}...")
+                print(
+                    f"     {stream_count}. ({elapsed:.1f}s) {event.content[:40]}...")
 
                 # Stop after 5 seconds or 5 events
                 if elapsed > 5 or stream_count >= 5:
@@ -260,7 +276,11 @@ async def filter_by_author():
                 content="This is my test event",
             )
             event = Event.from_dict(event_data)
-            await client.publish(event)
+            try:
+                await client.publish(event)
+                print("  ✅ Event published")
+            except ClientPublicationError as e:
+                print(f"  ⚠️ Publish failed: {e}")
 
             # Filter by your pubkey
             print("\nFetching your events...")
