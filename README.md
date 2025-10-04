@@ -1,4 +1,4 @@
-# nostr-tools 🚀
+# nostr-tools
 
 [![PyPI Version](https://img.shields.io/pypi/v/nostr-tools.svg)](https://pypi.org/project/nostr-tools/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/nostr-tools.svg)](https://pypi.org/project/nostr-tools/)
@@ -609,8 +609,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](https://g
 ## 📞 Support & Resources
 
 - 📚 **Documentation** - [Full API Documentation](https://bigbrotr.github.io/nostr-tools/)
-- 💬 **Discussions** - [GitHub Discussions](https://github.com/bigbrotr/nostr-tools/discussions)
-- 🐛 **Bug Reports** - [GitHub Issues](https://github.com/bigbrotr/nostr-tools/issues)
+- 🐛 **Issues & Discussions** - [GitHub Issues](https://github.com/bigbrotr/nostr-tools/issues)
 - 📧 **Email** - hello@bigbrotr.com
 - 🔗 **Nostr Protocol** - [nostr.com](https://nostr.com/) | [NIPs Repository](https://github.com/nostr-protocol/nips)
 
