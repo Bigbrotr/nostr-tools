@@ -134,8 +134,7 @@ class TestPublicAPI:
         import nostr_tools
 
         for name in nostr_tools.__all__:
-            assert hasattr(
-                nostr_tools, name), f"{name} not available in package"
+            assert hasattr(nostr_tools, name), f"{name} not available in package"
 
     def test_dir_returns_all_exports(self) -> None:
         """Test that dir() returns all exports."""
@@ -170,8 +169,7 @@ class TestLazyLoading:
             # Store BUILDING_DOCS state
 
             # Unload the module
-            modules_to_remove = [
-                mod for mod in sys.modules if mod.startswith("nostr_tools")]
+            modules_to_remove = [mod for mod in sys.modules if mod.startswith("nostr_tools")]
             for mod in modules_to_remove:
                 del sys.modules[mod]
 

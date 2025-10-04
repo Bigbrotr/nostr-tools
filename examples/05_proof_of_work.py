@@ -17,10 +17,9 @@ import asyncio
 import time
 
 from nostr_tools import Client
-from nostr_tools import Event
 from nostr_tools import ClientPublicationError
+from nostr_tools import Event
 from nostr_tools import Relay
-from nostr_tools import ClientConnectionError
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
 
@@ -121,8 +120,7 @@ async def mining_different_difficulties():
             elapsed = time.time() - start_time
             print(f"{difficulty:>12} {elapsed:>10.2f}s {'timeout':>15} {'❌':>10}")
         except Exception as e:
-            print(
-                f"{difficulty:>12} {'error':>12} {str(e)[:13]:>15} {'❌':>10}")
+            print(f"{difficulty:>12} {'error':>12} {str(e)[:13]:>15} {'❌':>10}")
 
 
 async def pow_event_structure():
@@ -280,11 +278,9 @@ async def adaptive_pow():
             # Verify it meets requirements
             leading_zeros = count_leading_zero_bits(event.id)
             if leading_zeros >= min_pow:
-                print(
-                    f"  ✅ Meets relay requirements ({leading_zeros} >= {min_pow})")
+                print(f"  ✅ Meets relay requirements ({leading_zeros} >= {min_pow})")
             else:
-                print(
-                    f"  ❌ Does not meet requirements ({leading_zeros} < {min_pow})")
+                print(f"  ❌ Does not meet requirements ({leading_zeros} < {min_pow})")
         else:
             print("\n  ℹ️  Relay does not require PoW")
 

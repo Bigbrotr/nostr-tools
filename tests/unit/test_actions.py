@@ -152,8 +152,7 @@ class TestFetchNip11:
 
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(
-            return_value=mock_response)
+        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
         mock_session.get.return_value.__aexit__ = AsyncMock()
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
@@ -172,8 +171,7 @@ class TestFetchNip11:
 
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(
-            return_value=mock_response)
+        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
         mock_session.get.return_value.__aexit__ = AsyncMock()
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
@@ -188,8 +186,7 @@ class TestFetchNip11:
         """Test that fetch_nip11 handles network errors."""
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(
-            side_effect=ClientError())
+        mock_session.get.return_value.__aenter__ = AsyncMock(side_effect=ClientError())
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
 
@@ -508,8 +505,7 @@ class TestActionsAdditionalCoverage:
 
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(
-            return_value=mock_response)
+        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
         mock_session.get.return_value.__aexit__ = AsyncMock()
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
@@ -547,8 +543,7 @@ class TestActionsAdditionalCoverage:
         filter = Filter(kinds=[1])
 
         # Create a test event
-        event_dict = generate_event(
-            valid_private_key, valid_public_key, 1, [], "test")
+        event_dict = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         event = Event.from_dict(event_dict)
 
         # Mock listen_events to yield test event

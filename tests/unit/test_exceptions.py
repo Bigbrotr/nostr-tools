@@ -15,6 +15,10 @@ This module tests all custom Core exceptions including:
 
 import pytest
 
+from nostr_tools.exceptions import ClientConnectionError
+from nostr_tools.exceptions import ClientError
+from nostr_tools.exceptions import ClientPublicationError
+from nostr_tools.exceptions import ClientSubscriptionError
 from nostr_tools.exceptions import ClientValidationError
 from nostr_tools.exceptions import EventValidationError
 from nostr_tools.exceptions import FilterValidationError
@@ -23,13 +27,6 @@ from nostr_tools.exceptions import Nip11ValidationError
 from nostr_tools.exceptions import Nip66Error
 from nostr_tools.exceptions import Nip66ValidationError
 from nostr_tools.exceptions import NostrToolsError
-from nostr_tools.exceptions import ClientConnectionError
-from nostr_tools.exceptions import ClientError
-from nostr_tools.exceptions import ClientPublicationError
-from nostr_tools.exceptions import ClientSubscriptionError
-from nostr_tools.exceptions import EventError
-from nostr_tools.exceptions import FilterError
-from nostr_tools.exceptions import RelayError
 from nostr_tools.exceptions import RelayMetadataError
 from nostr_tools.exceptions import RelayMetadataValidationError
 from nostr_tools.exceptions import RelayValidationError
@@ -427,16 +424,14 @@ class TestRelayMetadataValidationError:
 
     def test_create_relay_metadata_validation_error(self) -> None:
         """Test creating RelayMetadataValidationError."""
-        error = RelayMetadataValidationError(
-            "generated_at must be non-negative")
+        error = RelayMetadataValidationError("generated_at must be non-negative")
         assert isinstance(error, RelayMetadataValidationError)
         assert isinstance(error, NostrToolsError)
 
     def test_raise_relay_metadata_validation_error(self) -> None:
         """Test raising RelayMetadataValidationError."""
         with pytest.raises(RelayMetadataValidationError, match="generated_at must be non-negative"):
-            raise RelayMetadataValidationError(
-                "generated_at must be non-negative")
+            raise RelayMetadataValidationError("generated_at must be non-negative")
 
 
 # ============================================================================
@@ -471,16 +466,14 @@ class TestNip66ValidationError:
 
     def test_create_nip66_validation_error(self) -> None:
         """Test creating Nip66ValidationError."""
-        error = Nip66ValidationError(
-            "rtt_open must be provided when openable is True")
+        error = Nip66ValidationError("rtt_open must be provided when openable is True")
         assert isinstance(error, Nip66ValidationError)
         assert isinstance(error, NostrToolsError)
 
     def test_raise_nip66_validation_error(self) -> None:
         """Test raising Nip66ValidationError."""
         with pytest.raises(Nip66ValidationError, match="rtt_open must be provided"):
-            raise Nip66ValidationError(
-                "rtt_open must be provided when openable is True")
+            raise Nip66ValidationError("rtt_open must be provided when openable is True")
 
 
 # ============================================================================

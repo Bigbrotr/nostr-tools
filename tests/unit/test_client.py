@@ -19,9 +19,9 @@ from nostr_tools.core.client import Client
 from nostr_tools.core.event import Event
 from nostr_tools.core.filter import Filter
 from nostr_tools.core.relay import Relay
-from nostr_tools.exceptions import ClientValidationError
 from nostr_tools.exceptions import ClientConnectionError
 from nostr_tools.exceptions import ClientSubscriptionError
+from nostr_tools.exceptions import ClientValidationError
 
 # ============================================================================
 # Client Creation Tests
@@ -42,8 +42,7 @@ class TestClientCreation:
 
     def test_create_tor_client(self, tor_relay: Relay, socks5_proxy_url: str) -> None:
         """Test creating a client for Tor relay."""
-        client = Client(relay=tor_relay, timeout=10,
-                        socks5_proxy_url=socks5_proxy_url)
+        client = Client(relay=tor_relay, timeout=10, socks5_proxy_url=socks5_proxy_url)
         assert isinstance(client, Client)
         assert client.relay == tor_relay
         assert client.socks5_proxy_url == socks5_proxy_url
@@ -80,7 +79,9 @@ class TestClientValidation:
 
     def test_tor_relay_without_proxy_raises_error(self, tor_relay: Relay) -> None:
         """Test that Tor relay without proxy URL raises ClientValidationError."""
-        with pytest.raises(ClientValidationError, match="socks5_proxy_url is required for Tor relays"):
+        with pytest.raises(
+            ClientValidationError, match="socks5_proxy_url is required for Tor relays"
+        ):
             Client(relay=tor_relay)
 
     def test_tor_relay_with_proxy_is_valid(self, tor_relay: Relay, socks5_proxy_url: str) -> None:
@@ -466,8 +467,7 @@ class TestClientAdditionalCoverage:
         tor_relay = Relay(
             url="wss://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion"
         )
-        client = Client(relay=tor_relay,
-                        socks5_proxy_url="socks5://localhost:9050")
+        client = Client(relay=tor_relay, socks5_proxy_url="socks5://localhost:9050")
         connector = client.connector()
         assert isinstance(connector, ProxyConnector)
         await connector.close()
@@ -508,8 +508,7 @@ class TestClientAdditionalCoverage:
     def test_client_active_subscriptions_with_data(self, valid_relay: Relay) -> None:
         """Test active_subscriptions with subscriptions."""
         client = Client(relay=valid_relay)
-        client._subscriptions = {
-            "sub1": {"active": True}, "sub2": {"active": False}}
+        client._subscriptions = {"sub1": {"active": True}, "sub2": {"active": False}}
         active = client.active_subscriptions
         # Just check that it returns a list
         assert isinstance(active, list)

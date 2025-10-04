@@ -16,11 +16,11 @@ Learn how to interact with Nostr relays in real-time!
 import asyncio
 
 from nostr_tools import Client
+from nostr_tools import ClientConnectionError
+from nostr_tools import ClientPublicationError
 from nostr_tools import Event
 from nostr_tools import Filter
-from nostr_tools import ClientPublicationError
 from nostr_tools import Relay
-from nostr_tools import ClientConnectionError
 from nostr_tools import fetch_events
 from nostr_tools import generate_event
 from nostr_tools import generate_keypair
@@ -37,6 +37,7 @@ async def publish_events():
     client = Client(relay, timeout=15)
 
     import json
+
     published_count = 0
 
     try:
@@ -54,7 +55,7 @@ async def publish_events():
             print("\nPublishing event 1...")
             try:
                 await client.publish(event1)
-                print(f"  Result: ✅ Accepted")
+                print("  Result: ✅ Accepted")
                 published_count += 1
             except ClientPublicationError as e:
                 print(f"  Result: ❌ Rejected - {e}")
@@ -77,7 +78,7 @@ async def publish_events():
             print("\nPublishing event 2 (metadata)...")
             try:
                 await client.publish(event2)
-                print(f"  Result: ✅ Accepted")
+                print("  Result: ✅ Accepted")
                 published_count += 1
             except ClientPublicationError as e:
                 print(f"  Result: ❌ Rejected - {e}")
@@ -176,12 +177,10 @@ async def multiple_subscriptions():
 
                         if sub_id == sub_text:
                             text_count += 1
-                            print(
-                                f"  📝 Text note {text_count}: {event.content[:40]}...")
+                            print(f"  📝 Text note {text_count}: {event.content[:40]}...")
                         elif sub_id == sub_metadata:
                             metadata_count += 1
-                            print(
-                                f"  👤 Metadata {metadata_count}: from {event.pubkey[:16]}...")
+                            print(f"  👤 Metadata {metadata_count}: from {event.pubkey[:16]}...")
 
                         # Break when we have enough events
                         if text_count >= 3 and metadata_count >= 2:
@@ -241,8 +240,7 @@ async def fetch_vs_stream():
                 stream_count += 1
                 elapsed = time.time() - start_time
 
-                print(
-                    f"     {stream_count}. ({elapsed:.1f}s) {event.content[:40]}...")
+                print(f"     {stream_count}. ({elapsed:.1f}s) {event.content[:40]}...")
 
                 # Stop after 5 seconds or 5 events
                 if elapsed > 5 or stream_count >= 5:

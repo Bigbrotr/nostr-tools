@@ -16,9 +16,9 @@ Run this first if you're new to nostr-tools!
 import asyncio
 
 from nostr_tools import Client
+from nostr_tools import ClientConnectionError
 from nostr_tools import ClientPublicationError
 from nostr_tools import Relay
-from nostr_tools import ClientConnectionError
 from nostr_tools import generate_keypair
 from nostr_tools import to_bech32
 from nostr_tools import to_hex
@@ -50,8 +50,7 @@ async def generate_keys():
     hex_public = to_hex(npub)
 
     print("\nRound-trip conversion:")
-    print(
-        f"  Match: {private_key == hex_private and public_key == hex_public}")
+    print(f"  Match: {private_key == hex_private and public_key == hex_public}")
 
     return private_key, public_key
 

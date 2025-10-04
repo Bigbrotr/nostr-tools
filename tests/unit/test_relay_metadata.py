@@ -157,8 +157,7 @@ class TestNip11TypeValidation:
         """Test that invalid element type in supported_nips raises Nip11ValidationError."""
         # Only int or str are allowed
         with pytest.raises(Nip11ValidationError, match="supported_nips must be"):
-            RelayMetadata.Nip11(
-                supported_nips=[{"invalid": "type"}])  # type: ignore
+            RelayMetadata.Nip11(supported_nips=[{"invalid": "type"}])  # type: ignore
 
 
 # ============================================================================
@@ -281,8 +280,7 @@ class TestNip66TypeValidation:
     def test_non_int_rtt_open_raises_error(self) -> None:
         """Test that non-int rtt_open raises Nip66ValidationError."""
         with pytest.raises(Nip66ValidationError, match="rtt_open must be"):
-            RelayMetadata.Nip66(
-                openable=True, rtt_open="not_an_int")  # type: ignore
+            RelayMetadata.Nip66(openable=True, rtt_open="not_an_int")  # type: ignore
 
 
 # ============================================================================
@@ -296,8 +294,7 @@ class TestRelayMetadataCreation:
 
     def test_create_relay_metadata_minimal(self, valid_relay: Relay) -> None:
         """Test creating RelayMetadata with minimal data."""
-        metadata = RelayMetadata(
-            relay=valid_relay, generated_at=int(time.time()))
+        metadata = RelayMetadata(relay=valid_relay, generated_at=int(time.time()))
         assert isinstance(metadata, RelayMetadata)
         assert metadata.relay == valid_relay
         assert metadata.nip11 is None
@@ -308,8 +305,7 @@ class TestRelayMetadataCreation:
     ) -> None:
         """Test creating RelayMetadata with Nip11."""
         nip11 = RelayMetadata.Nip11.from_dict(valid_nip11_dict)
-        metadata = RelayMetadata(
-            relay=valid_relay, nip11=nip11, generated_at=int(time.time()))
+        metadata = RelayMetadata(relay=valid_relay, nip11=nip11, generated_at=int(time.time()))
         assert metadata.nip11 == nip11
 
     def test_create_relay_metadata_with_nip66(
@@ -317,8 +313,7 @@ class TestRelayMetadataCreation:
     ) -> None:
         """Test creating RelayMetadata with Nip66."""
         nip66 = RelayMetadata.Nip66.from_dict(valid_nip66_dict)
-        metadata = RelayMetadata(
-            relay=valid_relay, nip66=nip66, generated_at=int(time.time()))
+        metadata = RelayMetadata(relay=valid_relay, nip66=nip66, generated_at=int(time.time()))
         assert metadata.nip66 == nip66
 
     def test_create_relay_metadata_complete(
@@ -366,14 +361,12 @@ class TestRelayMetadataValidation:
     def test_non_relay_type_raises_error(self) -> None:
         """Test that non-Relay type raises RelayMetadataValidationError."""
         with pytest.raises(RelayMetadataValidationError, match="relay must be"):
-            RelayMetadata(relay="not_a_relay", generated_at=int(
-                time.time()))  # type: ignore
+            RelayMetadata(relay="not_a_relay", generated_at=int(time.time()))  # type: ignore
 
     def test_non_int_generated_at_raises_error(self, valid_relay: Relay) -> None:
         """Test that non-int generated_at raises RelayMetadataValidationError."""
         with pytest.raises(RelayMetadataValidationError, match="generated_at must be"):
-            RelayMetadata(relay=valid_relay,
-                          generated_at="not_an_int")  # type: ignore
+            RelayMetadata(relay=valid_relay, generated_at="not_an_int")  # type: ignore
 
 
 # ============================================================================

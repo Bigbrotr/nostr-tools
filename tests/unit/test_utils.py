@@ -135,8 +135,7 @@ class TestSanitize:
 
     def test_sanitize_dict_recursively(self) -> None:
         """Test that dicts are sanitized recursively."""
-        result = sanitize(
-            {"key\x00": "value\x00", "nested": {"data\x00": "test\x00"}})
+        result = sanitize({"key\x00": "value\x00", "nested": {"data\x00": "test\x00"}})
         assert result["key"] == "value"
         assert result["nested"]["data"] == "test"
 
@@ -174,8 +173,7 @@ class TestCalcEventId:
 
     def test_calc_event_id_returns_64_char_hex(self, valid_public_key: str) -> None:
         """Test that calc_event_id returns 64-character hex string."""
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
         assert len(event_id) == 64
         assert all(c in "0123456789abcdef" for c in event_id)
 
@@ -189,10 +187,8 @@ class TestCalcEventId:
     def test_calc_event_id_different_content(self, valid_public_key: str) -> None:
         """Test that different content produces different event ID."""
         created_at = int(time.time())
-        event_id1 = calc_event_id(
-            valid_public_key, created_at, 1, [], "content1")
-        event_id2 = calc_event_id(
-            valid_public_key, created_at, 1, [], "content2")
+        event_id1 = calc_event_id(valid_public_key, created_at, 1, [], "content1")
+        event_id2 = calc_event_id(valid_public_key, created_at, 1, [], "content2")
         assert event_id1 != event_id2
 
     def test_calc_event_id_different_kind(self, valid_public_key: str) -> None:
@@ -205,15 +201,13 @@ class TestCalcEventId:
     def test_calc_event_id_with_tags(self, valid_public_key: str) -> None:
         """Test event ID calculation with tags."""
         tags = [["e", "event_id"], ["p", "pubkey"]]
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, tags, "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, tags, "test")
         assert len(event_id) == 64
 
     def test_calc_event_id_with_unicode_content(self, valid_public_key: str) -> None:
         """Test event ID calculation with Unicode content."""
         content = "Hello 世界 🌍"
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], content)
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], content)
         assert len(event_id) == 64
 
 
@@ -228,8 +222,7 @@ class TestVerifySig:
 
     def test_verify_valid_signature(self, valid_private_key: str, valid_public_key: str) -> None:
         """Test verifying a valid signature."""
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
         sig = sig_event_id(event_id, valid_private_key)
         assert verify_sig(event_id, valid_public_key, sig) is True
 
@@ -241,8 +234,7 @@ class TestVerifySig:
 
     def test_verify_wrong_pubkey(self, valid_private_key: str, valid_public_key: str) -> None:
         """Test verifying with wrong public key."""
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
         sig = sig_event_id(event_id, valid_private_key)
         wrong_pubkey = "a" * 64
         assert verify_sig(event_id, wrong_pubkey, sig) is False
@@ -251,8 +243,7 @@ class TestVerifySig:
         self, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test verifying a corrupted signature."""
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
         # Use a completely different signature (all zeros) to ensure it's invalid
         corrupted_sig = "0" * 128
         assert verify_sig(event_id, valid_public_key, corrupted_sig) is False
@@ -301,16 +292,14 @@ class TestGenerateEvent:
         self, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test that generate_event returns a dictionary."""
-        event = generate_event(
-            valid_private_key, valid_public_key, 1, [], "test")
+        event = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         assert isinstance(event, dict)
 
     def test_generate_event_has_all_fields(
         self, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test that generated event has all required fields."""
-        event = generate_event(
-            valid_private_key, valid_public_key, 1, [], "test")
+        event = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         assert "id" in event
         assert "pubkey" in event
         assert "created_at" in event
@@ -333,16 +322,14 @@ class TestGenerateEvent:
         self, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test that generated event has valid signature."""
-        event = generate_event(
-            valid_private_key, valid_public_key, 1, [], "test")
+        event = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         assert verify_sig(event["id"], event["pubkey"], event["sig"]) is True
 
     def test_generate_event_id_is_correct(
         self, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test that generated event ID is correctly calculated."""
-        event = generate_event(
-            valid_private_key, valid_public_key, 1, [], "test")
+        event = generate_event(valid_private_key, valid_public_key, 1, [], "test")
         expected_id = calc_event_id(
             event["pubkey"],
             event["created_at"],
@@ -542,8 +529,7 @@ class TestUtilsEdgeCases:
 
     def test_calc_event_id_with_empty_tags(self, valid_public_key: str) -> None:
         """Test calculating event ID with empty tags."""
-        event_id = calc_event_id(
-            valid_public_key, int(time.time()), 1, [], "test")
+        event_id = calc_event_id(valid_public_key, int(time.time()), 1, [], "test")
         assert len(event_id) == 64
 
     def test_calc_event_id_with_empty_content(self, valid_public_key: str) -> None:
@@ -560,8 +546,7 @@ class TestUtilsEdgeCases:
             ["p", "pubkey"],
             ["a", "kind:pubkey:d"],
         ]
-        event = generate_event(
-            valid_private_key, valid_public_key, 1, tags, "test")
+        event = generate_event(valid_private_key, valid_public_key, 1, tags, "test")
         assert event["tags"] == tags
 
     def test_sanitize_preserves_structure(self) -> None:

@@ -19,9 +19,9 @@ import time
 from collections import Counter
 
 from nostr_tools import Client
+from nostr_tools import ClientConnectionError
 from nostr_tools import Filter
 from nostr_tools import Relay
-from nostr_tools import ClientConnectionError
 from nostr_tools import check_connectivity
 from nostr_tools import generate_keypair
 from nostr_tools import stream_events
@@ -48,8 +48,7 @@ async def realtime_streaming():
                 event_count += 1
                 elapsed = time.time() - start_time
 
-                print(
-                    f"  [{elapsed:>5.1f}s] Event {event_count}: {event.content[:50]}...")
+                print(f"  [{elapsed:>5.1f}s] Event {event_count}: {event.content[:50]}...")
 
                 # Stop after 15 seconds or 10 events
                 if elapsed > 15 or event_count >= 10:
@@ -98,8 +97,7 @@ async def multi_relay_operations():
         working_relays.sort(key=lambda x: x[1])  # Sort by RTT
         fastest_relay, fastest_rtt = working_relays[0]
 
-        print(
-            f"\n  Using fastest relay: {fastest_relay.url} ({fastest_rtt}ms)")
+        print(f"\n  Using fastest relay: {fastest_relay.url} ({fastest_rtt}ms)")
 
         # Fetch events from fastest relay
         client = Client(fastest_relay, timeout=10)
@@ -235,8 +233,7 @@ async def advanced_filtering():
             kind_counts = Counter(e.kind for e in events)
             print(f"  Retrieved {len(events)} events:")
             for kind, count in kind_counts.items():
-                kind_name = {0: "metadata", 1: "text",
-                             3: "contacts"}.get(kind, f"kind {kind}")
+                kind_name = {0: "metadata", 1: "text", 3: "contacts"}.get(kind, f"kind {kind}")
                 print(f"    - {kind_name}: {count}")
 
     except Exception as e:
