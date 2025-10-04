@@ -223,3 +223,8 @@ profile_results/
 
 # Version file (auto-generated)
 src/nostr_tools/_version.py
+
+# Security reports (generated)
+bandit-report.json
+safety-report.json
+pip-audit-report.json

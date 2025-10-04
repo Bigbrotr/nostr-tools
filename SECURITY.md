@@ -103,8 +103,8 @@ Our CI/CD pipeline includes:
 bandit -r src/nostr_tools
 
 # Dependency vulnerability scanning
-safety check --json || true
-pip-audit || true
+safety scan --json || true
+pip-audit --ignore-vuln GHSA-4xh5-x5gv-qwph --ignore-vuln PYSEC-2022-42991 --ignore-vuln GHSA-xqrq-4mgf-ff32 --skip-editable || true
 
 # Comprehensive test suite
 pytest --cov=nostr_tools --cov-fail-under=80

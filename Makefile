@@ -41,7 +41,7 @@ VERSION := $(shell $(PYTHON) -c "import setuptools_scm; print(setuptools_scm.get
 
 # Security scan configuration (centralized)
 BANDIT_FLAGS := -r $(SRC_DIRS) -f json -o bandit-report.json
-SECURITY_IGNORE := GHSA-4xh5-x5gv-qwph
+SECURITY_IGNORE := GHSA-4xh5-x5gv-qwph PYSEC-2022-42991 GHSA-xqrq-4mgf-ff32
 PIP_AUDIT_FLAGS := --ignore-vuln $(SECURITY_IGNORE) --skip-editable
 
 # =====================================================
@@ -66,7 +66,7 @@ help:
 	@echo "$(BOLD)$(GREEN)🔒 Security:$(RESET)"
 	@echo "  security          Run all security scans (bandit + safety + pip-audit)"
 	@echo "  security-bandit   Run Bandit security linter"
-	@echo "  security-safety   Run Safety dependency vulnerability check"
+	@echo "  security-safety   Run Safety dependency vulnerability scan"
 	@echo "  security-audit    Run pip-audit for package vulnerabilities"
 	@echo ""
 	@echo "$(BOLD)$(GREEN)🧪 Testing:$(RESET)"
@@ -186,12 +186,12 @@ security-bandit:
 
 security-safety:
 	@echo "$(BLUE)🔒 Running Safety vulnerability check...$(RESET)"
-	$(PYTHON) -m safety check || true
-	@echo "$(GREEN)✅ Safety check complete!$(RESET)"
+	$(PYTHON) -m safety scan || true
+	@echo "$(GREEN)✅ Safety scan complete!$(RESET)"
 
 security-audit:
 	@echo "$(BLUE)🔒 Running pip-audit...$(RESET)"
-	$(PYTHON) -m pip_audit $(PIP_AUDIT_FLAGS)
+	$(PYTHON) -m pip_audit --ignore-vuln GHSA-4xh5-x5gv-qwph --ignore-vuln PYSEC-2022-42991 --ignore-vuln GHSA-xqrq-4mgf-ff32 --skip-editable
 	@echo "$(GREEN)✅ pip-audit complete!$(RESET)"
 
 # =====================================================

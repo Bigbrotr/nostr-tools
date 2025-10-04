@@ -533,7 +533,7 @@ make type-check    # Run mypy type checker
 # Security
 make security      # Run all security checks
 make security-bandit # Security linting
-make security-safety # Dependency vulnerability check
+make security-safety # Dependency vulnerability scan
 
 # Documentation
 make docs-build    # Build documentation

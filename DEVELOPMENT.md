@@ -107,7 +107,7 @@ The project uses GitHub Actions for automated testing and quality assurance. The
 **Main CI Pipeline** (`.github/workflows/ci.yml`):
 - **Pre-commit Checks** - Fast quality gates (formatting, linting, type checking)
 - **Code Quality** - Comprehensive code analysis with Ruff and MyPy
-- **Security Scanning** - Bandit, Safety, and pip-audit vulnerability checks
+- **Security Scanning** - Bandit, Safety, and pip-audit vulnerability scans
 - **Testing** - Full test suite with coverage reporting
 - **Documentation** - Build and verify documentation
 
@@ -152,7 +152,7 @@ The project uses a modern Python development stack:
 
 **Security:**
 - **Bandit** - Security vulnerability scanner
-- **Safety** - Dependency vulnerability checker
+- **Safety** - Dependency vulnerability scanner
 - **pip-audit** - Comprehensive package auditing
 
 **Documentation:**
@@ -220,7 +220,7 @@ The project uses a comprehensive pre-commit configuration (`.pre-commit-config.y
 
 **Security Hooks:**
 - **Bandit** - Security vulnerability scanner for Python code
-- **Safety** - Known vulnerability checker for dependencies
+- **Safety** - Known vulnerability scanner for dependencies
 - **pip-audit** - Package vulnerability scanner
 - **Private key detection** - Prevents committing sensitive keys
 
@@ -545,7 +545,7 @@ make dist-check
 ### Security
 - `make security` - Run all security scans (bandit + safety + pip-audit)
 - `make security-bandit` - Run Bandit security linter
-- `make security-safety` - Run Safety dependency vulnerability check
+- `make security-safety` - Run Safety dependency vulnerability scan
 - `make security-audit` - Run pip-audit for package vulnerabilities
 
 ### Testing
