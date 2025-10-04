@@ -8,6 +8,7 @@ from pathlib import Path
 # Add project source to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
+sys.path.insert(0, str(project_root / "examples"))
 
 # -- Project information -----------------------------------------------------
 
@@ -36,6 +37,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.githubpages",
     "sphinx.ext.coverage",  # Documentation coverage tracking
+    "sphinx.ext.todo",  # Todo directives
     # Third-party extensions
     "myst_parser",  # For Markdown support
 ]
@@ -149,6 +151,76 @@ html_theme_options = {
     ],
 }
 
+# Sidebar configuration - organize by groups
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+    ]
+}
+
+# Custom sidebar organization
+html_context = {
+    "sidebar_groups": {
+        "Core Module": [
+            "nostr_tools.Client",
+            "nostr_tools.Event",
+            "nostr_tools.Filter",
+            "nostr_tools.Relay",
+            "nostr_tools.RelayMetadata",
+        ],
+        "Utils Module": [
+            "nostr_tools.generate_keypair",
+            "nostr_tools.validate_keypair",
+            "nostr_tools.generate_event",
+            "nostr_tools.calc_event_id",
+            "nostr_tools.verify_sig",
+            "nostr_tools.sig_event_id",
+            "nostr_tools.to_bech32",
+            "nostr_tools.to_hex",
+            "nostr_tools.find_ws_urls",
+            "nostr_tools.sanitize",
+        ],
+        "Actions Module": [
+            "nostr_tools.fetch_events",
+            "nostr_tools.stream_events",
+            "nostr_tools.fetch_nip11",
+            "nostr_tools.fetch_nip66",
+            "nostr_tools.fetch_relay_metadata",
+            "nostr_tools.check_connectivity",
+            "nostr_tools.check_readability",
+            "nostr_tools.check_writability",
+        ],
+        "Exceptions Module": [
+            "nostr_tools.NostrToolsError",
+            "nostr_tools.RelayConnectionError",
+            "nostr_tools.EventValidationError",
+            "nostr_tools.KeyValidationError",
+            "nostr_tools.FilterValidationError",
+            "nostr_tools.RelayValidationError",
+            "nostr_tools.SubscriptionError",
+            "nostr_tools.PublishError",
+            "nostr_tools.EncodingError",
+        ],
+        "Examples": [
+            "examples/01_getting_started",
+            "examples/02_events_and_filters",
+            "examples/03_publishing_and_subscribing",
+            "examples/04_relay_capabilities",
+            "examples/05_proof_of_work",
+            "examples/06_streaming_and_advanced",
+        ],
+    }
+}
+
+# Table of contents configuration
+html_use_index = True
+html_domain_indices = True
+
 # -- Options for LaTeX output ------------------------------------------------
 latex_engine = "pdflatex"
 latex_elements = {
@@ -190,3 +262,22 @@ epub_title = project
 epub_author = author
 epub_publisher = author
 epub_copyright = copyright
+
+# -- Napoleon settings -------------------------------------------------------
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = True
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
+
+# -- Todo extension settings -------------------------------------------------
+todo_include_todos = False  # Set to True during development
