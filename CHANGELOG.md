@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ⚠️ Important Notice
 
-**Only v1.2.0 is currently supported.** All previous versions (v1.1.x, v1.0.x, v0.x.x) are end-of-life as of January 15, 2025. Users must upgrade to v1.2.0 for continued support.
+**Only v1.2.0 is currently supported.** All previous versions (v1.1.x, v1.0.x, v0.x.x) are end-of-life as of October 4, 2025. Users must upgrade to v1.2.0 for continued support.
 
-## [1.2.0] - 2025-01-15
+## [1.2.0] - 2025-10-04
 
 ### Added
 
