@@ -70,10 +70,10 @@ class TestPackageImports:
 
     def test_import_exceptions(self) -> None:
         """Test importing exceptions."""
-        from nostr_tools import RelayConnectionError
+        from nostr_tools import ClientConnectionError
 
-        assert RelayConnectionError is not None
-        assert issubclass(RelayConnectionError, Exception)
+        assert ClientConnectionError is not None
+        assert issubclass(ClientConnectionError, Exception)
 
 
 # ============================================================================
@@ -134,7 +134,8 @@ class TestPublicAPI:
         import nostr_tools
 
         for name in nostr_tools.__all__:
-            assert hasattr(nostr_tools, name), f"{name} not available in package"
+            assert hasattr(
+                nostr_tools, name), f"{name} not available in package"
 
     def test_dir_returns_all_exports(self) -> None:
         """Test that dir() returns all exports."""
@@ -169,7 +170,8 @@ class TestLazyLoading:
             # Store BUILDING_DOCS state
 
             # Unload the module
-            modules_to_remove = [mod for mod in sys.modules if mod.startswith("nostr_tools")]
+            modules_to_remove = [
+                mod for mod in sys.modules if mod.startswith("nostr_tools")]
             for mod in modules_to_remove:
                 del sys.modules[mod]
 
@@ -271,9 +273,9 @@ class TestSubmoduleImports:
 
     def test_import_from_exceptions(self) -> None:
         """Test importing from exceptions."""
-        from nostr_tools.exceptions.errors import RelayConnectionError
+        from nostr_tools.exceptions.errors import ClientConnectionError
 
-        assert RelayConnectionError is not None
+        assert ClientConnectionError is not None
 
 
 # ============================================================================
@@ -370,9 +372,9 @@ class TestPackageErrorHandling:
         with pytest.raises((AttributeError, ImportError)):
             from nostr_tools import NonExistentSymbol  # type: ignore  # noqa: F401
 
-    def test_relay_connection_error_is_available(self) -> None:
-        """Test that RelayConnectionError is accessible."""
-        from nostr_tools import RelayConnectionError
+    def test_client_connection_error_is_available(self) -> None:
+        """Test that ClientConnectionError is accessible."""
+        from nostr_tools import ClientConnectionError
 
-        error = RelayConnectionError("test")
+        error = ClientConnectionError("test")
         assert isinstance(error, Exception)

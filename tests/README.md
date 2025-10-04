@@ -12,7 +12,6 @@ tests/
 ├── unit/                    # Unit tests (isolated, no external dependencies)
 │   ├── test_actions.py      # Action function tests
 │   ├── test_client.py       # Client class tests
-│   ├── test_coverage_boost.py  # Additional coverage tests
 │   ├── test_event.py        # Event class tests
 │   ├── test_exceptions.py   # Exception classes tests
 │   ├── test_filter.py       # Filter class tests
@@ -79,11 +78,6 @@ pytest tests/unit/test_event.py::TestEventCreation::test_create_valid_event -v
 - Subscription management
 - Event publishing
 - Async context manager
-
-**test_coverage_boost.py** - Additional Coverage Tests
-- Edge cases and corner scenarios
-- Additional code paths
-- Enhanced coverage for hard-to-test code
 
 **test_event.py** - Event Class Tests
 - Event creation and validation

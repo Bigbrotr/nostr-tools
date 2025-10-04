@@ -19,7 +19,9 @@ from nostr_tools.core.client import Client
 from nostr_tools.core.event import Event
 from nostr_tools.core.filter import Filter
 from nostr_tools.core.relay import Relay
-from nostr_tools.exceptions import RelayConnectionError
+from nostr_tools.exceptions import ClientValidationError
+from nostr_tools.exceptions import ClientConnectionError
+from nostr_tools.exceptions import ClientSubscriptionError
 
 # ============================================================================
 # Client Creation Tests
@@ -40,7 +42,8 @@ class TestClientCreation:
 
     def test_create_tor_client(self, tor_relay: Relay, socks5_proxy_url: str) -> None:
         """Test creating a client for Tor relay."""
-        client = Client(relay=tor_relay, timeout=10, socks5_proxy_url=socks5_proxy_url)
+        client = Client(relay=tor_relay, timeout=10,
+                        socks5_proxy_url=socks5_proxy_url)
         assert isinstance(client, Client)
         assert client.relay == tor_relay
         assert client.socks5_proxy_url == socks5_proxy_url
@@ -71,13 +74,13 @@ class TestClientValidation:
         assert valid_client.is_valid
 
     def test_negative_timeout_raises_error(self, valid_relay: Relay) -> None:
-        """Test that negative timeout raises ValueError."""
-        with pytest.raises(ValueError, match="timeout must be non-negative"):
+        """Test that negative timeout raises ClientValidationError."""
+        with pytest.raises(ClientValidationError, match="timeout must be non-negative"):
             Client(relay=valid_relay, timeout=-1)
 
     def test_tor_relay_without_proxy_raises_error(self, tor_relay: Relay) -> None:
-        """Test that Tor relay without proxy URL raises ValueError."""
-        with pytest.raises(ValueError, match="socks5_proxy_url is required for Tor relays"):
+        """Test that Tor relay without proxy URL raises ClientValidationError."""
+        with pytest.raises(ClientValidationError, match="socks5_proxy_url is required for Tor relays"):
             Client(relay=tor_relay)
 
     def test_tor_relay_with_proxy_is_valid(self, tor_relay: Relay, socks5_proxy_url: str) -> None:
@@ -96,18 +99,18 @@ class TestClientTypeValidation:
     """Test Client type validation."""
 
     def test_non_relay_relay_raises_error(self) -> None:
-        """Test that non-Relay relay raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-Relay relay raises ClientValidationError."""
+        with pytest.raises(ClientValidationError):
             Client(relay="not_a_relay")  # type: ignore
 
     def test_non_int_timeout_raises_error(self, valid_relay: Relay) -> None:
-        """Test that non-integer timeout raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-integer timeout raises ClientValidationError."""
+        with pytest.raises(ClientValidationError):
             Client(relay=valid_relay, timeout="not_an_int")  # type: ignore
 
     def test_non_string_socks5_proxy_url_raises_error(self, tor_relay: Relay) -> None:
-        """Test that non-string socks5_proxy_url raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-string socks5_proxy_url raises ClientValidationError."""
+        with pytest.raises(ClientValidationError):
             Client(relay=tor_relay, socks5_proxy_url=123)  # type: ignore
 
 
@@ -202,7 +205,7 @@ class TestClientConnection:
         client.socks5_proxy_url = None
         client.timeout = 10
 
-        with pytest.raises(RelayConnectionError, match="SOCKS5 proxy URL required"):
+        with pytest.raises(ClientConnectionError, match="SOCKS5 proxy URL required"):
             client.connector()
 
     @pytest.mark.asyncio
@@ -239,7 +242,7 @@ class TestClientMessageSending:
         """Test that send_message requires connection."""
         # Create a fresh client that's not connected
         client = Client(relay=valid_relay)
-        with pytest.raises(RelayConnectionError):
+        with pytest.raises(ClientConnectionError):
             await client.send_message(["TEST"])
 
     @pytest.mark.asyncio
@@ -407,7 +410,7 @@ class TestClientEdgeCases:
         """Test that listen requires connection."""
         # Create a fresh client that's not connected
         client = Client(relay=valid_relay)
-        with pytest.raises(RelayConnectionError):
+        with pytest.raises(ClientConnectionError):
             async for _ in client.listen():
                 pass
 
@@ -433,3 +436,108 @@ class TestClientEdgeCases:
         relay = Relay(url="wss://relay.example.com/nostr/v1")
         client = Client(relay=relay, timeout=10)
         assert client.is_valid
+
+
+# ============================================================================
+# Additional Client Coverage Tests
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestClientAdditionalCoverage:
+    """Additional tests for improved Client coverage."""
+
+    @pytest.mark.asyncio
+    async def test_client_connector_tcp(self, valid_relay: Relay) -> None:
+        """Test TCP connector for clearnet relay."""
+        from aiohttp import TCPConnector
+
+        client = Client(relay=valid_relay)
+        connector = client.connector()
+        assert isinstance(connector, TCPConnector)
+        await connector.close()
+
+    @pytest.mark.asyncio
+    async def test_client_connector_socks5(self) -> None:
+        """Test SOCKS5 connector for Tor relay."""
+        from aiohttp_socks import ProxyConnector
+
+        # Use a valid v3 onion address (exactly 56 chars, a-z2-7 only)
+        tor_relay = Relay(
+            url="wss://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion"
+        )
+        client = Client(relay=tor_relay,
+                        socks5_proxy_url="socks5://localhost:9050")
+        connector = client.connector()
+        assert isinstance(connector, ProxyConnector)
+        await connector.close()
+
+    @pytest.mark.asyncio
+    async def test_client_session_creation(self, valid_relay: Relay) -> None:
+        """Test session creation."""
+        from aiohttp import ClientSession
+
+        client = Client(relay=valid_relay)
+        session = client.session()
+        assert isinstance(session, ClientSession)
+        await session.close()
+
+    @pytest.mark.asyncio
+    async def test_client_session_with_custom_connector(self, valid_relay: Relay) -> None:
+        """Test session with custom connector."""
+        from aiohttp import ClientSession
+        from aiohttp import TCPConnector
+
+        client = Client(relay=valid_relay)
+        connector = TCPConnector()
+        session = client.session(connector)
+        assert isinstance(session, ClientSession)
+        await session.close()
+        await connector.close()
+
+    def test_client_is_connected_false(self, valid_relay: Relay) -> None:
+        """Test is_connected when not connected."""
+        client = Client(relay=valid_relay)
+        assert client.is_connected is False
+
+    def test_client_active_subscriptions_empty(self, valid_relay: Relay) -> None:
+        """Test active_subscriptions when empty."""
+        client = Client(relay=valid_relay)
+        assert client.active_subscriptions == []
+
+    def test_client_active_subscriptions_with_data(self, valid_relay: Relay) -> None:
+        """Test active_subscriptions with subscriptions."""
+        client = Client(relay=valid_relay)
+        client._subscriptions = {
+            "sub1": {"active": True}, "sub2": {"active": False}}
+        active = client.active_subscriptions
+        # Just check that it returns a list
+        assert isinstance(active, list)
+
+    @pytest.mark.asyncio
+    async def test_client_disconnect_not_connected(self, valid_relay: Relay) -> None:
+        """Test disconnect when not connected."""
+        client = Client(relay=valid_relay)
+        await client.disconnect()  # Should not raise
+
+    @pytest.mark.asyncio
+    async def test_client_unsubscribe_nonexistent(self, valid_relay: Relay) -> None:
+        """Test unsubscribe from nonexistent subscription raises SubscriptionError."""
+        client = Client(relay=valid_relay)
+        client._ws = AsyncMock()
+        client._ws.closed = False
+        with pytest.raises(ClientSubscriptionError, match="not found"):
+            await client.unsubscribe("nonexistent")
+
+    @pytest.mark.asyncio
+    async def test_client_subscribe_auto_id(self, valid_filter: Filter) -> None:
+        """Test subscribe generates subscription ID."""
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+        client._ws = AsyncMock()
+        client._ws.closed = False
+        client._ws.send_str = AsyncMock()
+
+        sub_id = await client.subscribe(valid_filter)
+        assert sub_id is not None
+        assert len(sub_id) > 0

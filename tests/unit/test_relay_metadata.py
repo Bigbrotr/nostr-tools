@@ -16,6 +16,9 @@ import pytest
 
 from nostr_tools.core.relay import Relay
 from nostr_tools.core.relay_metadata import RelayMetadata
+from nostr_tools.exceptions import Nip11ValidationError
+from nostr_tools.exceptions import Nip66ValidationError
+from nostr_tools.exceptions import RelayMetadataValidationError
 
 # ============================================================================
 # Nip11 Creation Tests
@@ -97,32 +100,32 @@ class TestNip11Validation:
         assert nip11.extra_fields is None
 
     def test_non_json_serializable_limitation_raises_error(self) -> None:
-        """Test that non-JSON serializable limitation raises ValueError."""
+        """Test that non-JSON serializable limitation raises Nip11ValidationError."""
 
         # Create an object that can't be JSON serialized
         class NonSerializable:
             pass
 
-        with pytest.raises(ValueError, match="must be JSON serializable"):
+        with pytest.raises(Nip11ValidationError, match="must be JSON serializable"):
             RelayMetadata.Nip11(limitation={"obj": NonSerializable()})
 
     def test_non_json_serializable_extra_fields_raises_error(self) -> None:
-        """Test that non-JSON serializable extra_fields raises ValueError."""
+        """Test that non-JSON serializable extra_fields raises Nip11ValidationError."""
 
         class NonSerializable:
             pass
 
-        with pytest.raises(ValueError, match="must be JSON serializable"):
+        with pytest.raises(Nip11ValidationError, match="must be JSON serializable"):
             RelayMetadata.Nip11(extra_fields={"obj": NonSerializable()})
 
     def test_non_string_keys_in_limitation_raises_error(self) -> None:
-        """Test that non-string keys in limitation raise TypeError."""
-        with pytest.raises(TypeError, match="All keys .* must be strings"):
+        """Test that non-string keys in limitation raise Nip11ValidationError."""
+        with pytest.raises(Nip11ValidationError, match="All keys .* must be strings"):
             RelayMetadata.Nip11(limitation={1: "value"})  # type: ignore
 
     def test_non_string_keys_in_extra_fields_raises_error(self) -> None:
-        """Test that non-string keys in extra_fields raise TypeError."""
-        with pytest.raises(TypeError, match="All keys .* must be strings"):
+        """Test that non-string keys in extra_fields raise Nip11ValidationError."""
+        with pytest.raises(Nip11ValidationError, match="All keys .* must be strings"):
             RelayMetadata.Nip11(extra_fields={1: "value"})  # type: ignore
 
 
@@ -136,25 +139,26 @@ class TestNip11TypeValidation:
     """Test Nip11 type validation."""
 
     def test_non_string_name_raises_error(self) -> None:
-        """Test that non-string name raises TypeError."""
-        with pytest.raises(TypeError, match="name must be"):
+        """Test that non-string name raises Nip11ValidationError."""
+        with pytest.raises(Nip11ValidationError, match="name must be"):
             RelayMetadata.Nip11(name=123)  # type: ignore
 
     def test_non_string_description_raises_error(self) -> None:
-        """Test that non-string description raises TypeError."""
-        with pytest.raises(TypeError, match="description must be"):
+        """Test that non-string description raises Nip11ValidationError."""
+        with pytest.raises(Nip11ValidationError, match="description must be"):
             RelayMetadata.Nip11(description=123)  # type: ignore
 
     def test_non_list_supported_nips_raises_error(self) -> None:
-        """Test that non-list supported_nips raises TypeError."""
-        with pytest.raises(TypeError, match="supported_nips must be"):
+        """Test that non-list supported_nips raises Nip11ValidationError."""
+        with pytest.raises(Nip11ValidationError, match="supported_nips must be"):
             RelayMetadata.Nip11(supported_nips="not_a_list")  # type: ignore
 
     def test_invalid_supported_nips_element_type_raises_error(self) -> None:
-        """Test that invalid element type in supported_nips raises TypeError."""
+        """Test that invalid element type in supported_nips raises Nip11ValidationError."""
         # Only int or str are allowed
-        with pytest.raises(TypeError, match="supported_nips must be"):
-            RelayMetadata.Nip11(supported_nips=[{"invalid": "type"}])  # type: ignore
+        with pytest.raises(Nip11ValidationError, match="supported_nips must be"):
+            RelayMetadata.Nip11(
+                supported_nips=[{"invalid": "type"}])  # type: ignore
 
 
 # ============================================================================
@@ -213,40 +217,40 @@ class TestNip66Validation:
         assert nip66.is_valid
 
     def test_readable_without_openable_raises_error(self) -> None:
-        """Test that readable without openable raises ValueError."""
-        with pytest.raises(ValueError, match="openable must be True"):
+        """Test that readable without openable raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="openable must be True"):
             RelayMetadata.Nip66(readable=True, rtt_read=50)
 
     def test_writable_without_openable_raises_error(self) -> None:
-        """Test that writable without openable raises ValueError."""
-        with pytest.raises(ValueError, match="openable must be True"):
+        """Test that writable without openable raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="openable must be True"):
             RelayMetadata.Nip66(writable=True, rtt_write=75)
 
     def test_openable_without_rtt_raises_error(self) -> None:
-        """Test that openable without rtt_open raises ValueError."""
-        with pytest.raises(ValueError, match="rtt_open must be provided"):
+        """Test that openable without rtt_open raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="rtt_open must be provided"):
             RelayMetadata.Nip66(openable=True)
 
     def test_readable_without_rtt_raises_error(self) -> None:
-        """Test that readable without rtt_read raises ValueError."""
-        with pytest.raises(ValueError, match="rtt_read must be provided"):
+        """Test that readable without rtt_read raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="rtt_read must be provided"):
             RelayMetadata.Nip66(openable=True, rtt_open=100, readable=True)
 
     def test_writable_without_rtt_raises_error(self) -> None:
-        """Test that writable without rtt_write raises ValueError."""
-        with pytest.raises(ValueError, match="rtt_write must be provided"):
+        """Test that writable without rtt_write raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="rtt_write must be provided"):
             RelayMetadata.Nip66(
                 openable=True, rtt_open=100, readable=True, rtt_read=50, writable=True
             )
 
     def test_rtt_without_flag_raises_error(self) -> None:
-        """Test that rtt without corresponding flag raises ValueError."""
-        with pytest.raises(ValueError, match="rtt_open must be None"):
+        """Test that rtt without corresponding flag raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="rtt_open must be None"):
             RelayMetadata.Nip66(openable=False, rtt_open=100)
 
     def test_negative_rtt_raises_error(self) -> None:
-        """Test that negative rtt raises ValueError."""
-        with pytest.raises(ValueError, match="must be non-negative"):
+        """Test that negative rtt raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="must be non-negative"):
             RelayMetadata.Nip66(openable=True, rtt_open=-1)
 
 
@@ -260,24 +264,25 @@ class TestNip66TypeValidation:
     """Test Nip66 type validation."""
 
     def test_non_bool_openable_raises_error(self) -> None:
-        """Test that non-bool openable raises TypeError."""
-        with pytest.raises(TypeError, match="openable must be"):
+        """Test that non-bool openable raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="openable must be"):
             RelayMetadata.Nip66(openable="not_a_bool")  # type: ignore
 
     def test_non_bool_readable_raises_error(self) -> None:
-        """Test that non-bool readable raises TypeError."""
-        with pytest.raises(TypeError, match="readable must be"):
+        """Test that non-bool readable raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="readable must be"):
             RelayMetadata.Nip66(readable="not_a_bool")  # type: ignore
 
     def test_non_bool_writable_raises_error(self) -> None:
-        """Test that non-bool writable raises TypeError."""
-        with pytest.raises(TypeError, match="writable must be"):
+        """Test that non-bool writable raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="writable must be"):
             RelayMetadata.Nip66(writable="not_a_bool")  # type: ignore
 
     def test_non_int_rtt_open_raises_error(self) -> None:
-        """Test that non-int rtt_open raises TypeError."""
-        with pytest.raises(TypeError, match="rtt_open must be"):
-            RelayMetadata.Nip66(openable=True, rtt_open="not_an_int")  # type: ignore
+        """Test that non-int rtt_open raises Nip66ValidationError."""
+        with pytest.raises(Nip66ValidationError, match="rtt_open must be"):
+            RelayMetadata.Nip66(
+                openable=True, rtt_open="not_an_int")  # type: ignore
 
 
 # ============================================================================
@@ -291,7 +296,8 @@ class TestRelayMetadataCreation:
 
     def test_create_relay_metadata_minimal(self, valid_relay: Relay) -> None:
         """Test creating RelayMetadata with minimal data."""
-        metadata = RelayMetadata(relay=valid_relay, generated_at=int(time.time()))
+        metadata = RelayMetadata(
+            relay=valid_relay, generated_at=int(time.time()))
         assert isinstance(metadata, RelayMetadata)
         assert metadata.relay == valid_relay
         assert metadata.nip11 is None
@@ -302,7 +308,8 @@ class TestRelayMetadataCreation:
     ) -> None:
         """Test creating RelayMetadata with Nip11."""
         nip11 = RelayMetadata.Nip11.from_dict(valid_nip11_dict)
-        metadata = RelayMetadata(relay=valid_relay, nip11=nip11, generated_at=int(time.time()))
+        metadata = RelayMetadata(
+            relay=valid_relay, nip11=nip11, generated_at=int(time.time()))
         assert metadata.nip11 == nip11
 
     def test_create_relay_metadata_with_nip66(
@@ -310,7 +317,8 @@ class TestRelayMetadataCreation:
     ) -> None:
         """Test creating RelayMetadata with Nip66."""
         nip66 = RelayMetadata.Nip66.from_dict(valid_nip66_dict)
-        metadata = RelayMetadata(relay=valid_relay, nip66=nip66, generated_at=int(time.time()))
+        metadata = RelayMetadata(
+            relay=valid_relay, nip66=nip66, generated_at=int(time.time()))
         assert metadata.nip66 == nip66
 
     def test_create_relay_metadata_complete(
@@ -351,19 +359,21 @@ class TestRelayMetadataValidation:
         assert metadata.is_valid
 
     def test_negative_generated_at_raises_error(self, valid_relay: Relay) -> None:
-        """Test that negative generated_at raises ValueError."""
-        with pytest.raises(ValueError, match="generated_at must be non-negative"):
+        """Test that negative generated_at raises RelayMetadataValidationError."""
+        with pytest.raises(RelayMetadataValidationError, match="generated_at must be non-negative"):
             RelayMetadata(relay=valid_relay, generated_at=-1)
 
     def test_non_relay_type_raises_error(self) -> None:
-        """Test that non-Relay type raises TypeError."""
-        with pytest.raises(TypeError, match="relay must be"):
-            RelayMetadata(relay="not_a_relay", generated_at=int(time.time()))  # type: ignore
+        """Test that non-Relay type raises RelayMetadataValidationError."""
+        with pytest.raises(RelayMetadataValidationError, match="relay must be"):
+            RelayMetadata(relay="not_a_relay", generated_at=int(
+                time.time()))  # type: ignore
 
     def test_non_int_generated_at_raises_error(self, valid_relay: Relay) -> None:
-        """Test that non-int generated_at raises TypeError."""
-        with pytest.raises(TypeError, match="generated_at must be"):
-            RelayMetadata(relay=valid_relay, generated_at="not_an_int")  # type: ignore
+        """Test that non-int generated_at raises RelayMetadataValidationError."""
+        with pytest.raises(RelayMetadataValidationError, match="generated_at must be"):
+            RelayMetadata(relay=valid_relay,
+                          generated_at="not_an_int")  # type: ignore
 
 
 # ============================================================================
@@ -504,3 +514,42 @@ class TestRelayMetadataEdgeCases:
         old_time = 1  # Unix epoch + 1 second
         metadata = RelayMetadata(relay=valid_relay, generated_at=old_time)
         assert metadata.generated_at == old_time
+
+
+# ============================================================================
+# Additional RelayMetadata Coverage Tests
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestRelayMetadataAdditionalCoverage:
+    """Additional tests for improved RelayMetadata coverage."""
+
+    def test_nip11_with_none_values(self) -> None:
+        """Test Nip11 with all None values."""
+        nip11 = RelayMetadata.Nip11()
+        assert nip11.name is None
+        assert nip11.description is None
+        assert nip11.is_valid is True
+
+    def test_nip66_with_false_flags(self) -> None:
+        """Test Nip66 with all flags False."""
+        nip66 = RelayMetadata.Nip66(
+            openable=False,
+            readable=False,
+            writable=False,
+        )
+        assert nip66.openable is False
+        assert nip66.rtt_open is None
+        assert nip66.rtt_read is None
+        assert nip66.rtt_write is None
+
+    def test_relay_metadata_minimal(self, valid_relay: Relay) -> None:
+        """Test RelayMetadata with minimal data."""
+        metadata = RelayMetadata(
+            relay=valid_relay,
+            generated_at=int(time.time()),
+        )
+        assert metadata.nip11 is None
+        assert metadata.nip66 is None
+        assert metadata.is_valid is True

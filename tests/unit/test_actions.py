@@ -25,7 +25,7 @@ from nostr_tools.core.client import Client
 from nostr_tools.core.event import Event
 from nostr_tools.core.filter import Filter
 from nostr_tools.core.relay import Relay
-from nostr_tools.exceptions import RelayConnectionError
+from nostr_tools.exceptions import ClientConnectionError
 
 # ============================================================================
 # Fetch Events Tests
@@ -41,7 +41,7 @@ class TestFetchEvents:
         self, valid_client: Client, valid_filter: Filter
     ) -> None:
         """Test that fetch_events requires client to be connected."""
-        with pytest.raises(RelayConnectionError, match="not connected"):
+        with pytest.raises(ClientConnectionError, match="not connected"):
             await fetch_events(valid_client, valid_filter)
 
     @pytest.mark.asyncio
@@ -103,7 +103,7 @@ class TestStreamEvents:
         self, valid_client: Client, valid_filter: Filter
     ) -> None:
         """Test that stream_events requires client to be connected."""
-        with pytest.raises(RelayConnectionError, match="not connected"):
+        with pytest.raises(ClientConnectionError, match="not connected"):
             async for _ in stream_events(valid_client, valid_filter):
                 pass
 
@@ -152,7 +152,8 @@ class TestFetchNip11:
 
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.get.return_value.__aenter__ = AsyncMock(
+            return_value=mock_response)
         mock_session.get.return_value.__aexit__ = AsyncMock()
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
@@ -171,7 +172,8 @@ class TestFetchNip11:
 
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.get.return_value.__aenter__ = AsyncMock(
+            return_value=mock_response)
         mock_session.get.return_value.__aexit__ = AsyncMock()
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
@@ -186,7 +188,8 @@ class TestFetchNip11:
         """Test that fetch_nip11 handles network errors."""
         mock_session = AsyncMock()
         mock_session.get = MagicMock()
-        mock_session.get.return_value.__aenter__ = AsyncMock(side_effect=ClientError())
+        mock_session.get.return_value.__aenter__ = AsyncMock(
+            side_effect=ClientError())
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock()
 
@@ -223,7 +226,7 @@ class TestCheckConnectivity:
         valid_client._ws = AsyncMock()
         valid_client._ws.closed = False
 
-        with pytest.raises(RelayConnectionError, match="already connected"):
+        with pytest.raises(ClientConnectionError, match="already connected"):
             await check_connectivity(valid_client)
 
 
@@ -239,7 +242,7 @@ class TestCheckReadability:
     @pytest.mark.asyncio
     async def test_check_readability_requires_connection(self, valid_client: Client) -> None:
         """Test that readability check requires connection."""
-        with pytest.raises(RelayConnectionError, match="not connected"):
+        with pytest.raises(ClientConnectionError, match="not connected"):
             await check_readability(valid_client)
 
     @pytest.mark.asyncio
@@ -275,7 +278,7 @@ class TestCheckWritability:
         self, valid_client: Client, valid_private_key: str, valid_public_key: str
     ) -> None:
         """Test that writability check requires connection."""
-        with pytest.raises(RelayConnectionError, match="not connected"):
+        with pytest.raises(ClientConnectionError, match="not connected"):
             await check_writability(valid_client, valid_private_key, valid_public_key)
 
     @pytest.mark.asyncio
@@ -315,7 +318,7 @@ class TestFetchNip66:
         valid_client._ws = AsyncMock()
         valid_client._ws.closed = False
 
-        with pytest.raises(RelayConnectionError, match="already connected"):
+        with pytest.raises(ClientConnectionError, match="already connected"):
             await fetch_nip66(valid_client, valid_private_key, valid_public_key)
 
     @pytest.mark.asyncio
@@ -435,3 +438,131 @@ class TestFetchRelayMetadata:
         with patch("nostr_tools.actions.actions.fetch_nip11", mock_fetch_nip11):
             with patch("nostr_tools.actions.actions.fetch_nip66", mock_fetch_nip66):
                 await fetch_relay_metadata(client, valid_private_key, valid_public_key)
+
+
+# ============================================================================
+# Additional Actions Coverage Tests
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestActionsAdditionalCoverage:
+    """Additional tests for improved Actions coverage."""
+
+    @pytest.mark.asyncio
+    async def test_check_connectivity_failure(self) -> None:
+        """Test connectivity check failure."""
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+
+        # Mock connect to fail
+        with patch.object(client, "connect", side_effect=Exception("Connection failed")):
+            rtt, connected = await check_connectivity(client)
+
+        assert connected is False
+        assert rtt is None
+
+    @pytest.mark.asyncio
+    async def test_check_readability_failure(self) -> None:
+        """Test readability check failure."""
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+        client._ws = AsyncMock()
+        client._ws.closed = False
+
+        # Mock subscribe to fail
+        with patch.object(client, "subscribe", side_effect=Exception("Subscribe failed")):
+            rtt, readable = await check_readability(client)
+
+        assert readable is False
+        assert rtt is None
+
+    @pytest.mark.asyncio
+    async def test_check_writability_failure(
+        self, valid_private_key: str, valid_public_key: str
+    ) -> None:
+        """Test writability check failure."""
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+        client._ws = AsyncMock()
+        client._ws.closed = False
+
+        # Mock publish to fail
+        with patch.object(client, "publish", side_effect=Exception("Publish failed")):
+            rtt, writable = await check_writability(client, valid_private_key, valid_public_key)
+
+        assert writable is False
+        assert rtt is None
+
+    @pytest.mark.asyncio
+    async def test_fetch_nip11_http_fallback(self) -> None:
+        """Test NIP-11 fetch with HTTP fallback."""
+        from unittest.mock import MagicMock
+
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+
+        # Mock to return None (simulating both protocols failing)
+        mock_response = AsyncMock()
+        mock_response.status = 404
+
+        mock_session = AsyncMock()
+        mock_session.get = MagicMock()
+        mock_session.get.return_value.__aenter__ = AsyncMock(
+            return_value=mock_response)
+        mock_session.get.return_value.__aexit__ = AsyncMock()
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock()
+
+        with patch.object(client, "session", return_value=mock_session):
+            nip11 = await fetch_nip11(client)
+
+        # Should return None when both fail
+        assert nip11 is None
+
+    @pytest.mark.asyncio
+    async def test_fetch_nip66_not_openable(
+        self, valid_private_key: str, valid_public_key: str
+    ) -> None:
+        """Test NIP-66 when relay is not openable."""
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+
+        # Mock connectivity to return False
+        with patch("nostr_tools.actions.actions.check_connectivity", return_value=(None, False)):
+            nip66 = await fetch_nip66(client, valid_private_key, valid_public_key)
+
+        assert nip66 is None
+
+    @pytest.mark.asyncio
+    async def test_stream_events_yields_events(
+        self, valid_private_key: str, valid_public_key: str
+    ) -> None:
+        """Test stream_events yields events."""
+        from nostr_tools import Filter
+        from nostr_tools import generate_event
+
+        relay = Relay(url="wss://relay.example.com")
+        client = Client(relay=relay)
+        filter = Filter(kinds=[1])
+
+        # Create a test event
+        event_dict = generate_event(
+            valid_private_key, valid_public_key, 1, [], "test")
+        event = Event.from_dict(event_dict)
+
+        # Mock listen_events to yield test event
+        async def mock_listen_events(sub_id: str):
+            yield ["EVENT", sub_id, event.to_dict()]
+
+        client._ws = AsyncMock()
+        client._ws.closed = False
+
+        with patch.object(client, "listen_events", mock_listen_events):
+            events = []
+            async for evt in stream_events(client, filter):
+                events.append(evt)
+                break  # Only get first event
+
+        assert len(events) == 1
+        assert events[0].id == event.id
