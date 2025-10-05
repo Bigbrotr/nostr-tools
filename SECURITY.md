@@ -247,7 +247,7 @@ We follow responsible disclosure practices:
 | Date | Version | Changes |
 |------|---------|---------|
 | 2025-10-04 | 1.2.0 | Updated supported versions - v1.2.0 only |
-| 2024-12-20 | 1.0.0 | Initial security policy |
+| 2025-09-15 | 1.0.0 | Initial security policy |
 
 ## 🙏 Acknowledgments
 

@@ -203,8 +203,8 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
 | 1.2.x   | ✅ **Only Supported** | TBD            |
-| 1.1.x   | ❌ End of Life | 2025-01-15     |
-| 1.0.x   | ❌ End of Life | 2025-01-15     |
+| 1.1.x   | ❌ End of Life | 2025-10-04     |
+| 1.0.x   | ❌ End of Life | 2025-10-04     |
 | 0.x.x   | ❌ End of Life | 2025-09-14     |
 
 ### Support Timeline
