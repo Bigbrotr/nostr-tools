@@ -10,7 +10,9 @@ We provide security updates for the following versions:
 
 | Version | Supported          | Status              |
 | ------- | ------------------ | ------------------- |
-| 1.0.x   | ✅ Yes             | Active Support      |
+| 1.2.0   | ✅ Yes             | Active Support      |
+| 1.1.x   | ❌ No              | End of Life         |
+| 1.0.x   | ❌ No              | End of Life         |
 | < 1.0.0 | ❌ No              | End of Life         |
 
 ## 🚨 Reporting a Vulnerability
@@ -244,6 +246,7 @@ We follow responsible disclosure practices:
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2025-10-04 | 1.2.0 | Updated supported versions - v1.2.0 only |
 | 2024-12-20 | 1.0.0 | Initial security policy |
 
 ## 🙏 Acknowledgments
