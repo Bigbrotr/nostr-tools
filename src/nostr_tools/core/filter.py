@@ -331,6 +331,28 @@ class Filter:
             return False
 
     @classmethod
+    def from_subscription_filter(cls, data: dict[str, Any]) -> "Filter":
+        """
+        Create Filter from subscription filter dictionary.
+
+        Args:
+            data (dict[str, Any]): Dictionary containing subscription filter data
+        Returns:
+            Filter: An instance of Filter
+        Raises:
+            TypeError: If data is not a dictionary
+            FilterValidationError: If data is invalid
+        """
+        if not isinstance(data, dict):
+            raise TypeError(f"data must be a dict, got {type(data)}")
+
+        data = {
+            (key[1] if len(key) == 2 and key[0] == "#" and key[1].isalpha() else key): value
+            for key, value in data.items()
+        }
+        return cls(**data)
+
+    @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Filter":
         """
         Create Filter from dictionary.

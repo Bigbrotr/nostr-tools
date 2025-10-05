@@ -419,10 +419,10 @@ make build-check
 
 ```bash
 # 1. Update version in git tag
-git tag -a v1.2.0 -m "Release v1.2.0"
+git tag -a v1.2.1 -m "Release v1.2.1"
 
 # 2. Push tag
-git push origin v1.2.0
+git push origin v1.2.1
 
 # 3. Build package
 make build

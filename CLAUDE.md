@@ -204,8 +204,8 @@ Version is managed by `setuptools-scm` from git tags. To release:
 make verify-all
 
 # 2. Create git tag
-git tag -a v1.2.0 -m "Release v1.2.0"
-git push origin v1.2.0
+git tag -a v1.2.1 -m "Release v1.2.1"
+git push origin v1.2.1
 
 # 3. Build and publish (automated via GitHub Actions)
 # Workflow publishes to Test PyPI for pre-releases, production PyPI for stable releases

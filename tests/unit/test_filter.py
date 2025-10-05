@@ -460,6 +460,166 @@ class TestFilterDictionaryConversion:
 
 
 # ============================================================================
+# Filter Subscription Filter Conversion Tests
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestFilterSubscriptionFilterConversion:
+    """Test Filter.from_subscription_filter() method."""
+
+    def test_from_subscription_filter_creates_filter(self) -> None:
+        """Test that from_subscription_filter creates a Filter instance."""
+        data = {"kinds": [1], "limit": 10}
+        filter = Filter.from_subscription_filter(data)
+        assert isinstance(filter, Filter)
+        assert filter.kinds == [1]
+        assert filter.limit == 10
+
+    def test_from_subscription_filter_with_non_dict_raises_error(self) -> None:
+        """Test that from_subscription_filter with non-dict raises TypeError."""
+        with pytest.raises(TypeError, match="data must be a dict"):
+            Filter.from_subscription_filter("not_a_dict")  # type: ignore
+
+    def test_from_subscription_filter_with_empty_dict(self) -> None:
+        """Test that from_subscription_filter with empty dict creates empty filter."""
+        filter = Filter.from_subscription_filter({})
+        assert filter.ids is None
+        assert filter.authors is None
+        assert filter.kinds is None
+        assert filter.tags is None
+
+    def test_from_subscription_filter_converts_tag_filters(self) -> None:
+        """Test that from_subscription_filter converts #-prefixed tag filters."""
+        data = {"kinds": [1], "#e": ["event1"], "#p": ["pubkey1"]}
+        filter = Filter.from_subscription_filter(data)
+        assert filter.kinds == [1]
+        assert filter.tags == {"e": ["event1"], "p": ["pubkey1"]}
+
+    def test_from_subscription_filter_with_single_tag(self) -> None:
+        """Test from_subscription_filter with a single tag filter."""
+        data = {"#e": ["event_id_123"]}
+        filter = Filter.from_subscription_filter(data)
+        assert filter.tags == {"e": ["event_id_123"]}
+
+    def test_from_subscription_filter_with_multiple_tags(self) -> None:
+        """Test from_subscription_filter with multiple tag filters."""
+        data = {
+            "#e": ["event1", "event2"],
+            "#p": ["pubkey1"],
+            "#a": ["addr1"],
+            "#t": ["hashtag1", "hashtag2"],
+        }
+        filter = Filter.from_subscription_filter(data)
+        assert filter.tags is not None
+        assert len(filter.tags) == 4
+        assert filter.tags["e"] == ["event1", "event2"]
+        assert filter.tags["p"] == ["pubkey1"]
+        assert filter.tags["a"] == ["addr1"]
+        assert filter.tags["t"] == ["hashtag1", "hashtag2"]
+
+    def test_from_subscription_filter_with_all_fields(self) -> None:
+        """Test from_subscription_filter with all standard and tag fields."""
+        data = {
+            "ids": ["a" * 64],
+            "authors": ["b" * 64],
+            "kinds": [1, 2],
+            "since": 1000000,
+            "until": 2000000,
+            "limit": 50,
+            "#e": ["event1"],
+            "#p": ["pubkey1"],
+        }
+        filter = Filter.from_subscription_filter(data)
+        assert filter.ids == ["a" * 64]
+        assert filter.authors == ["b" * 64]
+        assert filter.kinds == [1, 2]
+        assert filter.since == 1000000
+        assert filter.until == 2000000
+        assert filter.limit == 50
+        assert filter.tags == {"e": ["event1"], "p": ["pubkey1"]}
+
+    def test_from_subscription_filter_ignores_invalid_tag_keys(self) -> None:
+        """Test that from_subscription_filter ignores non-alphabetic tag keys."""
+        data = {"#1": ["value"], "#ab": ["value"], "kinds": [1]}
+        filter = Filter.from_subscription_filter(data)
+        # Invalid tags should be filtered out during validation
+        assert filter.kinds == [1]
+        assert filter.tags is None or "1" not in (filter.tags or {})
+        assert filter.tags is None or "ab" not in (filter.tags or {})
+
+    def test_from_subscription_filter_preserves_non_tag_fields(self) -> None:
+        """Test that from_subscription_filter preserves fields without # prefix."""
+        data = {"kinds": [1, 7], "limit": 100, "#e": ["event_ref"]}
+        filter = Filter.from_subscription_filter(data)
+        assert filter.kinds == [1, 7]
+        assert filter.limit == 100
+        assert filter.tags == {"e": ["event_ref"]}
+
+    def test_from_subscription_filter_round_trip(self) -> None:
+        """Test round-trip conversion: Filter -> subscription_filter -> Filter."""
+        original_filter = Filter(
+            ids=["a" * 64],
+            authors=["b" * 64],
+            kinds=[1],
+            since=1000000,
+            until=2000000,
+            limit=10,
+            e=["event1"],
+            p=["pubkey1"],
+        )
+
+        # Convert to subscription filter
+        sub_filter = original_filter.subscription_filter
+
+        # Convert back to Filter
+        reconstructed_filter = Filter.from_subscription_filter(sub_filter)
+
+        # Verify all fields match
+        assert reconstructed_filter.ids == original_filter.ids
+        assert reconstructed_filter.authors == original_filter.authors
+        assert reconstructed_filter.kinds == original_filter.kinds
+        assert reconstructed_filter.since == original_filter.since
+        assert reconstructed_filter.until == original_filter.until
+        assert reconstructed_filter.limit == original_filter.limit
+        assert reconstructed_filter.tags == original_filter.tags
+
+    def test_from_subscription_filter_with_uppercase_tags(self) -> None:
+        """Test from_subscription_filter with uppercase tag names."""
+        data = {"#E": ["event1"], "#P": ["pubkey1"]}
+        filter = Filter.from_subscription_filter(data)
+        # Tags should be normalized to lowercase keys
+        assert filter.tags == {"E": ["event1"], "P": ["pubkey1"]}
+
+    def test_from_subscription_filter_mixed_tag_formats(self) -> None:
+        """Test from_subscription_filter handles mixed tag key formats."""
+        data = {
+            "#e": ["event1"],  # Valid tag with #
+            "kinds": [1],  # Standard field
+            "#p": ["pubkey1"],  # Valid tag with #
+            "limit": 10,  # Standard field
+        }
+        filter = Filter.from_subscription_filter(data)
+        assert filter.kinds == [1]
+        assert filter.limit == 10
+        assert filter.tags == {"e": ["event1"], "p": ["pubkey1"]}
+
+    def test_from_subscription_filter_validates_result(self) -> None:
+        """Test that from_subscription_filter validates the resulting filter."""
+        # Invalid data should raise validation error
+        with pytest.raises(FilterValidationError):
+            Filter.from_subscription_filter({"kinds": [-1]})
+
+    def test_from_subscription_filter_with_empty_tag_values(self) -> None:
+        """Test from_subscription_filter with empty tag value lists."""
+        data = {"#e": [], "kinds": [1]}
+        filter = Filter.from_subscription_filter(data)
+        # Empty tag lists should be removed
+        assert filter.kinds == [1]
+        assert filter.tags is None
+
+
+# ============================================================================
 # Filter Property Tests
 # ============================================================================
 

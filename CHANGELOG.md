@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ⚠️ Important Notice
 
-**Only v1.2.0 is currently supported.** All previous versions (v1.1.x, v1.0.x, v0.x.x) are end-of-life as of October 4, 2025. Users must upgrade to v1.2.0 for continued support.
+**Only v1.2.1 is currently supported.** All previous versions (v1.2.0, v1.1.x, v1.0.x, v0.x.x) are end-of-life as of October 5, 2025. Users must upgrade to v1.2.1 for continued support.
+
+## [1.2.1] - 2025-10-05
+
+### Added
+
+#### Filter API Enhancement
+- **Filter.from_subscription_filter()** - New classmethod to create Filter instances directly from subscription filter dictionaries (with #-prefixed tag keys)
+- **Comprehensive Test Coverage** - Added 17 new test cases covering all aspects of the from_subscription_filter() method including:
+  - Basic filter creation from subscription data
+  - Tag filter conversion (#e, #p, etc.)
+  - Round-trip conversion (Filter → subscription_filter → Filter)
+  - Empty and invalid input handling
+  - Mixed tag format handling
+  - Validation of resulting filters
+
+### Changed
+- **Enhanced Filter Flexibility** - The Filter class now supports bidirectional conversion between internal representation and subscription filter format, making it easier to work with relay responses
+
+### Fixed
+- **Tag Key Processing** - Improved handling of #-prefixed tag keys in subscription filters with proper validation and normalization
+
+---
 
 ## [1.2.0] - 2025-10-04
 
@@ -202,16 +224,17 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
-| 1.2.x   | ✅ **Only Supported** | TBD            |
+| 1.2.1   | ✅ **Only Supported** | TBD            |
+| 1.2.0   | ❌ End of Life | 2025-10-05     |
 | 1.1.x   | ❌ End of Life | 2025-10-04     |
 | 1.0.x   | ❌ End of Life | 2025-10-04     |
 | 0.x.x   | ❌ End of Life | 2025-09-14     |
 
 ### Support Timeline
 
-- **Active Support**: v1.2.0 only - bug fixes, security updates, and new features
-- **End of Life**: All previous versions (v1.1.x, v1.0.x, v0.x.x) - no further updates or support
-- **Migration Required**: Users must upgrade to v1.2.0 for continued support
+- **Active Support**: v1.2.1 only - bug fixes, security updates, and new features
+- **End of Life**: All previous versions (v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
+- **Migration Required**: Users must upgrade to v1.2.1 for continued support
 
 We follow semantic versioning and maintain backward compatibility within major versions.
 
