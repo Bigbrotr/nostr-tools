@@ -177,13 +177,13 @@ class TestRelayTypeValidation:
     """Test Relay type validation."""
 
     def test_non_string_url_raises_error(self) -> None:
-        """Test that non-string URL raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-string URL raises RelayValidationError."""
+        with pytest.raises(RelayValidationError):
             Relay(url=123)  # type: ignore
 
     def test_non_string_network_raises_error(self, valid_relay_url: str) -> None:
-        """Test that non-string network raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-string network raises RelayValidationError."""
+        with pytest.raises(RelayValidationError):
             Relay(url=valid_relay_url, network=123)  # type: ignore
 
 

@@ -7,7 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ⚠️ Important Notice
 
-**Only v1.2.1 is currently supported.** All previous versions (v1.2.0, v1.1.x, v1.0.x, v0.x.x) are end-of-life as of October 5, 2025. Users must upgrade to v1.2.1 for continued support.
+**Only v1.3.0 is currently supported.** All previous versions (v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) are end-of-life as of November 2, 2025. Users must upgrade to v1.3.0 for continued support.
+
+## [1.3.0] - 2025-11-02
+
+### Added
+
+#### Enhanced Validation System
+- **Filter.is_valid** - New property for safe validation checks without raising exceptions
+- **Relay.is_valid** - Non-throwing validation property for conditional checks
+- **Client.is_valid** - Exception-free validation for client instances
+- **RelayMetadata.is_valid** - Safe metadata validation checks
+- **Comprehensive Type Checking** - Enhanced validation methods across all core classes with thorough type and value validation
+
+#### Documentation Enhancements
+- **Filter Class Documentation** - Complete docstring overhaul with detailed examples for all methods (from_subscription_filter, from_dict, to_dict, subscription_filter, is_valid, validate)
+- **Relay Class Documentation** - Enhanced documentation with usage examples and validation scenarios
+- **Client Class Documentation** - Improved method documentation with subscription management examples and active_subscriptions property
+- **RelayMetadata Class Documentation** - Detailed NIP-11 and NIP-66 documentation with comprehensive examples
+- **Internal Function Documentation** - Added documentation for internal utilities including count_leading_zero_bits()
+
+### Changed
+
+#### Validation Improvements
+- **Enhanced Filter.validate()** - Comprehensive type checking for ids, authors, kinds, tags, time ranges, and limits with detailed error messages
+- **Enhanced Relay.validate()** - Improved WebSocket URL validation and network type consistency checks
+- **Enhanced Client.validate()** - Strengthened validation with internal state checks (_session, _ws, _subscriptions) and nested filter validation
+- **Enhanced RelayMetadata.validate()** - Lazy loading compatibility using class name comparison and nested object validation (nip11, nip66)
+- **Better Error Messages** - All validation errors now provide detailed, actionable information including expected vs actual types
+
+#### Code Quality
+- **Consistent Validation Patterns** - Unified validation approach across all core classes
+- **Type Safety** - Enhanced type hints and lazy loading compatibility throughout
+- **Improved Maintainability** - Better separation of concerns in validation logic
+
+### Technical Details
+
+**Modified Files (9 files, +396/-95 lines)**
+- filter.py - Enhanced validate() method with comprehensive checks, added is_valid property, improved all docstrings
+- relay.py - Improved validate() method, added is_valid property, enhanced documentation
+- client.py - Strengthened validate() with internal state validation, added is_valid property, improved active_subscriptions
+- relay_metadata.py - Comprehensive validation with lazy loading, added is_valid property, enhanced from_dict/to_dict documentation
+- event.py - Minor validation improvements
+- utils.py - Enhanced documentation for internal functions
+
+**All Tests Passing**
+- 541 total tests
+- 80%+ code coverage maintained
+- Full type checking with MyPy
+- All quality checks passing
+
+---
 
 ## [1.2.1] - 2025-10-05
 
@@ -224,7 +274,8 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
-| 1.2.1   | ✅ **Only Supported** | TBD            |
+| 1.3.0   | ✅ **Only Supported** | TBD            |
+| 1.2.1   | ❌ End of Life | 2025-11-02     |
 | 1.2.0   | ❌ End of Life | 2025-10-05     |
 | 1.1.x   | ❌ End of Life | 2025-10-04     |
 | 1.0.x   | ❌ End of Life | 2025-10-04     |
@@ -232,9 +283,9 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 ### Support Timeline
 
-- **Active Support**: v1.2.1 only - bug fixes, security updates, and new features
-- **End of Life**: All previous versions (v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
-- **Migration Required**: Users must upgrade to v1.2.1 for continued support
+- **Active Support**: v1.3.0 only - bug fixes, security updates, and new features
+- **End of Life**: All previous versions (v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
+- **Migration Required**: Users must upgrade to v1.3.0 for continued support
 
 We follow semantic versioning and maintain backward compatibility within major versions.
 

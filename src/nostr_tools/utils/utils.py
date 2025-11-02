@@ -1966,7 +1966,27 @@ def generate_event(
     """
 
     def count_leading_zero_bits(hex_str: str) -> int:
-        """Count leading zero bits in a hex string for proof-of-work."""
+        """
+        Count leading zero bits in a hex string for proof-of-work validation.
+
+        This internal function calculates the difficulty of a proof-of-work hash
+        by counting consecutive zero bits from the start of the hex string. Used
+        to verify that an event ID meets the required proof-of-work difficulty.
+
+        Args:
+            hex_str (str): Hexadecimal string to analyze (typically event ID).
+
+        Returns:
+            int: Number of consecutive zero bits from the start of the string.
+
+        Examples:
+            >>> count_leading_zero_bits("0000abc")  # 16 zero bits
+            16
+            >>> count_leading_zero_bits("00001abc")  # 19 zero bits (0000 = 16, 1xxx = 3)
+            19
+            >>> count_leading_zero_bits("1abc")  # 0 zero bits
+            0
+        """
         bits = 0
         for char in hex_str:
             val = int(char, 16)

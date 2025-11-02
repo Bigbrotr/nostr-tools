@@ -17,10 +17,44 @@ from .relay import Relay
 @dataclass
 class RelayMetadata:
     """
-    Comprehensive metadata for a NOSTR relay.
+    Comprehensive metadata for a Nostr relay.
 
-    This class stores metadata about a relay, including information
-    from NIP-11 and NIP-66 standards.
+    This class stores complete metadata about a relay, combining information
+    from multiple Nostr Improvement Proposals (NIPs). It includes:
+    - Relay connection and configuration (Relay object)
+    - NIP-11: Relay information document (name, description, capabilities)
+    - NIP-66: Connection performance metrics (RTT, read/write capabilities)
+    - Generation timestamp for tracking when metadata was collected
+
+    The metadata provides a comprehensive view of relay capabilities and
+    performance, useful for relay selection, monitoring, and health checks.
+
+    Examples:
+        Fetch complete relay metadata:
+
+        >>> relay = Relay("wss://relay.damus.io")
+        >>> client = Client(relay)
+        >>> metadata = await fetch_relay_metadata(client, private_key, public_key)
+        >>> print(f"Relay: {metadata.relay.url}")
+        >>> print(f"Name: {metadata.nip11.name if metadata.nip11 else 'Unknown'}")
+        >>> print(f"Readable: {metadata.nip66.readable if metadata.nip66 else False}")
+
+        Access NIP-11 information:
+
+        >>> if metadata.nip11:
+        ...     print(f"Software: {metadata.nip11.software}")
+        ...     print(f"Supported NIPs: {metadata.nip11.supported_nips}")
+
+        Check connection metrics:
+
+        >>> if metadata.nip66:
+        ...     print(f"Connection time: {metadata.nip66.rtt_open}ms")
+        ...     print(f"Read capable: {metadata.nip66.readable}")
+        ...     print(f"Write capable: {metadata.nip66.writable}")
+
+    Raises:
+        RelayMetadataValidationError: If metadata validation fails during
+            initialization or when invalid data is provided.
     """
 
     #: The relay object this metadata describes
@@ -41,8 +75,6 @@ class RelayMetadata:
 
         Raises:
             RelayMetadataValidationError: If metadata validation fails
-            Nip11ValidationError: If NIP-11 data is invalid
-            Nip66ValidationError: If NIP-66 data is invalid
         """
         self.validate()
 
@@ -52,14 +84,7 @@ class RelayMetadata:
 
         Raises:
             RelayMetadataValidationError: If relay metadata is invalid
-            Nip11ValidationError: If NIP-11 data is invalid
-            Nip66ValidationError: If NIP-66 data is invalid
         """
-        if self.nip11 is not None:
-            self.nip11.validate()
-        if self.nip66 is not None:
-            self.nip66.validate()
-
         # Type validation - use class name comparison for compatibility with lazy loading
         if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
             raise RelayMetadataValidationError(f"relay must be Relay, got {type(self.relay)}")
@@ -67,35 +92,101 @@ class RelayMetadata:
             raise RelayMetadataValidationError(
                 f"generated_at must be int, got {type(self.generated_at)}"
             )
+        if self.nip11 is not None and not (
+            isinstance(self.nip11, RelayMetadata.Nip11) or type(self.nip11).__name__ == "Nip11"
+        ):
+            raise RelayMetadataValidationError(
+                f"nip11 must be Nip11 or None, got {type(self.nip11)}"
+            )
+        if self.nip66 is not None and not (
+            isinstance(self.nip66, RelayMetadata.Nip66) or type(self.nip66).__name__ == "Nip66"
+        ):
+            raise RelayMetadataValidationError(
+                f"nip66 must be Nip66 or None, got {type(self.nip66)}"
+            )
+
+        if not self.relay.is_valid:
+            raise RelayMetadataValidationError(f"relay is invalid: {self.relay}")
 
         if self.generated_at < 0:
             raise RelayMetadataValidationError("generated_at must be non-negative")
 
+        if self.nip11 is not None and not self.nip11.is_valid:
+            raise RelayMetadataValidationError(f"nip11 is invalid: {self.nip11}")
+
+        if self.nip66 is not None and not self.nip66.is_valid:
+            raise RelayMetadataValidationError(f"nip66 is invalid: {self.nip66}")
+
     @property
     def is_valid(self) -> bool:
         """
-        Check if all metadata is valid.
+        Check if all metadata is valid without raising exceptions.
+
+        This property attempts validation and returns True if successful,
+        False otherwise. Unlike validate(), this method does not raise
+        exceptions, making it safe for conditional checks.
 
         Returns:
-            bool: True if valid, False otherwise
+            bool: True if all metadata passes validation checks,
+                False if validation fails for any reason.
+
+        Examples:
+            >>> metadata = await fetch_relay_metadata(client, sec, pub)
+            >>> if metadata.is_valid:
+            ...     print("Metadata is valid")
+            ...     store_metadata(metadata)
+            ... else:
+            ...     print("Invalid metadata")
+
+            >>> # Validate before processing
+            >>> if not metadata.is_valid:
+            ...     logger.warning(f"Invalid metadata for {metadata.relay.url}")
         """
         try:
             self.validate()
             return True
-        except (RelayMetadataValidationError, Nip11ValidationError, Nip66ValidationError):
+        except RelayMetadataValidationError:
             return False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RelayMetadata":
         """
-        Create RelayMetadata from dictionary.
+        Create RelayMetadata from dictionary representation.
+
+        This method reconstructs a RelayMetadata instance from a dictionary,
+        typically used for deserialization from storage or network transmission.
 
         Args:
-            data (dict[str, Any]): Dictionary containing relay metadata
+            data (dict[str, Any]): Dictionary containing relay metadata with keys:
+                - relay (dict): Relay configuration dictionary
+                - generated_at (int): Unix timestamp when metadata was generated
+                - nip11 (Optional[dict]): NIP-11 relay information or None
+                - nip66 (Optional[dict]): NIP-66 connection metrics or None
+
         Returns:
-            RelayMetadata: An instance of RelayMetadata
+            RelayMetadata: An instance of RelayMetadata created from the dictionary.
+
         Raises:
-            TypeError: If data is not a dictionary
+            TypeError: If data is not a dictionary.
+            RelayMetadataValidationError: If relay metadata validation fails.
+
+        Examples:
+            Load from JSON:
+
+            >>> import json
+            >>> with open('relay_metadata.json') as f:
+            ...     data = json.load(f)
+            >>> metadata = RelayMetadata.from_dict(data)
+
+            Deserialize from database:
+
+            >>> metadata_dict = db.relay_metadata.find_one({"relay.url": url})
+            >>> metadata = RelayMetadata.from_dict(metadata_dict)
+
+            Parse API response:
+
+            >>> response = requests.get(f"{api_url}/relay/metadata")
+            >>> metadata = RelayMetadata.from_dict(response.json())
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, got {type(data)}")
@@ -113,10 +204,39 @@ class RelayMetadata:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert RelayMetadata to dictionary.
+        Convert RelayMetadata to dictionary representation.
+
+        This method serializes the RelayMetadata instance into a dictionary
+        format suitable for JSON encoding, storage, or network transmission.
 
         Returns:
-            dict[str, Any]: Dictionary representation of RelayMetadata
+            dict[str, Any]: Dictionary representation of RelayMetadata with keys:
+                - relay (dict): Relay configuration dictionary
+                - generated_at (int): Unix timestamp when metadata was generated
+                - nip11 (Optional[dict]): NIP-11 relay information or None
+                - nip66 (Optional[dict]): NIP-66 connection metrics or None
+
+        Examples:
+            Serialize to JSON:
+
+            >>> metadata = await fetch_relay_metadata(client, sec, pub)
+            >>> metadata_dict = metadata.to_dict()
+            >>> import json
+            >>> json_str = json.dumps(metadata_dict, indent=2)
+            >>> with open('relay_metadata.json', 'w') as f:
+            ...     f.write(json_str)
+
+            Store in database:
+
+            >>> metadata_dict = metadata.to_dict()
+            >>> db.relay_metadata.insert_one(metadata_dict)
+
+            Send via API:
+
+            >>> response = requests.post(
+            ...     f"{api_url}/relay/metadata",
+            ...     json=metadata.to_dict()
+            ... )
         """
         return {
             "relay": self.relay.to_dict(),
@@ -259,6 +379,7 @@ class RelayMetadata:
                 RelayMetadata.Nip11: An instance of Nip11
             Raises:
                 TypeError: If data is not a dictionary
+                Nip11ValidationError: If NIP-11 data is invalid
             """
             if not isinstance(data, dict):
                 raise TypeError(f"data must be a dict, got {type(data)}")
@@ -405,6 +526,7 @@ class RelayMetadata:
                 RelayMetadata.Nip66: An instance of Nip66
             Raises:
                 TypeError: If data is not a dictionary
+                Nip66ValidationError: If NIP-66 data is invalid
             """
             if not isinstance(data, dict):
                 raise TypeError(f"data must be a dict, got {type(data)}")

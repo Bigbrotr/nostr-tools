@@ -58,7 +58,6 @@ class Relay:
         ...     print(f"Validation failed: {e}")
 
     Raises:
-        TypeError: If url is not a string or network type is invalid.
         RelayValidationError: If URL is not a valid WebSocket URL or
             network type doesn't match the URL.
     """
@@ -77,7 +76,6 @@ class Relay:
         and validates the relay configuration.
 
         Raises:
-            TypeError: If url or network have incorrect types.
             RelayValidationError: If URL or network configuration is invalid.
         """
         if isinstance(self.url, str):
@@ -98,7 +96,6 @@ class Relay:
         - URL normalization and format compliance
 
         Raises:
-            TypeError: If url is not a string or network is not a string.
             RelayValidationError: If url is not a valid WebSocket URL,
                 or network type doesn't match the URL pattern.
 
@@ -115,7 +112,9 @@ class Relay:
         ]
         for field_name, field_value, expected_type in type_checks:
             if not isinstance(field_value, expected_type):
-                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
+                raise RelayValidationError(
+                    f"{field_name} must be {expected_type}, got {type(field_value)}"
+                )
 
         urls = find_ws_urls(self.url)
         if len(urls) != 1 or urls[0] != self.url:
@@ -149,7 +148,7 @@ class Relay:
         try:
             self.validate()
             return True
-        except (TypeError, RelayValidationError):
+        except RelayValidationError:
             return False
 
     @property

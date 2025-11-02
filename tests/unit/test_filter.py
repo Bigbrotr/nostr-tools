@@ -223,58 +223,58 @@ class TestFilterTypeValidation:
     """Test Filter type validation."""
 
     def test_non_list_ids_raises_error(self) -> None:
-        """Test that non-list ids raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-list ids raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(ids="not_a_list")  # type: ignore
 
     def test_non_list_authors_raises_error(self) -> None:
-        """Test that non-list authors raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-list authors raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(authors="not_a_list")  # type: ignore
 
     def test_non_list_kinds_raises_error(self) -> None:
-        """Test that non-list kinds raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-list kinds raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(kinds="not_a_list")  # type: ignore
 
     def test_non_int_since_raises_error(self) -> None:
-        """Test that non-integer since raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-integer since raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(since="not_an_int")  # type: ignore
 
     def test_non_int_until_raises_error(self) -> None:
-        """Test that non-integer until raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-integer until raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(until="not_an_int")  # type: ignore
 
     def test_non_int_limit_raises_error(self) -> None:
-        """Test that non-integer limit raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that non-integer limit raises FilterValidationError."""
+        with pytest.raises(FilterValidationError):
             Filter(limit="not_an_int")  # type: ignore
 
     def test_non_string_id_elements_raises_error(self) -> None:
-        """Test that non-string ID elements raise TypeError."""
-        with pytest.raises(TypeError, match="must be of type"):
+        """Test that non-string ID elements raise FilterValidationError."""
+        with pytest.raises(FilterValidationError, match="must be of type"):
             Filter(ids=[123])  # type: ignore
 
     def test_non_string_author_elements_raises_error(self) -> None:
-        """Test that non-string author elements raise TypeError."""
-        with pytest.raises(TypeError, match="must be of type"):
+        """Test that non-string author elements raise FilterValidationError."""
+        with pytest.raises(FilterValidationError, match="must be of type"):
             Filter(authors=[123])  # type: ignore
 
     def test_non_int_kind_elements_raises_error(self) -> None:
-        """Test that non-integer kind elements raise TypeError."""
-        with pytest.raises(TypeError, match="must be of type"):
+        """Test that non-integer kind elements raise FilterValidationError."""
+        with pytest.raises(FilterValidationError, match="must be of type"):
             Filter(kinds=["not_int"])  # type: ignore
 
     def test_non_list_tag_values_raises_error(self) -> None:
-        """Test that non-list tag values raise TypeError."""
-        with pytest.raises(TypeError, match="must be lists of strings"):
+        """Test that non-list tag values raise FilterValidationError."""
+        with pytest.raises(FilterValidationError, match="must be lists of strings"):
             Filter(e="not_a_list")  # type: ignore
 
     def test_non_string_tag_value_elements_raises_error(self) -> None:
-        """Test that non-string tag value elements raise TypeError."""
-        with pytest.raises(TypeError, match="must be lists of strings"):
+        """Test that non-string tag value elements raise FilterValidationError."""
+        with pytest.raises(FilterValidationError, match="must be lists of strings"):
             Filter(e=[123])  # type: ignore
 
 

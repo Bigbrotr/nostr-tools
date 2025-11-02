@@ -142,18 +142,58 @@ class Client:
             >>> invalid_client = Client(relay, timeout=-5)
             >>> invalid_client.validate()  # Raises ClientValidationError
         """
-        # Type validation - use class name comparison for compatibility with lazy loading
         if not (isinstance(self.relay, Relay) or type(self.relay).__name__ == "Relay"):
             raise ClientValidationError(f"relay must be Relay, got {type(self.relay)}")
+        if not self.relay.is_valid:
+            raise ClientValidationError(f"relay is invalid: {self.relay}")
+
         if self.timeout is not None and not isinstance(self.timeout, int):
             raise ClientValidationError(f"timeout must be int or None, got {type(self.timeout)}")
+        if self.timeout is not None and self.timeout < 0:
+            raise ClientValidationError("timeout must be non-negative")
+
         if self.socks5_proxy_url is not None and not isinstance(self.socks5_proxy_url, str):
             raise ClientValidationError(
                 f"socks5_proxy_url must be str or None, got {type(self.socks5_proxy_url)}"
             )
 
-        if self.timeout is not None and self.timeout < 0:
-            raise ClientValidationError("timeout must be non-negative")
+        if not (self._session is None or isinstance(self._session, ClientSession)):
+            raise ClientValidationError(
+                f"_session must be ClientSession or None, got {type(self._session)}"
+            )
+
+        if not (self._ws is None or isinstance(self._ws, ClientWebSocketResponse)):
+            raise ClientValidationError(
+                f"_ws must be ClientWebSocketResponse or None, got {type(self._ws)}"
+            )
+
+        if not isinstance(self._subscriptions, dict):
+            raise ClientValidationError(
+                f"_subscriptions must be dict, got {type(self._subscriptions)}"
+            )
+        for sub_id, sub_data in self._subscriptions.items():
+            if not isinstance(sub_id, str):
+                raise ClientValidationError(f"Subscription ID must be str, got {type(sub_id)}")
+            if not isinstance(sub_data, dict):
+                raise ClientValidationError(f"Subscription data must be dict, got {type(sub_data)}")
+            if "filter" not in sub_data or "active" not in sub_data:
+                raise ClientValidationError(
+                    "Subscription data must contain 'filter' and 'active' keys"
+                )
+            if not (
+                isinstance(sub_data["filter"], Filter)
+                or type(sub_data["filter"]).__name__ == "Filter"
+            ):
+                raise ClientValidationError(
+                    f"Subscription filter must be Filter, got {type(sub_data['filter'])}"
+                )
+            if not isinstance(sub_data["active"], bool):
+                raise ClientValidationError(
+                    f"Subscription 'active' must be bool, got {type(sub_data['active'])}"
+                )
+            if not sub_data["filter"].is_valid:
+                raise ClientValidationError(f"Subscription filter is invalid: {sub_data['filter']}")
+
         if self.relay.network == "tor" and not self.socks5_proxy_url:
             raise ClientValidationError("socks5_proxy_url is required for Tor relays")
 
@@ -168,7 +208,7 @@ class Client:
         try:
             self.validate()
             return True
-        except (TypeError, ValueError):
+        except ClientValidationError:
             return False
 
     @classmethod

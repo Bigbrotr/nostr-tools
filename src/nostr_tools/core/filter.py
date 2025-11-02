@@ -69,7 +69,6 @@ class Filter:
         >>> filter = Filter.from_dict(filter_data)
 
     Raises:
-        TypeError: If any attribute has an incorrect type.
         FilterValidationError: If any attribute value is invalid (e.g.,
             invalid hex strings, negative timestamps, invalid tag names).
     """
@@ -148,7 +147,17 @@ class Filter:
         self.__post_init__()
 
     def __post_init__(self) -> None:
-        """Validate and build filter dictionary after initialization."""
+        """
+        Validate and normalize filter after initialization.
+
+        This method is automatically called after the dataclass is created.
+        It normalizes empty collections to None, converts hex strings to
+        lowercase, removes invalid tag filters, and validates all filter
+        criteria.
+
+        Raises:
+            FilterValidationError: If validation fails after normalization.
+        """
         # Normalize empty collections to None
         if self.ids == []:
             self.ids = None
@@ -191,7 +200,6 @@ class Filter:
         Validate the Filter instance.
 
         Raises:
-            TypeError: If any attribute is of incorrect type
             FilterValidationError: If any attribute has an invalid value
         """
         type_checks: list[tuple[str, Any, tuple[type, ...]]] = [
@@ -205,7 +213,9 @@ class Filter:
         ]
         for field_name, field_value, expected_type in type_checks:
             if not isinstance(field_value, expected_type):
-                raise TypeError(f"{field_name} must be {expected_type}, got {type(field_value)}")
+                raise FilterValidationError(
+                    f"{field_name} must be {expected_type}, got {type(field_value)}"
+                )
 
         elem_type_checks: list[
             tuple[str, Union[list[str], list[int], dict[str, list[str]], None], type]
@@ -220,7 +230,7 @@ class Filter:
                 and isinstance(field_value, list)
                 and not all(isinstance(elem, expected_elem_type) for elem in field_value)
             ):
-                raise TypeError(
+                raise FilterValidationError(
                     f"All elements in {field_name} must be of type {expected_elem_type}"
                 )
 
@@ -255,7 +265,7 @@ class Filter:
         if self.tags is not None:
             for tag_name, tag_values in self.tags.items():
                 if not isinstance(tag_name, str):
-                    raise TypeError("Tag names must be strings")
+                    raise FilterValidationError("Tag names must be strings")
                 if isinstance(tag_name, str) and (len(tag_name) != 1 or not tag_name.isalpha()):
                     raise FilterValidationError(
                         "Tag names must be single alphabetic characters a-z or A-Z"
@@ -263,7 +273,7 @@ class Filter:
                 if not isinstance(tag_values, list) or not all(
                     isinstance(tag_value, str) for tag_value in tag_values
                 ):
-                    raise TypeError("All tag values must be lists of strings")
+                    raise FilterValidationError("All tag values must be lists of strings")
 
     @property
     def subscription_filter(self) -> dict[str, Any]:
@@ -319,15 +329,32 @@ class Filter:
     @property
     def is_valid(self) -> bool:
         """
-        Check if the Filter is valid.
+        Check if the Filter is valid without raising exceptions.
+
+        This property attempts validation and returns True if successful,
+        False otherwise. Unlike validate(), this method does not raise
+        exceptions, making it safe for conditional checks.
 
         Returns:
-            bool: True if valid, False otherwise
+            bool: True if the filter passes all validation checks,
+                False if validation fails for any reason.
+
+        Examples:
+            >>> filter = Filter(kinds=[1], limit=10)
+            >>> if filter.is_valid:
+            ...     events = await fetch_events(client, filter)
+            ... else:
+            ...     print("Invalid filter configuration")
+
+            >>> # Check before using
+            >>> filter = Filter(authors=["invalid"])
+            >>> if not filter.is_valid:
+            ...     print("Filter validation failed")
         """
         try:
             self.validate()
             return True
-        except (TypeError, FilterValidationError):
+        except FilterValidationError:
             return False
 
     @classmethod
@@ -335,13 +362,40 @@ class Filter:
         """
         Create Filter from subscription filter dictionary.
 
+        This method converts a subscription filter dictionary (typically from
+        a REQ message) into a Filter object. It handles the conversion of
+        #-prefixed tag filters back to tag dictionary format.
+
         Args:
-            data (dict[str, Any]): Dictionary containing subscription filter data
+            data (dict[str, Any]): Dictionary containing subscription filter data.
+                Can include standard filter fields and #-prefixed tag filters
+                like {"#e": ["event_id"], "#p": ["pubkey"]}.
+
         Returns:
-            Filter: An instance of Filter
+            Filter: An instance of Filter with all criteria properly converted.
+
         Raises:
-            TypeError: If data is not a dictionary
-            FilterValidationError: If data is invalid
+            TypeError: If data is not a dictionary.
+            FilterValidationError: If data contains invalid filter criteria.
+
+        Examples:
+            Parse REQ message filter:
+
+            >>> req_filter = {
+            ...     "kinds": [1],
+            ...     "#e": ["abc123..."],
+            ...     "#p": ["def456..."],
+            ...     "limit": 10
+            ... }
+            >>> filter = Filter.from_subscription_filter(req_filter)
+            >>> print(filter.tags)
+            {'e': ['abc123...'], 'p': ['def456...']}
+
+            Convert relay subscription:
+
+            >>> relay_filter = {"kinds": [1, 3], "#t": ["nostr"]}
+            >>> filter = Filter.from_subscription_filter(relay_filter)
+            >>> # Use filter object with standard methods
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, got {type(data)}")
@@ -355,14 +409,50 @@ class Filter:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Filter":
         """
-        Create Filter from dictionary.
+        Create Filter from dictionary representation.
+
+        This method creates a Filter instance from a dictionary with standard
+        Filter format (not subscription format). Tag filters should be provided
+        in the "tags" dictionary field without # prefixes.
 
         Args:
-            data (dict[str, Any]): Dictionary containing filter data
+            data (dict[str, Any]): Dictionary containing filter data with keys:
+                - ids (Optional[list[str]]): Event IDs
+                - authors (Optional[list[str]]): Author public keys
+                - kinds (Optional[list[int]]): Event kinds
+                - since (Optional[int]): Minimum timestamp
+                - until (Optional[int]): Maximum timestamp
+                - limit (Optional[int]): Maximum number of events
+                - tags (Optional[dict]): Tag filters without # prefix
+
         Returns:
-            Filter: An instance of Filter
+            Filter: An instance of Filter created from the dictionary.
+
         Raises:
-            TypeError: If data is not a dictionary
+            TypeError: If data is not a dictionary.
+            FilterValidationError: If filter data is invalid.
+
+        Examples:
+            Create from stored configuration:
+
+            >>> config = {
+            ...     "kinds": [1],
+            ...     "limit": 10,
+            ...     "tags": {"e": ["event_id"], "p": ["pubkey"]}
+            ... }
+            >>> filter = Filter.from_dict(config)
+
+            Parse from JSON:
+
+            >>> import json
+            >>> json_str = '{"kinds": [1], "authors": ["abc123..."], "limit": 50}'
+            >>> filter_dict = json.loads(json_str)
+            >>> filter = Filter.from_dict(filter_dict)
+
+            Load from database:
+
+            >>> filter_data = db.filters.find_one({"name": "my_filter"})
+            >>> filter = Filter.from_dict(filter_data)
         """
         if not isinstance(data, dict):
             raise TypeError(f"data must be a dict, got {type(data)}")
@@ -379,10 +469,43 @@ class Filter:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert Filter to dictionary.
+        Convert Filter to dictionary representation.
+
+        This method serializes the Filter instance into a dictionary format
+        suitable for JSON encoding, storage, or transmission. The output uses
+        standard Filter format with tag filters in the "tags" dictionary field
+        (not subscription format with # prefixes).
 
         Returns:
-            dict[str, Any]: Dictionary representation of Filter
+            dict[str, Any]: Dictionary representation of Filter with keys:
+                - ids (Optional[list[str]]): Event IDs or None
+                - authors (Optional[list[str]]): Author public keys or None
+                - kinds (Optional[list[int]]): Event kinds or None
+                - since (Optional[int]): Minimum timestamp or None
+                - until (Optional[int]): Maximum timestamp or None
+                - limit (Optional[int]): Maximum number of events or None
+                - tags (Optional[dict]): Tag filters or None
+
+        Examples:
+            Serialize to JSON:
+
+            >>> filter = Filter(kinds=[1], limit=10, e=["event_id"])
+            >>> filter_dict = filter.to_dict()
+            >>> import json
+            >>> json_str = json.dumps(filter_dict)
+
+            Store in database:
+
+            >>> filter = Filter(kinds=[1], authors=["abc123..."])
+            >>> filter_data = filter.to_dict()
+            >>> db.filters.insert_one({"name": "my_filter", **filter_data})
+
+            Create configuration:
+
+            >>> filters_config = {
+            ...     "notes": Filter(kinds=[1], limit=100).to_dict(),
+            ...     "metadata": Filter(kinds=[0]).to_dict()
+            ... }
         """
         return {
             "ids": self.ids,

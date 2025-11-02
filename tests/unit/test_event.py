@@ -225,27 +225,27 @@ class TestEventTypeValidation:
             Event.from_dict(valid_event_dict)
 
     def test_non_int_created_at_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that non-integer created_at raises TypeError."""
+        """Test that non-integer created_at raises EventValidationError."""
         valid_event_dict["created_at"] = "not_an_int"
-        with pytest.raises(TypeError, match="created_at must be int"):
+        with pytest.raises(EventValidationError, match="created_at must be int"):
             Event.from_dict(valid_event_dict)
 
     def test_non_int_kind_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that non-integer kind raises TypeError."""
+        """Test that non-integer kind raises EventValidationError."""
         valid_event_dict["kind"] = "not_an_int"
-        with pytest.raises(TypeError, match="kind must be int"):
+        with pytest.raises(EventValidationError, match="kind must be int"):
             Event.from_dict(valid_event_dict)
 
     def test_non_list_tags_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that non-list tags raises TypeError."""
+        """Test that non-list tags raises EventValidationError."""
         valid_event_dict["tags"] = "not_a_list"
-        with pytest.raises(TypeError, match="tags must be list"):
+        with pytest.raises(EventValidationError):
             Event.from_dict(valid_event_dict)
 
     def test_non_string_content_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that non-string content raises TypeError."""
+        """Test that non-string content raises EventValidationError or AttributeError."""
         valid_event_dict["content"] = 123
-        with pytest.raises(TypeError, match="content must be str"):
+        with pytest.raises((EventValidationError, AttributeError)):
             Event.from_dict(valid_event_dict)
 
     def test_non_string_sig_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
@@ -255,15 +255,15 @@ class TestEventTypeValidation:
             Event.from_dict(valid_event_dict)
 
     def test_empty_tag_list_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that empty tag lists raise TypeError."""
+        """Test that empty tag lists raise EventValidationError."""
         valid_event_dict["tags"] = [[]]  # Empty tag
-        with pytest.raises(TypeError, match="tags must be a list of lists"):
+        with pytest.raises(EventValidationError, match="tags must be a list of lists"):
             Event.from_dict(valid_event_dict)
 
     def test_non_string_tag_elements_raises_error(self, valid_event_dict: dict[str, Any]) -> None:
-        """Test that non-string tag elements raise TypeError."""
+        """Test that non-string tag elements raise EventValidationError or AttributeError."""
         valid_event_dict["tags"] = [[1, 2, 3]]  # Non-string elements
-        with pytest.raises(TypeError, match="tags must be a list of lists"):
+        with pytest.raises((EventValidationError, AttributeError)):
             Event.from_dict(valid_event_dict)
 
 

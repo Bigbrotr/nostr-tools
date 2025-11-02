@@ -54,7 +54,6 @@ class Event:
         1
 
     Raises:
-        TypeError: If any attribute has an incorrect type during validation.
         EventValidationError: If any attribute value is invalid, ID doesn't
             match computed hash, or signature verification fails.
     """
@@ -84,7 +83,6 @@ class Event:
         them and re-validates.
 
         Raises:
-            TypeError: If any attribute has an incorrect type.
             EventValidationError: If validation fails after escape handling.
         """
         self.id = self.id.lower()
@@ -130,7 +128,6 @@ class Event:
         - Null byte checking in content and tags
 
         Raises:
-            TypeError: If any attribute is of incorrect type.
             EventValidationError: If any attribute has an invalid value,
                 including:
                 - Invalid hex string formats
@@ -158,7 +155,7 @@ class Event:
         ]
         for field_name, field_value, expected_type in type_checks:
             if not isinstance(field_value, expected_type):
-                raise TypeError(
+                raise EventValidationError(
                     f"{field_name} must be {expected_type.__name__}, got {type(field_value).__name__}"
                 )
 
@@ -166,7 +163,7 @@ class Event:
             isinstance(tag, list) and tag != [] and all(isinstance(t, str) for t in tag)
             for tag in self.tags
         ):
-            raise TypeError("tags must be a list of lists (not empty) of strings")
+            raise EventValidationError("tags must be a list of lists (not empty) of strings")
 
         checks: list[tuple[Any, Callable[[Any], bool], str]] = [
             (
@@ -244,7 +241,7 @@ class Event:
         try:
             self.validate()
             return True
-        except (TypeError, EventValidationError):
+        except EventValidationError:
             return False
 
     @classmethod
