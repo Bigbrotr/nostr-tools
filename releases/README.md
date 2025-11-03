@@ -8,12 +8,13 @@ This directory contains detailed release notes for all versions of nostr-tools, 
 
 | Version | Release Date | Status | Release Notes | Key Features | Commit |
 |---------|--------------|--------|---------------|--------------|--------|
-| [v1.3.0](v1.3.0.md) | 2025-11-02 | ✅ **Current & Only Supported** | Enhanced validation & documentation | is_valid properties, comprehensive validation, enhanced docs | TBD |
+| [v1.4.0](v1.4.0.md) | 2025-11-03 | ✅ **Current & Only Supported** | Filter validation enhancement | Non-negative integer support, zero value acceptance | TBD |
 
 ### End of Life Versions
 
 | Version | Release Date | Status | Release Notes | Key Features | Commit |
 |---------|--------------|--------|---------------|--------------|--------|
+| [v1.3.0](v1.3.0.md) | 2025-11-02 | ❌ End of Life | Enhanced validation & documentation | is_valid properties, comprehensive validation, enhanced docs | `63cf17b` |
 | [v1.2.1](v1.2.1.md) | 2025-10-05 | ❌ End of Life | Filter API enhancement | from_subscription_filter() method, comprehensive tests | `18637de` |
 | [v1.2.0](v1.2.0.md) | 2025-10-04 | ❌ End of Life | Documentation & release management | Comprehensive docs, version consolidation, support policy | `02276d2` |
 | [v1.1.1](v1.1.1.md) | 2025-10-03 | ❌ End of Life | Documentation & build fixes | Sphinx improvements, setuptools fixes, development guide | `7324fc5` |
@@ -26,7 +27,8 @@ This directory contains detailed release notes for all versions of nostr-tools, 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
-| 1.3.0   | ✅ **Only Supported** | TBD            |
+| 1.4.0   | ✅ **Only Supported** | TBD            |
+| 1.3.0   | ❌ End of Life | 2025-11-03     |
 | 1.2.1   | ❌ End of Life | 2025-11-02     |
 | 1.2.0   | ❌ End of Life | 2025-10-05     |
 | 1.1.x   | ❌ End of Life | 2025-10-04     |
@@ -35,9 +37,9 @@ This directory contains detailed release notes for all versions of nostr-tools, 
 
 ### Support Timeline
 
-- **Active Support**: v1.3.0 only - bug fixes, security updates, and new features
-- **End of Life**: All previous versions (v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
-- **Migration Required**: Users must upgrade to v1.3.0 for continued support
+- **Active Support**: v1.4.0 only - bug fixes, security updates, and new features
+- **End of Life**: All previous versions (v1.3.0, v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
+- **Migration Required**: Users must upgrade to v1.4.0 for continued support
 
 We follow semantic versioning and maintain backward compatibility within major versions.
 
@@ -57,7 +59,15 @@ Each release note includes:
 
 ## ⚠️ Important Migration Notes
 
-### v1.3.0 - Current & Only Supported
+### v1.4.0 - Current & Only Supported
+- **No Breaking Changes** from v1.3.0
+- All existing APIs remain the same
+- Filter validation now accepts zero values for `since`, `until`, and `limit` fields
+- Validation constraint updated from `> 0` to `>= 0` for better protocol compliance
+- Error messages updated from "positive integer" to "non-negative integer"
+- No code changes required for existing functionality
+
+### v1.3.0 Breaking Changes (End of Life)
 - **No Breaking Changes** from v1.2.1
 - All existing APIs remain the same
 - New `is_valid` properties added to Filter, Relay, Client, and RelayMetadata classes

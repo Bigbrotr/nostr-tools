@@ -79,11 +79,11 @@ class Filter:
     authors: Optional[list[str]] = None
     #: List of event kinds to match (0-65535). Events matching any kind in the list will be returned. Common kinds: 0=metadata, 1=text note, 3=contacts, 7=reaction
     kinds: Optional[list[int]] = None
-    #: Unix timestamp (seconds). Only events created at or after this time will be returned.
+    #: Unix timestamp (seconds). Only events created at or after this time will be returned. Must be >= 0.
     since: Optional[int] = None
-    #: Unix timestamp (seconds). Only events created at or before this time will be returned.
+    #: Unix timestamp (seconds). Only events created at or before this time will be returned. Must be >= 0.
     until: Optional[int] = None
-    #: Maximum number of events to return. Must be positive. Relays may impose their own limits.
+    #: Maximum number of events to return. Must be >= 0. Relays may impose their own limits.
     limit: Optional[int] = None
     #: Tag-based filters. Keys are single alphabetic characters (a-z, A-Z), values are lists of strings. Example: {"e": ["event_id1", "event_id2"], "p": ["pubkey1"]}
     tags: Optional[dict[str, list[str]]] = field(default_factory=dict)
@@ -109,9 +109,9 @@ class Filter:
             ids (Optional[list[str]]): List of event IDs to match (64-char hex).
             authors (Optional[list[str]]): List of author pubkeys (64-char hex).
             kinds (Optional[list[int]]): List of event kinds (0-65535).
-            since (Optional[int]): Unix timestamp for minimum event age.
-            until (Optional[int]): Unix timestamp for maximum event age.
-            limit (Optional[int]): Maximum number of events to return.
+            since (Optional[int]): Unix timestamp for minimum event age (>= 0).
+            until (Optional[int]): Unix timestamp for maximum event age (>= 0).
+            limit (Optional[int]): Maximum number of events to return (>= 0).
             **tags (list[str]): Tag filters as keyword arguments.
                 Single-letter keys only (a-z, A-Z).
                 Example: e=['event_id'], p=['pubkey'], t=['hashtag']
@@ -257,8 +257,8 @@ class Filter:
             ("limit", self.limit),
         ]
         for field_name, field_value in int_checks:
-            if field_value is not None and field_value <= 0:
-                raise FilterValidationError(f"{field_name} must be a positive integer")
+            if field_value is not None and field_value < 0:
+                raise FilterValidationError(f"{field_name} must be a non-negative integer")
         if self.since is not None and self.until is not None and self.since > self.until:
             raise FilterValidationError("since must be less than or equal to until")
 

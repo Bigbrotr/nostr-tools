@@ -147,7 +147,7 @@ class FilterValidationError(FilterError):
         message (str): Description of the filter validation error
 
     Examples:
-        >>> raise FilterValidationError("limit must be a positive integer")
+        >>> raise FilterValidationError("limit must be a non-negative integer")
     """
 
     pass

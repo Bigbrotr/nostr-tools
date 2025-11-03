@@ -10,7 +10,8 @@ We provide security updates for the following versions:
 
 | Version | Supported          | Status              |
 | ------- | ------------------ | ------------------- |
-| 1.3.0   | ✅ Yes             | Active Support      |
+| 1.4.0   | ✅ Yes             | Active Support      |
+| 1.3.0   | ❌ No              | End of Life         |
 | 1.2.1   | ❌ No              | End of Life         |
 | 1.2.0   | ❌ No              | End of Life         |
 | 1.1.x   | ❌ No              | End of Life         |

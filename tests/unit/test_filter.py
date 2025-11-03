@@ -154,33 +154,36 @@ class TestFilterValidation:
 
     def test_negative_since_raises_error(self) -> None:
         """Test that negative since raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a non-negative integer"):
             Filter(since=-1)
 
-    def test_zero_since_raises_error(self) -> None:
-        """Test that zero since raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
-            Filter(since=0)
+    def test_zero_since_is_valid(self) -> None:
+        """Test that zero since is valid (Unix epoch start)."""
+        filter = Filter(since=0)
+        assert filter.since == 0
+        assert filter.is_valid
 
     def test_negative_until_raises_error(self) -> None:
         """Test that negative until raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a non-negative integer"):
             Filter(until=-1)
 
-    def test_zero_until_raises_error(self) -> None:
-        """Test that zero until raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
-            Filter(until=0)
+    def test_zero_until_is_valid(self) -> None:
+        """Test that zero until is valid (Unix epoch start)."""
+        filter = Filter(until=0)
+        assert filter.until == 0
+        assert filter.is_valid
 
     def test_negative_limit_raises_error(self) -> None:
         """Test that negative limit raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
+        with pytest.raises(FilterValidationError, match="must be a non-negative integer"):
             Filter(limit=-1)
 
-    def test_zero_limit_raises_error(self) -> None:
-        """Test that zero limit raises ValueError."""
-        with pytest.raises(FilterValidationError, match="must be a positive integer"):
-            Filter(limit=0)
+    def test_zero_limit_is_valid(self) -> None:
+        """Test that zero limit is valid (no results)."""
+        filter = Filter(limit=0)
+        assert filter.limit == 0
+        assert filter.is_valid
 
     def test_since_greater_than_until_raises_error(self) -> None:
         """Test that since > until raises ValueError."""

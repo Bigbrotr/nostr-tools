@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ⚠️ Important Notice
 
-**Only v1.3.0 is currently supported.** All previous versions (v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) are end-of-life as of November 2, 2025. Users must upgrade to v1.3.0 for continued support.
+**Only v1.4.0 is currently supported.** All previous versions (v1.3.0, v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) are end-of-life as of November 3, 2025. Users must upgrade to v1.4.0 for continued support.
+
+## [1.4.0] - 2025-11-03
+
+### Changed
+
+#### Filter Validation Enhancement
+- **Non-negative Integer Support** - Filter fields `since`, `until`, and `limit` now accept `0` as a valid value (previously required values > 0)
+  - `since=0`: Valid Unix timestamp (epoch start: January 1, 1970)
+  - `until=0`: Valid Unix timestamp (edge case but technically valid)
+  - `limit=0`: Valid request for zero results (unusual but valid)
+- **Validation Constraint Update** - Changed from `> 0` (strictly positive) to `>= 0` (non-negative) for better protocol compliance
+- **Error Message Update** - Validation error messages changed from "must be a positive integer" to "must be a non-negative integer"
+
+### Fixed
+- **Filter Validation** - Filters with `since=0`, `until=0`, or `limit=0` no longer raise `FilterValidationError`
+- **Documentation** - Updated all docstrings and examples to reflect the `>= 0` constraint
+
+### Technical Details
+
+**Modified Files (3 files, +21/-11 lines)**
+- filter.py - Updated validation logic (line 260), field docstrings (lines 82-87), and method parameter documentation (lines 112-114)
+- test_filter.py - Added 3 new tests for zero values, updated 3 existing tests for error message changes
+- errors.py - Updated example in FilterValidationError docstring
+
+**All Tests Passing**
+- 541 total tests (3 new tests added)
+- 80%+ code coverage maintained
+- Full type checking with MyPy
+- All quality checks passing
+
+---
 
 ## [1.3.0] - 2025-11-02
 
@@ -274,7 +305,8 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 | Version | Support Status | End of Support |
 |---------|----------------|----------------|
-| 1.3.0   | ✅ **Only Supported** | TBD            |
+| 1.4.0   | ✅ **Only Supported** | TBD            |
+| 1.3.0   | ❌ End of Life | 2025-11-03     |
 | 1.2.1   | ❌ End of Life | 2025-11-02     |
 | 1.2.0   | ❌ End of Life | 2025-10-05     |
 | 1.1.x   | ❌ End of Life | 2025-10-04     |
@@ -283,9 +315,9 @@ This is the first stable release of nostr-tools, a comprehensive Python library 
 
 ### Support Timeline
 
-- **Active Support**: v1.3.0 only - bug fixes, security updates, and new features
-- **End of Life**: All previous versions (v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
-- **Migration Required**: Users must upgrade to v1.3.0 for continued support
+- **Active Support**: v1.4.0 only - bug fixes, security updates, and new features
+- **End of Life**: All previous versions (v1.3.0, v1.2.1, v1.2.0, v1.1.x, v1.0.x, v0.x.x) - no further updates or support
+- **Migration Required**: Users must upgrade to v1.4.0 for continued support
 
 We follow semantic versioning and maintain backward compatibility within major versions.
 
